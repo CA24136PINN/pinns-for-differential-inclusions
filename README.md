@@ -270,12 +270,7 @@ Open a pull request and briefly describe:
 
 ## Citation
 
-The repository accompanies the working preprint:
-
-> Maria Filipkovska, Juan José Marín, Isil Oner, and Francisco Periago,  
-> **Distance-Residual Physics-Informed Neural Networks: A Deep Learning Framework for Differential and Partial Differential Inclusions**, 2026.
-
-A provisional BibTeX entry is:
+The repository accompanies the working preprint. A provisional BibTeX entry is:
 
 ```bibtex
 @misc{filipkovska2026drpinns,
