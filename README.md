@@ -29,14 +29,14 @@ $$
 Because there is no unique value to subtract from $D(u)$, the classical pointwise residual is replaced by the squared distance to the admissible set:
 
 $$
-R(u_\theta)(z) = \operatorname{dist}^2\!\left(D(u_\theta)(z),F(u_\theta)(z)\right).
+R(u_\theta)(z) = \text{dist}^2\!\left(D(u_\theta)(z),F(u_\theta)(z)\right).
 $$
 
 The corresponding DR-PINN loss is
 
 $$
 \mathcal{L}(\theta) = \frac{1}{N}\sum_{i=1}^{N}
-\operatorname{dist}^2\!\left(
+\text{dist}^2\!\left(
 D(u_\theta)(z_i),F(u_\theta)(z_i)
 \right).
 $$
@@ -44,7 +44,7 @@ $$
 The residual vanishes exactly when the differential inclusion is satisfied. For closed convex admissible sets, the metric projection is unique and
 
 $$
-\nabla_v\operatorname{dist}^2(v,C) = 2\bigl(v-\Pi_C(v)\bigr),
+\nabla_v\text{dist}^2(v,C) = 2\bigl(v-\Pi_C(v)\bigr),
 $$
 
 which makes the loss suitable for gradient-based optimization.
@@ -119,7 +119,7 @@ where the two separated disks rotate in time. It compares:
 This example demonstrates an important distinction between convex and nonconvex problems. Pointwise exactness of the distance residual survives without convexity, but weak limits of oscillating admissible velocities may satisfy only
 
 $$
-\dot{x}(t)\in \operatorname{co}F(t,x(t)),
+\dot{x}(t)\in \text{co}F(t,x(t)),
 $$
 
 rather than the original nonconvex inclusion. The benchmark therefore reports both geometric feasibility and relaxation behavior.
