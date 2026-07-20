@@ -283,7 +283,7 @@ A provisional BibTeX entry is:
             A Deep Learning Framework for Differential and
             Partial Differential Inclusions},
   author = {Filipkovska, Maria and Marín, Juan José and
-            Oner, Isil and Periago, Francisco},
+           Oner, Isil and Periago, Francisco and Rykaczewski, Krzysztof},
   year   = {2026},
   note   = {Working preprint}
 }
