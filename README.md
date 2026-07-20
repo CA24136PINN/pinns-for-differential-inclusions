@@ -29,16 +29,13 @@ $$
 Because there is no unique value to subtract from $D(u)$, the classical pointwise residual is replaced by the squared distance to the admissible set:
 
 $$
-R(u_\theta)(z) = \text{dist}^2\!\left(D(u_\theta)(z),F(u_\theta)(z)\right).
+R(u_\theta)(z) = \text{dist}^2  \left(D(u_\theta)(z),F(u_\theta)(z)\right).
 $$
 
 The corresponding DR-PINN loss is
 
 $$
-\mathcal{L}(\theta) = \frac{1}{N}\sum_{i=1}^{N}
-\text{dist}^2\!\left(
-D(u_\theta)(z_i),F(u_\theta)(z_i)
-\right).
+\mathcal{L}(\theta) = \frac{1}{N}\sum_{i=1}^{N} \text{dist}^2 \left( D(u_\theta)(z_i),F(u_\theta)(z_i) \right).
 $$
 
 The residual vanishes exactly when the differential inclusion is satisfied. For closed convex admissible sets, the metric projection is unique and
