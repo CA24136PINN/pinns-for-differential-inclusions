@@ -107,9 +107,11 @@
 			This substitution is natural (the distance vanishes precisely when the
 			inclusion is satisfied), geometrically interpretable (it measures the
 			minimum correction needed for the operator to enter the admissible set),
-			and amenable to gradient-based training (the squared distance is
-			differentiable with respect to the network parameters whenever the
-			admissible set is convex, with gradient given by the metric projection).
+			and amenable to gradient-based training: for a fixed closed convex
+			admissible set, the squared distance is differentiable with respect to
+			the operator value, with gradient given by the metric projection. When
+			the admissible set also depends on the network state, that dependence
+			must additionally be included by the chain rule.
 			The framework encompasses ordinary differential inclusions and 
 			partial differential inclusions with set-valued reaction terms.
 			For both settings we prove \emph{consistency}:
@@ -162,7 +164,7 @@
 	equality.
 	
 	A class of mathematical models which does not fit within this
-	framework is the one whose the governing law takes the \emph{set-valued} form
+	framework is the one whose governing law takes the \emph{set-valued} form
 %	In many applications --- control theory and optimal control
 %	\cite{aubin_cellina_1984}, mechanics of systems with unilateral
 %	constraints \cite{deimling_1992}, nonsmooth dynamics, phase-field models
@@ -324,7 +326,7 @@ Finally, it is worth-mentioning that although the theory of differential inclusi
 		Similarly, $\mathcal{F}$ is said to be \emph{lower semicontinuous} at $x\in X$
 		if for every $y\in \mathcal{F}(x)$ and every neighborhood $U$ of $y$, there exists a neighborhood $V$ of $x$ such that
 		\[
-		\mathcal{F}(x) \cap V \neq \varnothing \quad \forall x \in V.
+		\mathcal{F}(x') \cap U \neq \varnothing \quad \text{for every } x' \in V.
 		\] 
 		%
 		$\mathcal{F}$ is said to be upper semicontinuous (respectively, lower semicontinuous) if it is upper semicontinuous (respectively, lower semicontinuous) at every point $x\in X$. 
@@ -381,15 +383,15 @@ Finally, it is worth-mentioning that although the theory of differential inclusi
 	\subsection{Projection onto a set} \label{sec:projection}
 	
 	Fix a normed space $X$.
-	If $C \subseteq X$ is a closed set, then the infimum
+	If $C \subseteq X$ is a nonempty closed set, then the infimum
 	%
 	\begin{equation*}
 		\text{dist}(x_0,C) := \inf\{\|x_0 - x\|_X : x \in C\}, \quad x_0 \in X,
 	\end{equation*}
 	%
-	is always attained. We say that $z\in C$ is a projection of $x_0$ onto $C$ whenever $\text{dist}(x_0,C)=\|z - x_0\|_X$. In general there can be several projections of $x_0$ onto $C$, that is, there might be more than one point in $C$ closest to $x_0$.
+	is always well defined; it is attained, for instance, whenever $X$ is finite-dimensional or, more generally, whenever $C$ is boundedly compact (in a general infinite-dimensional normed space a nearest point may fail to exist). We say that $z\in C$ is a projection of $x_0$ onto $C$ whenever $\text{dist}(x_0,C)=\|z - x_0\|_X$. In general there can be several projections of $x_0$ onto $C$, that is, there might be more than one point in $C$ closest to $x_0$.
 	%
-	A fundamental result in convex analysis (see, e.g., \cite[Section~8.1]{boyd_vandenberghe_2004}) establishes that the projection is unique whenever $C$ is closed and convex, and the norm $\|\cdot\|_X$ is strictly convex.
+	A fundamental result in convex analysis (see, e.g., \cite[Section~8.1]{boyd_vandenberghe_2004}) establishes that, whenever the distance is attained, the projection is unique provided $C$ is closed and convex and the norm $\|\cdot\|_X$ is strictly convex.
 	
 	In the case $X=\mathbb{R}^n$, we assume throughout this work that the norm is the Euclidean norm $\|\cdot\|_2$, which is strictly convex. To simplify the notation, we write $|\cdot|$ in place of $\|\cdot\|_2$. In this scenario the projection of $x_0$ onto $C$ is unique and will be denoted by $\Pi_C(x_0)$. In other words,
 	\begin{equation}
@@ -485,7 +487,7 @@ Finally, it is worth-mentioning that although the theory of differential inclusi
 		\bigr\},
 	\end{equation}
 	where ${\rm AC}([0,T];\mathbb{R}^d)$ denotes the collection of
-	absolutely continuous functions on $[0,T]\times\mathbb{R}^d$,
+	absolutely continuous functions from $[0,T]$ into $\mathbb{R}^d$,
 	is naturally set-valued.  Consequently, a trained DR-PINN approximates
 	\emph{one} admissible trajectory, not a distinguished one; this
 	interpretation is made precise by the consistency result in
@@ -494,7 +496,7 @@ Finally, it is worth-mentioning that although the theory of differential inclusi
 %\subsubsection*{Parabolic partial differential inclusions}
 Next, we consider partial differential inclusions. Although, for the sake of simplicity, in what follows we only address the parabolic case, most of the main ideas and results extend to other types of partial differential inclusions. 
 
-Let $\Omega\subset\mathbb{R}^d$ be a bounded domain with smooth boundary, let $T>0$, and set
+Let $\Omega\subset\mathbb{R}^d$ be a bounded domain with $C^{1,1}$ boundary, or a bounded convex domain, let $T>0$, and set
 $Q:=(0,T)\times\Omega$.  Consider the parabolic partial differential
 inclusion
 \begin{equation}\label{eq:parabolic-inclusion-background}
@@ -694,18 +696,25 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 	
 	\begin{remark}
 		Since we are assuming that $\mathcal{F}$ is strict and closed-valued,
-		when $\mathcal{F}(u)$ is convex and $\|\cdot\|_Y$ is strictly convex, the projection
-		$P_{\mathcal{F}(u)}$ on $\mathcal{F}(u)$ is uniquely defined (cf. Section~\ref{sec:projection}), and
+		when $\mathcal{F}(u)$ is convex and $Y$ is a Hilbert space, the
+		projection $P_{\mathcal{F}(u)}$ onto $\mathcal{F}(u)$ is uniquely
+		defined (cf. Section~\ref{sec:projection}), and
 		\[
 		R(u)
 		=
-		\bigl\|\mathcal{D}(u)-P_{\mathcal{F}(u)}\bigl(\mathcal{D}(u)\bigr)\bigr\|_Y^{2},
-		\qquad
-		\nabla R(u)
-		=
-		2\Bigl(\mathcal{D}(u)-P_{\mathcal{F}(u)}\bigl(\mathcal{D}(u)\bigr)\Bigr),
+		\bigl\|\mathcal{D}(u)-P_{\mathcal{F}(u)}\bigl(\mathcal{D}(u)\bigr)\bigr\|_Y^{2}.
 		\]
-		which is convenient for gradient-based optimization.
+		For a \emph{fixed} closed convex set $C\subset Y$, the map
+		$y\mapsto\dist^2(y,C)$ is Fr\'echet differentiable and
+		\[
+		\nabla_y\dist^2(y,C)=2\bigl(y-P_C(y)\bigr).
+		\]
+		This is the projection-gradient identity used in the numerical
+		implementations. It is a derivative with respect to the first
+		argument, with the set held fixed; it is not, by itself, a formula for
+		$\nabla R(u)$ when $\mathcal{F}(u)$ depends on $u$. In that case the
+		state dependence of the admissible set must also be differentiated (or
+		rewritten explicitly, as in the translated-set examples below).
 	\end{remark}
 	
 	This principle provides a unified framework in which classical PINNs
@@ -751,8 +760,8 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 	
 	\begin{theorem}[General consistency]\label{thm:general-consistency}
 		Let $X$, $Y$ be Banach spaces, assume that $\mathcal{D}:X\to Y$ is continuous,
-		and let $\mathcal{F}:X\rightrightarrows Y$ be strict and closed-valued.
-		Let $\{u_n\}_{n\in\mathbb{N}}\subset X$ satisfy $u_n\to x$ in $X$ and
+		and let $\mathcal{F}:X\rightrightarrows Y$ be strict and closed (that is, with closed graph).
+		Let $\{u_n\}_{n\in\mathbb{N}}\subset X$ satisfy $u_n\to u$ in $X$ and
 		\[
 		\dist(\mathcal{D}(u_n),\mathcal{F}(u_n))\to 0.
 		\]
@@ -761,7 +770,7 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 	\end{theorem}
 	
 	\begin{proof}
-		Since $\mathcal{D}$ is continuous, $\mathcal{D}(u_n)\to\mathcal{D}(u)$. The result then follows by appling Lemma~\ref{lem:closed-graph} with with $x_n=u_n$ and $y_n=\mathcal{D}(u_n)$.
+		Since $\mathcal{D}$ is continuous, $\mathcal{D}(u_n)\to\mathcal{D}(u)$. The result then follows by applying Lemma~\ref{lem:closed-graph} with $x_n=u_n$ and $y_n=\mathcal{D}(u_n)$.
 	\end{proof}
 	
 	Theorem~\ref{thm:general-consistency} applies whenever the functional
@@ -818,9 +827,11 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		\[
 		\nabla_v\dist^2(v,F(t,x))=2(v-\Pi_{F(t,x)}(v)),
 		\]
-		which is
-		well-defined and Lipschitz --- properties that are particularly
-		favorable for gradient-based training.
+		which is well-defined and Lipschitz. This identity differentiates
+		only with respect to $v$, with $F(t,x)$ held fixed. If the admissible
+		set depends on the learned state $x_\theta$, the corresponding chain-rule
+		term must be retained in the implementation. These properties are
+		particularly favorable for gradient-based training.
 	\end{remark}
 	
 	The DR-PINN loss for the differential inclusion \eqref{eq:inclusion} is
@@ -988,7 +999,7 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		We start with the proof of $(a)$.
 		%
 		Fix $x \in \mathbb{R}^d$. For $v_1, v_2 \in \mathbb{R}^d$ and $\lambda \in [0,1]$, 
-		since $F(t,x)$ is compact, the projections onto $F(t,x)$ are unique:
+		since $F(t,x)$ is compact and convex, the projections onto $F(t,x)$ exist and are unique:
 		\[
 		w_1 := \Pi_{F(t,x)} (v_1),  \quad
 		w_2 := \Pi_{F(t,x)} (v_2).
@@ -1062,7 +1073,7 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		and $\{v_n\}_{n=1}^{\infty}\subset\mathbb{R}^d$
 		with $(x_n, v_n) \rightarrow (x, v)$ as $n \rightarrow \infty.$ From \eqref{eq:normal-integrand-inproof4}, we have
 		\begin{equation}
-			\text{dist}(v_n, F(t, x_n)) \ge \text{dist}(v, F(t, x_n)) - |v_n - v| \quad \text{ for all } k\in\mathbb{N}.
+			\text{dist}(v_n, F(t, x_n)) \ge \text{dist}(v, F(t, x_n)) - |v_n - v| \quad \text{ for all } n\in\mathbb{N}.
 		\end{equation}
 		Taking the $\liminf_{n \rightarrow \infty}$ on both sides, the term $|v_n - v|$ vanishes and the lower semicontinuity in $x$ for the first term on the right-hand side gives
 		\begin{equation}
@@ -1080,8 +1091,8 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		solution set $\mathcal{S}(x_0)$ defined as in \eqref{eq:solution-DI}.
 		Then:
 		\begin{enumerate}
-			\item[\rm(a)] (Exactness) For every $x \in A$, $\mathcal{J}(x) = 0$ if and only if $x \in S(x_0)$.
-			\item[\rm(b)] (Asymptotic consistency) Let $\{x_n\}_{n=1}^{\infty} \subset \mathcal{A}$ with $\mathcal{J}(x_n) \to 0$. Then there exist a subsequence (not relabeled) and $x^* \in \mathcal{A}$ such that $x_n \to x^*$ uniformly on $[0,T]$, $\dot{x}_n \rightharpoonup \dot{x}^*$ weakly in $L^2(0,T; \mathbb{R}^d)$, and $x^* \in S(x_0)$.
+			\item[\rm(a)] (Exactness) For every $x \in \mathcal{A}$, $\mathcal{J}(x) = 0$ if and only if $x \in \mathcal{S}(x_0)$.
+			\item[\rm(b)] (Asymptotic consistency) Let $\{x_n\}_{n=1}^{\infty} \subset \mathcal{A}$ with $\mathcal{J}(x_n) \to 0$. Then there exist a subsequence (not relabeled) and $x^* \in \mathcal{A}$ such that $x_n \to x^*$ uniformly on $[0,T]$, $\dot{x}_n \rightharpoonup \dot{x}^*$ weakly in $L^2(0,T; \mathbb{R}^d)$, and $x^* \in \mathcal{S}(x_0)$.
 		\end{enumerate}
 	\end{theorem}
 	
@@ -1111,8 +1122,8 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		%
 		Then, integrating \eqref{eq:consistency-inproof1} we deduce that
 		\begin{align}
-			|x_n(t)| & = |x_0|  + |x_n(t)-x_0|
-			\leq |x_0| + \int_0^t |\dot{x}(s)|\, ds
+			|x_n(t)| & \le |x_0|  + |x_n(t)-x_0|
+			\leq |x_0| + \int_0^t |\dot{x}_n(s)|\, ds
 			\nonumber\\ & 
 			\le |x_0| + R_0 + \int_0^t m(s)(1 + |x_n(s)|) \, ds.
 			\nonumber
@@ -1152,12 +1163,10 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		In particular, from \eqref{eq:consistency-inproof2} and \eqref{eq:consistency-inproof3} we deduce that
 		the sequence $\{x_n\}_{n\in\mathbb{N}}$ is bounded in the Sobolev space $W^{1,2}(0,T; \mathbb{R}^d)$, that is, $\|x_n\|_{W^{1,2}(0,T)} \le C_W$ for every $n\in\mathbb{N}$.
 		
-		Since $W^{1,2}(0,T; \mathbb{R}^d)$ is a Hilbert space (hence reflexive), 
-		by \cite[Theorem 3.18]{brezis_2011}, there exists a subsequence such that
+		Since, by \eqref{eq:consistency-inproof3}, the sequence $\{\dot{x}_n\}_{n\in\mathbb{N}}$ is bounded in the Hilbert space $L^2(0,T; \mathbb{R}^d)$, which is reflexive, \cite[Theorem 3.18]{brezis_2011} provides a subsequence (not relabeled) and $v^*\in L^2(0,T;\mathbb{R}^d)$ such that
 		\[
-		x_n \rightharpoonup x^* \quad \text{weakly in } W^{1,2}(0,T; \mathbb{R}^d).
+		\dot{x}_n \rightharpoonup v^* \quad \text{weakly in } L^2(0,T; \mathbb{R}^d).
 		\]
-		This weak convergence in $W^{1,2}(0,T;\mathbb{R}^d)$ implies $\dot{x}_n \rightharpoonup w$ weakly in $L^2(0,T; \mathbb{R}^d)$, because the weak limit is determined by the bilinear form, and strong convergence of $x_n$, by Rellich–Kondrachov Theorem, forces the derivative component to converge weakly.
 		%
 		By Cauchy--Schwarz inequality,
 		\[
@@ -1177,20 +1186,20 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		\[
 		x_n \to x^* \quad \text{uniformly on } [0,T].
 		\]
-		Then, passing to the limit in $x_n(t) = x_0 + \int_0^t \dot{x}_n(s) \, ds$ gives 
+		Then, passing to the limit in $x_n(t) = x_0 + \int_0^t \dot{x}_n(s) \, ds$ (the integral converges by the weak convergence $\dot{x}_n \rightharpoonup v^*$ in $L^2$, tested against $\mathbf{1}_{[0,t]}$) gives 
 		\[
-		x^*(t) = x_0 + \int_0^t w(s) \, ds
+		x^*(t) = x_0 + \int_0^t v^*(s) \, ds
 		\]
-		hence $x^* \in \mathcal{A}$ and $\dot{x}^* = w$ a.e.
+		hence $x^* \in \mathcal{A}$ and $\dot{x}^* = v^*$ a.e.
 		
 		Finally, set $g(t, x, v) := \operatorname{dist}^2(v, F(t,x))$. 
-		By Lemma~\ref{lem:normal-integrand}, $g$ is a normal convex integrand. The classical lower semicontinuity theorem for integral functionals with normal convex integrands (\cite[Theorem~1]{berkovitz_1974}; see also Ioffe [13] and [14, Chapter VIII]), applied with $x_n \to x^*$ uniformly and $\dot{x}_n \rightharpoonup \dot{x}^*$ weakly in $L^2(0,T;\mathbb{R}^d)$, yields
+		By Lemma~\ref{lem:normal-integrand}, $g$ is a normal convex integrand. The classical lower semicontinuity theorem for integral functionals with normal convex integrands (\cite[Theorem~1]{berkovitz_1974}; see also \cite{ioffe_1977} and \cite[Chapter~VIII]{ekeland_temam_1999}), applied with $x_n \to x^*$ uniformly and $\dot{x}_n \rightharpoonup \dot{x}^*$ weakly in $L^2(0,T;\mathbb{R}^d)$, yields
 		%
 		\[
 		\mathcal{J}(x^*) \le \liminf_{n \to \infty} \mathcal{J}(x_n) = 0.
 		\]
 		%
-		As $\mathcal{J}$ is non-negative, we conclude that $\mathcal{J}(x^*) = 0$. By part (a), this means that $x^* \in S(x_0)$.
+		As $\mathcal{J}$ is non-negative, we conclude that $\mathcal{J}(x^*) = 0$. By part (a), this means that $x^* \in \mathcal{S}(x_0)$.
 	\end{proof}
 	
 	\begin{remark}
@@ -1579,7 +1588,7 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		
 		We now apply the standard $L^2$ regularity estimate for the
 		Dirichlet heat equation to \eqref{eq:pde-decomposition}. Since
-		$u_0\in H_0^1(\Omega)$ and $\partial\Omega$ is smooth ($C^{1,1}$ regularity is enough), there exists a constant
+		$u_0\in H_0^1(\Omega)$ and $\partial\Omega$ is smooth ($C^{1,1}$ regularity is enough; convexity of $\Omega$ also suffices, which covers the square domain used in Section~\ref{subsec:parabolic-PDI}), there exists a constant
 		$C_{\mathrm{par}}>0$, independent of $n$, such that
 		\[
 		\|u_n\|_{\mathcal{W}(0,T)}
@@ -2258,44 +2267,50 @@ strictly below the boundary value $\ell=1$ at all times.
 	\label{fig:ellipse-state}
 \end{figure}
 \paragraph{DR-PINN companion run}
-The hard-admissible parametrization above does not, by itself, exercise the
-distance-residual loss. To verify that the DR-PINN approach of
-Section~\ref{sec:description-formulation} also applies directly to this
-benchmark --- and to quantify what the hard parametrization buys --- we
-additionally trained a neural trajectory
-$x_\theta(t)=x_0+t\,N_\theta(t)$ (hard initial condition; $N_\theta$ a
-$3\times64$ tanh network) with the genuine distance-residual loss
+The hard-admissible selector optimization above is a direct constrained
+optimal-control discretization, not a DR-PINN: it propagates the state by RK4
+and makes the inclusion hold by construction. To test the distance-residual
+method itself on the same benchmark, we therefore performed a separate
+DR-PINN run. Because the experiment is a steering problem with prescribed
+initial and terminal states, we used the endpoint-hard neural ansatz
 \begin{equation}
-	\label{eq:ellipse-drpinn-loss}
-	\mathcal{L}(\theta)
-	=\frac{1}{N}\sum_{i=1}^{N}
-	\dist^2\!\bigl(\dot{x}_\theta(t_i)-g(t_i,x_\theta(t_i)),\,E(t_i)\bigr)
-	+\lambda_{\rm f}\,\bigl|x_\theta(T)-x_{\rm f}\bigr|^2,
+\label{eq:ellipse-endpoint-hard}
+ x_\theta(t)
+ =x_0+\frac{t}{T}(x_{\rm f}-x_0)+t(T-t)N_\theta(t),
 \end{equation}
-with $N=512$ uniform collocation points and $\lambda_{\rm f}=10$. Since the
-projection onto an ellipse has no closed form, $\dist^2(v,E(t))$ is
-evaluated pointwise by Newton iteration on the secular equation
-$\sum_{k}\bigl(\sigma_k\,v^{\rm loc}_k/(\sigma_k^2+\mu)\bigr)^2=1$ in the
-local frame of $E(t)$ (with $\sigma_1=a(t)$, $\sigma_2=b(t)$); the multiplier
-$\mu$ is treated as a constant in the backward pass, which yields the exact
-gradient $2\bigl(v-\Pi_{E(t)}(v)\bigr)$ by the projection-gradient identity
-of Section~\ref{sec:description-formulation}. This illustrates that the
-DR-PINN framework accommodates admissible sets whose projection is only
-\emph{numerically} available. After $9000$ Adam epochs (hold-then-decay
-learning rate, double precision), the DR-PINN steers the state to the target
-with $|x_\theta(T)-x_{\rm f}|=1.3\times10^{-4}$, while the inclusion
-residual $\dist(\dot{x}_\theta-g,E(t))$ attains a mean of
-$3.9\times10^{-2}$ and a maximum of $0.14$ over a dense evaluation grid:
-because the target lies close to the boundary of the reachable set,
-near-extremal velocities are required for most of the horizon, and the soft
-distance penalty settles for velocities slightly \emph{outside} $E(t)$
-(mean level $1.19$). The comparison with
-Table~\ref{tab:ellipse-continuation} makes the trade-off quantitative: the
-distance-residual route recovers the correct steering behavior with a small
-residual infeasibility, whereas the hard-admissible parametrization
-guarantees $\ell<1$ exactly --- which is why we adopt the latter for this
-example, and why hard constructions are preferable whenever the admissible
-set carries an explicit parametric description.
+where $N_\theta$ is a $3\times64$ tanh network. Hence
+$x_\theta(0)=x_0$ and $x_\theta(T)=x_{\rm f}$ exactly, and the training
+objective is the pure distance residual
+\begin{equation}
+\label{eq:ellipse-drpinn-loss}
+ \mathcal{L}(\theta)
+ =\frac{1}{N}\sum_{i=1}^{N}
+ \dist^2\!\bigl(\dot{x}_\theta(t_i)-g(t_i,x_\theta(t_i)),E(t_i)\bigr),
+\end{equation}
+with $N=512$ uniform collocation points.
+
+The projection onto an ellipse is evaluated pointwise by Newton iteration on
+the secular equation
+$\sum_k(\sigma_k v_k^{\rm loc}/(\sigma_k^2+\mu))^2=1$ in the local frame of
+$E(t)$, with $\sigma_1=a(t)$ and $\sigma_2=b(t)$. In the backward pass the
+\emph{entire projected point} $\Pi_{E(t)}(v)$ is held constant, so automatic
+differentiation returns the exact envelope gradient
+$2(v-\Pi_{E(t)}(v))$. Holding only the multiplier $\mu$ constant would not
+give this gradient; this distinction is important in an implementation with
+a numerically computed projection. A finite-difference gradient check in the
+replication code gives a relative error of $7.5\times10^{-11}$.
+
+After $7000$ Adam epochs (hold-then-decay learning rate, double precision),
+the collocation loss is $1.9\times10^{-14}$. On an independent dense grid of
+$2000$ time points, the mean and maximum inclusion distances are respectively
+$7.1\times10^{-9}$ and $2.2\times10^{-6}$, while both endpoint errors are zero
+up to machine precision. The corresponding selector has mean level $0.931$
+and maximum level $1.000011$; the latter tiny overshoot is consistent with the
+reported $2.2\times10^{-6}$ distance and numerical projection tolerance. Thus
+the corrected distance-residual implementation does solve this benchmark as
+a genuine DR-PINN. The hard-admissible selector experiment remains useful as
+a complementary construction that guarantees feasibility independently of
+training, but it should not itself be labelled a DR-PINN experiment.
 
 %% ------------------------------------------------------------
 \subsection{A Reaction-Diffusion Inclusion with Relay (Sliding-Mode) Feedback}
@@ -2444,7 +2459,7 @@ Section~\ref{subsec:linear-control} is required, uniqueness of strong
 solutions holds here: since $-\Delta+\lambda\,\partial|\cdot|$ is a sum of
 maximal monotone operators, standard monotonicity arguments show that
 $\tfrac{d}{dt}\|u_1-u_2\|_{L^2(\Omega)}^2\le0$ for any two strong solutions
-with the same initial datum, so $S(u_0)$ is a singleton. A single trained
+with the same initial datum, so $\mathcal{S}(u_0)$ is a singleton. A single trained
 DR-PINN can therefore be validated directly against one reference solution,
 obtained by a first-order operator-splitting scheme on a uniform
 $49\times49$ interior grid with time step $\Delta t=5\times10^{-4}$.

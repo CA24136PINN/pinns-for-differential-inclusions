@@ -95,7 +95,7 @@ pinns-for-differential-inclusions/
 | # | Manuscript section | Notebook / source | Figures (paper/figures) |
 |---|--------------------|-------------------|--------------------------|
 | 1 | 6.1 Linear control system with polytopic input set | `code/src/dr_pinn_linear_control_qp_quickhull.ipynb` | `control_set`, `loss_single`, `trajectory_vs_tube`, `scalability` |
-| 2 | 6.2 Planar inclusion with rotating ellipsoidal constraint | `code/src/rotating_ellipse_selector_experiment.py` | `ellipse_velocity_tube`, `ellipse_selector_level`, `ellipse_state_trajectory` |
+| 2 | 6.2 Planar inclusion with rotating ellipsoidal constraint | `code/src/rotating_ellipse_selector_experiment.py` (hard-admissible comparison) and `code/src/rotating_ellipse_drpinn_companion.py` (endpoint-hard DR-PINN) | `ellipse_velocity_tube`, `ellipse_selector_level`, `ellipse_state_trajectory`, plus DR-PINN diagnostics |
 | 3 | 6.3 Reaction–diffusion inclusion with relay feedback | `code/src/dr_pinn_relay_parabolic_experiment.ipynb` | `reference_extinction_curves`, `training_history_relay`, `dr_pinn_vs_reference`, `branch_selection_diagnostic`, `extinction_time_sweep` |
 
 All manuscript figures must be generated with the shared style defined in
@@ -113,7 +113,7 @@ script, run from the repository root:
 ```bash
 scripts/reproduce.sh refcurves   # Sec 6.3 reference figure only (CPU, seconds)
 scripts/reproduce.sh exp1        # Sec 6.1 notebook
-scripts/reproduce.sh exp2        # Sec 6.2 replication-package figures
+scripts/reproduce.sh exp2        # Sec 6.2 hard selector + corrected DR-PINN
 scripts/reproduce.sh exp3        # Sec 6.3 notebook (GPU: 4 x 40k epochs)
 scripts/reproduce.sh sync        # copy fresh PNGs into paper/figures/
 scripts/reproduce.sh check       # audit paper/figures vs manuscript + style
@@ -191,11 +191,29 @@ rather than the original nonconvex inclusion. The benchmark therefore reports bo
   <img src="replication_package/di_nonconvex_twodisk_example/outputs/02_selector_double_cylinder_light.png" alt="Nonconvex rotating two-disk selector benchmark" width="78%">
 </p>
 
+
+### Gradient implementation note
+
+For a fixed closed convex set $C$, the identity
+$\nabla_v\operatorname{dist}^2(v,C)=2(v-\Pi_C(v))$ differentiates only
+with respect to the first argument. If the admissible set depends on the
+network state, its state dependence must remain in the computational graph.
+The linear-control notebook therefore evaluates
+$\operatorname{dist}^2(\dot x-Ax,BU)$, and the rotating-ellipse companion
+detaches the entire numerically computed projection point (not only the
+ellipse multiplier). Run the regression checks with:
+
+```bash
+python code/src/test_distance_residual_gradients.py
+```
+
 ## Requirements
 
 - Python **3.10 or newer**
 - NumPy
-- SciPy for the nonconvex optimization example
+- SciPy for projection/optimization routines
+- PyTorch for the corrected rotating-ellipse DR-PINN companion
+- TensorFlow for the two notebook-based DR-PINN experiments
 - Plotly
 - Kaleido for PNG and PDF export
 - A Unix-like shell for the provided `run_export.sh` scripts
