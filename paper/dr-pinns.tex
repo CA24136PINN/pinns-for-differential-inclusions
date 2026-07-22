@@ -2257,6 +2257,46 @@ strictly below the boundary value $\ell=1$ at all times.
 		boundary value $\ell=1$ of $\partial E(t)$.}
 	\label{fig:ellipse-state}
 \end{figure}
+\paragraph{DR-PINN companion run}
+The hard-admissible parametrization above does not, by itself, exercise the
+distance-residual loss. To verify that the DR-PINN approach of
+Section~\ref{sec:description-formulation} also applies directly to this
+benchmark --- and to quantify what the hard parametrization buys --- we
+additionally trained a neural trajectory
+$x_\theta(t)=x_0+t\,N_\theta(t)$ (hard initial condition; $N_\theta$ a
+$3\times64$ tanh network) with the genuine distance-residual loss
+\begin{equation}
+	\label{eq:ellipse-drpinn-loss}
+	\mathcal{L}(\theta)
+	=\frac{1}{N}\sum_{i=1}^{N}
+	\dist^2\!\bigl(\dot{x}_\theta(t_i)-g(t_i,x_\theta(t_i)),\,E(t_i)\bigr)
+	+\lambda_{\rm f}\,\bigl|x_\theta(T)-x_{\rm f}\bigr|^2,
+\end{equation}
+with $N=512$ uniform collocation points and $\lambda_{\rm f}=10$. Since the
+projection onto an ellipse has no closed form, $\dist^2(v,E(t))$ is
+evaluated pointwise by Newton iteration on the secular equation
+$\sum_{k}\bigl(\sigma_k\,v^{\rm loc}_k/(\sigma_k^2+\mu)\bigr)^2=1$ in the
+local frame of $E(t)$ (with $\sigma_1=a(t)$, $\sigma_2=b(t)$); the multiplier
+$\mu$ is treated as a constant in the backward pass, which yields the exact
+gradient $2\bigl(v-\Pi_{E(t)}(v)\bigr)$ by the projection-gradient identity
+of Section~\ref{sec:description-formulation}. This illustrates that the
+DR-PINN framework accommodates admissible sets whose projection is only
+\emph{numerically} available. After $9000$ Adam epochs (hold-then-decay
+learning rate, double precision), the DR-PINN steers the state to the target
+with $|x_\theta(T)-x_{\rm f}|=1.3\times10^{-4}$, while the inclusion
+residual $\dist(\dot{x}_\theta-g,E(t))$ attains a mean of
+$3.9\times10^{-2}$ and a maximum of $0.14$ over a dense evaluation grid:
+because the target lies close to the boundary of the reachable set,
+near-extremal velocities are required for most of the horizon, and the soft
+distance penalty settles for velocities slightly \emph{outside} $E(t)$
+(mean level $1.19$). The comparison with
+Table~\ref{tab:ellipse-continuation} makes the trade-off quantitative: the
+distance-residual route recovers the correct steering behavior with a small
+residual infeasibility, whereas the hard-admissible parametrization
+guarantees $\ell<1$ exactly --- which is why we adopt the latter for this
+example, and why hard constructions are preferable whenever the admissible
+set carries an explicit parametric description.
+
 %% ------------------------------------------------------------
 \subsection{A Reaction-Diffusion Inclusion with Relay (Sliding-Mode) Feedback}
 \label{subsec:parabolic-PDI}

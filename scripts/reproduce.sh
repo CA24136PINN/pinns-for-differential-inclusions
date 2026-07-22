@@ -65,6 +65,9 @@ do_exp2 () {
   echo ">>> [exp2] Section 6.2: rotating-ellipse selector-steering experiment"
   echo ">>>        (72-variable L-BFGS-B continuation; CPU, ~2-4 minutes)"
   ( cd code/src && python3 rotating_ellipse_selector_experiment.py )
+  echo ">>> [exp2] DR-PINN companion run (Newton-based ellipse projection;"
+  echo ">>>        CPU, ~4-5 minutes; prints diagnostics quoted in Sec 6.2)"
+  ( cd code/src && python3 rotating_ellipse_drpinn_companion.py )
 }
 
 do_exp2_illustrations () {
