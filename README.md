@@ -52,6 +52,20 @@ which makes the loss suitable for gradient-based optimization.
 pinns-for-differential-inclusions/
 ├── README.md
 ├── LICENSE
+├── paper/
+│   ├── dr-pinns.tex          # manuscript (single source of truth)
+│   ├── dr-pinns.pdf          # compiled draft for co-authors
+│   └── figures/              # exactly the PNGs referenced by dr-pinns.tex
+├── code/
+│   ├── src/
+│   │   ├── paper_style.py                          # shared matplotlib style (CM serif 14pt, dpi=180)
+│   │   ├── dr_pinn_linear_control_qp_quickhull.ipynb   # Experiment 1 (Sec. 6.1)
+│   │   ├── dr_pinn_relay_parabolic_experiment.ipynb    # Experiment 3 (Sec. 6.3)
+│   │   └── tf_distance_residual_pinn_inclusion.{ipynb,py}  # legacy scalar experiment (not in paper)
+│   └── results/
+│       ├── results_linear_control_qp_quickhull/
+│       ├── results_parabolic_case/
+│       └── results_tf_distance_residual_pinn/
 ├── notes/
 │   ├── notes_convex/
 │   │   ├── rotating_ellipse_inclusion_convex.tex
@@ -61,7 +75,7 @@ pinns-for-differential-inclusions/
 │       ├── twodisk_nonconvex.pdf
 │       ├── twodisk_relaxation_gap.py
 │       └── twodisk_relaxation_gap.png
-└── replication_package/
+└── replication_package/          # Experiment 2 material (Sec. 6.2, in preparation)
     ├── di_convex_ellipse_example/
     │   ├── src/generate_di_figures.py
     │   ├── outputs/
@@ -76,7 +90,29 @@ pinns-for-differential-inclusions/
         └── README.md
 ```
 
-The repository currently contains two complementary benchmarks.
+## Paper experiments (Section 6 of the manuscript)
+
+| # | Manuscript section | Notebook / source | Figures (paper/figures) |
+|---|--------------------|-------------------|--------------------------|
+| 1 | 6.1 Linear control system with polytopic input set | `code/src/dr_pinn_linear_control_qp_quickhull.ipynb` | `control_set`, `loss_single`, `trajectory_vs_tube`, `scalability` |
+| 2 | 6.2 Planar inclusion with rotating ellipsoidal constraint | `replication_package/di_convex_ellipse_example/` *(section in preparation)* | — |
+| 3 | 6.3 Reaction–diffusion inclusion with relay feedback | `code/src/dr_pinn_relay_parabolic_experiment.ipynb` | `reference_extinction_curves`, `training_history_relay`, `dr_pinn_vs_reference`, `branch_selection_diagnostic`, `extinction_time_sweep` |
+
+All manuscript figures must be generated with the shared style defined in
+`code/src/paper_style.py` (Computer Modern serif, 14pt body size, `dpi=180`,
+tight bounding box). Both experiment notebooks call `apply_paper_style()` at
+start-up and write their figures into the corresponding
+`code/results/results_*` directory; copy the final PNGs into `paper/figures/`
+when updating the manuscript.
+
+> **Status note (2026-07-22).** The committed PNGs of Experiment 3 were
+> produced *before* the style unification (default fonts, dpi=150). Re-running
+> `dr_pinn_relay_parabolic_experiment.ipynb` (GPU recommended) regenerates
+> them in the unified style; afterwards refresh `paper/figures/`.
+
+## Benchmarks for Experiment 2 (replication package)
+
+The `replication_package/` directory contains two complementary benchmarks.
 
 ### 1. Convex rotating-ellipse inclusion
 
