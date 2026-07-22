@@ -2169,8 +2169,20 @@ for which $|v_i|\le\lambda\Delta t$ is sent to identically zero by the
 soft-thresholding step.
 
 \paragraph{Network architecture and loss function}
-The DR-PINN loss for this example is~\eqref{eq:pde-distance-loss} with
-$\Phi$ as in \eqref{eq:relay-Phi}. Since $\Phi(s)$ is an interval of
+The trial solution takes the hard-constrained form
+\begin{equation}
+	\label{eq:trial-parabolic}
+	u_\theta(t,x,y)
+	= u_0(x,y) + t\,x(1-x)\,y(1-y)\,N_\theta(t,x,y),
+\end{equation}
+where $N_\theta:\mathbb{R}^3\to\mathbb{R}$ is a fully connected neural
+network. The parametrization~\eqref{eq:trial-parabolic} enforces the
+initial condition $u_\theta(0,\cdot)=u_0$ and the homogeneous Dirichlet
+boundary condition exactly for every $\theta$ (the polynomial factor
+vanishes on $\partial\Omega$), so, as in
+Section~\ref{subsec:linear-control}, the DR-PINN loss reduces to the pure
+inclusion term: it is~\eqref{eq:pde-distance-loss} with
+$\Phi$ as in \eqref{eq:relay-Phi} and $\lambda_0=\lambda_b=0$. Since $\Phi(s)$ is an interval of
 $\mathbb{R}$, the projection $\Pi_{\Phi(u_\theta(t_i,x_i))}$ needed to
 evaluate the distance residual is explicit, requiring no quadratic program.
 Beyond the usual comparison against the reference solver, we recommend a
@@ -2202,7 +2214,9 @@ those detected by the trained DR-PINNs.
   \caption{Reference solution: $\|u(t)\|_{L^2(\Omega)}$ on a log scale for
     $\lambda\in\{0,0.4,0.6,0.8\}$. The vertical dotted lines mark the finite-time
     extinction instants $t^*$ of the three relay cases; the $\lambda=0$ heat-equation
-    curve does not extinguish within $[0,T]$.}
+    curve does not extinguish within $[0,T]$. Curves are clipped below $10^{-6}$
+    for readability; after extinction the reference norm is exactly zero
+    (drop below the axis).}
   \label{fig:relay-extinction-ref}
 \end{figure}
 
@@ -2268,7 +2282,8 @@ solution $u\equiv0$ after extinction.
   \centering
   \includegraphics[width=\textwidth]{figures/dr_pinn_vs_reference.png}
   \caption{Validation of the DR-PINN against the reference solution
-    ($\lambda=0.6$). Left: $L^2(\Omega)$-norm decay on a log scale; the
+    ($\lambda=0.6$). Left: $L^2(\Omega)$-norm decay on a log scale (clipped
+    below $10^{-6}$ for readability); the
     dotted vertical line marks the reference extinction time
     $t^*_{\rm ref}=0.1645$. Right: pointwise error $|u_\theta-u_{\rm ref}|$
     at $t=T=0.3$; the maximum error is $\approx2\times10^{-3}$.}
@@ -2300,7 +2315,8 @@ where the residual is hardest to reduce.
     Points with $s\gtrsim0.05$ cluster tightly on the branch $z=-0.6$;
     no points appear with $s<0$ (sign preservation by the relay flow);
     the vertical scatter near $s\approx0$ traces the extinction front,
-    where the discontinuity of $\Phi$ limits pointwise accuracy.}
+    where the discontinuity of $\Phi$ limits pointwise accuracy. The inset
+    magnifies the neighborhood of the extinction front ($s$ close to $0$).}
   \label{fig:relay-branch}
 \end{figure}
 
@@ -2322,7 +2338,8 @@ absolute accuracy at larger $\lambda$.
   \caption{Extinction-time comparison across the primary sweep
     $\lambda\in\{0.4,0.6,0.8\}$. Solid lines: reference solver. Dashed lines:
     DR-PINN. Colors identify the three $\lambda$ values (blue: $0.4$, orange:
-    $0.6$, green: $0.8$). After extinction the reference drops to machine zero
+    $0.6$, green: $0.8$). Curves are clipped below $10^{-6}$ for readability:
+    after extinction the reference drops to exactly zero (below the axis)
     while the DR-PINN norm stabilizes at $\approx10^{-4}$; the correct
     monotone ordering of extinction times is reproduced by the DR-PINN for all
     three values.}

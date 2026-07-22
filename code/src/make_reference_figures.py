@@ -109,19 +109,29 @@ def main():
         if expected is not None and (tstar is None or abs(tstar - expected) > 1e-12):
             ok = False
 
-    # Figure identical in content to the notebook cell that produced
-    # `reference_extinction_curves.png`; only the style is unified.
+    # Figure identical in content and style to the notebook cell that produces
+    # `reference_extinction_curves.png` (global lambda->color map, y-axis
+    # clipped at NORM_FLOOR, annotated extinction times).
+    LAMBDA_COLORS = {0.0: "0.45", 0.4: "tab:blue", 0.6: "tab:orange", 0.8: "tab:green"}
+    NORM_FLOOR = 1e-6
     fig, ax = plt.subplots(figsize=(6.5, 4.5))
     for lam in LAMBDA_SWEEP:
         times, norms, tstar = results[lam]
         label = rf"$\lambda={lam}$" + (" (heat eq.)" if lam == 0.0 else "")
-        ax.semilogy(times, np.maximum(norms, 1e-16), label=label)
+        ax.semilogy(times, np.maximum(norms, 1e-16), color=LAMBDA_COLORS[lam],
+                    lw=2, label=label)
         if tstar is not None:
-            ax.axvline(tstar, color="gray", linestyle=":", linewidth=0.8)
+            ax.axvline(tstar, color=LAMBDA_COLORS[lam], linestyle=":",
+                       linewidth=0.9, alpha=0.8)
+            ax.annotate(rf"$t^*={tstar:.4f}$", xy=(tstar, NORM_FLOOR * 4),
+                        xytext=(tstar + 0.004, NORM_FLOOR * 4), fontsize=10,
+                        color=LAMBDA_COLORS[lam], rotation=90, va="bottom")
+    ax.set_ylim(NORM_FLOOR, 2.0)
     ax.set_xlabel("$t$")
     ax.set_ylabel(r"$\|u(t)\|_{L^2(\Omega)}$  (log scale)")
     ax.set_title("Reference solution: finite-time extinction vs. classical decay")
-    ax.legend()
+    ax.grid(True, which="major", alpha=0.25)
+    ax.legend(loc="lower left")
     fig.tight_layout()
     out_path = os.path.join(OUT_DIR, "reference_extinction_curves.png")
     plt.savefig(out_path, dpi=180)
