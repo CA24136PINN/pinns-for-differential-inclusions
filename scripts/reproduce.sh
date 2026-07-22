@@ -6,7 +6,8 @@
 #
 #   scripts/reproduce.sh refcurves   # Sec 6.3 reference figure only (CPU, seconds)
 #   scripts/reproduce.sh exp1        # Sec 6.1 notebook (CPU ok, ~tens of minutes)
-#   scripts/reproduce.sh exp2        # Sec 6.2 replication-package figures (CPU)
+#   scripts/reproduce.sh exp2        # Sec 6.2 selector-steering experiment (CPU, minutes)
+#   scripts/reproduce.sh exp2-illustrations  # Plotly geometry illustrations (optional)
 #   scripts/reproduce.sh exp3        # Sec 6.3 notebook (GPU strongly recommended:
 #                                    #   4 trainings x 40k epochs)
 #   scripts/reproduce.sh sync        # copy freshly generated PNGs into paper/figures
@@ -29,6 +30,9 @@ declare -A FIGSRC=(
   [loss_single.png]="code/results/results_linear_control_qp_quickhull"
   [trajectory_vs_tube.png]="code/results/results_linear_control_qp_quickhull"
   [scalability.png]="code/results/results_linear_control_qp_quickhull"
+  [ellipse_velocity_tube.png]="code/results/results_rotating_ellipse"
+  [ellipse_selector_level.png]="code/results/results_rotating_ellipse"
+  [ellipse_state_trajectory.png]="code/results/results_rotating_ellipse"
   [reference_extinction_curves.png]="code/results/results_parabolic_case"
   [training_history_relay.png]="code/results/results_parabolic_case"
   [dr_pinn_vs_reference.png]="code/results/results_parabolic_case"
@@ -45,7 +49,7 @@ run_notebook () {
 
 do_refcurves () {
   echo ">>> [refcurves] Section 6.3 reference figure (no training)"
-  ( cd code/src && python make_reference_figures.py )
+  ( cd code/src && python3 make_reference_figures.py )
 }
 
 do_exp1 () {
@@ -58,7 +62,14 @@ do_exp1 () {
 }
 
 do_exp2 () {
-  echo ">>> [exp2] Section 6.2: replication-package benchmarks"
+  echo ">>> [exp2] Section 6.2: rotating-ellipse selector-steering experiment"
+  echo ">>>        (72-variable L-BFGS-B continuation; CPU, ~2-4 minutes)"
+  ( cd code/src && python3 rotating_ellipse_selector_experiment.py )
+}
+
+do_exp2_illustrations () {
+  echo ">>> [exp2-illustrations] Plotly geometry illustrations (NOT the paper"
+  echo ">>>        experiment: hand-crafted selector, synthetic drift)"
   for d in replication_package/di_convex_ellipse_example \
            replication_package/di_nonconvex_twodisk_example; do
     ( cd "$d" && chmod +x run_export.sh && ./run_export.sh )
@@ -84,13 +95,14 @@ do_sync () {
 }
 
 do_check () {
-  python scripts/check_figures.py
+  python3 scripts/check_figures.py
 }
 
 case "${1:-}" in
   refcurves) do_refcurves ;;
   exp1)      do_exp1 ;;
   exp2)      do_exp2 ;;
+  exp2-illustrations) do_exp2_illustrations ;;
   exp3)      do_exp3 ;;
   sync)      do_sync ;;
   check)     do_check ;;

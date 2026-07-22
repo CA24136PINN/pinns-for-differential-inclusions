@@ -2004,7 +2004,259 @@ preprocessing step then adds overhead without shrinking the downstream QP.
 \subsection{A Planar Differential Inclusion with a Rotating Ellipsoidal Control Constraint}
 \label{subsec:rotating-ellipsoidal}
 %% ------------------------------------------------------------
-\textcolor{red}{TO BE COMPLETED BY KRIS}
+
+\paragraph{Problem formulation}
+The two examples of Sections~\ref{subsec:linear-control}
+and~\ref{subsec:parabolic-PDI} enforce the inclusion by \emph{minimizing}
+the distance residual. This second ODE example illustrates the
+complementary strategy anticipated in
+Section~\ref{sec:description-formulation}: when the admissible set has a
+tractable parametric description, admissibility can be built into the
+parametrization itself, so that the distance residual vanishes
+\emph{identically} along every candidate trajectory and the remaining
+degrees of freedom can be used to select a specific element of the
+solution set $\mathcal{S}(x_0)$ --- here, the trajectory steering the
+state closest to a prescribed terminal point. This makes concrete the
+non-uniqueness discussion of Section~\ref{subsec:consistency}: the
+distance-residual loss guarantees convergence to \emph{some} admissible
+trajectory, whereas a hard-admissible parametrization allows one to
+optimize \emph{which} one.
+
+We consider trajectories $x:[0,T]\to\mathbb{R}^2$ of the differential
+inclusion
+\begin{equation}
+	\label{eq:ellipse-inclusion}
+	\dot{x}(t)\in F(t,x(t)) = g(t,x(t))+E(t),
+	\qquad x(0)=x_0,
+\end{equation}
+whose admissible-velocity set is of Minkowski type: a nonlinear,
+nonautonomous drift
+\begin{equation}
+	\label{eq:ellipse-drift}
+	g(t,x)=
+	\begin{pmatrix}
+		\sin(x_1)+0.15\cos\bigl(\tfrac{2\pi t}{T}\bigr)\\[2mm]
+		0.5\cos(x_2)-0.20\sin\bigl(\tfrac{2\pi t}{T}\bigr)
+	\end{pmatrix},
+	\qquad x=(x_1,x_2)^{\top},
+\end{equation}
+translated by a compact, convex, \emph{time-dependent} control set
+$E(t)$, a rotating ellipse defined below. Equivalently, admissible
+trajectories are exactly the solutions of the controlled system
+\begin{equation}
+	\label{eq:ellipse-controlled}
+	\dot{x}(t)=g(t,x(t))+\xi(t),
+	\qquad \xi(t)\in E(t)\ \text{ a.e.\ on } [0,T],
+\end{equation}
+where $\xi$ is a measurable selector of $t\mapsto E(t)$. Since
+$E(t)$ does not depend on the state, this example falls into
+regime~(a) of Section~\ref{sec:projection-extreme-points}; however,
+unlike the polytopic set of Section~\ref{subsec:linear-control}, the
+projection onto an ellipse admits no closed form (it requires the
+solution of a scalar secular equation), which makes the hard-admissible
+route particularly attractive here. We take $T=3$ and $x_0=(0,0)^{\top}$.
+
+\paragraph{The rotating ellipsoidal control set}
+For $t\in[0,T]$, let
+\begin{equation}
+	\label{eq:ellipse-axes}
+	a(t)=0.3+0.4\Bigl|\sin\Bigl(\frac{\pi t}{T}\Bigr)\Bigr|,
+	\qquad
+	b(t)=0.15+0.25\Bigl|\cos\Bigl(\frac{\pi t}{T}\Bigr)\Bigr|,
+	\qquad
+	\varphi(t)=\frac{\pi t}{T},
+\end{equation}
+and let $R_{\varphi(t)}$ denote the rotation by the angle $\varphi(t)$.
+The control set is the (filled) rotating ellipse
+\begin{equation}
+	\label{eq:ellipse-set}
+	E(t)=\Bigl\{R_{\varphi(t)}
+	\begin{pmatrix}u\\w\end{pmatrix}\in\mathbb{R}^2:
+	\frac{u^2}{a(t)^2}+\frac{w^2}{b(t)^2}\leq 1\Bigr\},
+\end{equation}
+which is nonempty, compact, and convex for every $t$, with semi-axes and
+orientation varying continuously in time; since $\varphi(0)=0$ and
+$\varphi(T)=\pi$, the ellipse performs a half-turn over the horizon, and
+the translated family $g(t,x(t))+E(t)$ traces a twisted tube of
+admissible velocities along the drift curve
+(Figure~\ref{fig:ellipse-tube}). Writing
+$(u,w)^{\top}=R_{-\varphi(t)}\,\xi$ for the coordinates of
+$\xi\in\mathbb{R}^2$ in the local frame of the ellipse, the
+\emph{level function}
+\begin{equation}
+	\label{eq:ellipse-level}
+	\ell(t,\xi)
+	=\Bigl(\frac{u}{a(t)}\Bigr)^2+\Bigl(\frac{w}{b(t)}\Bigr)^2
+\end{equation}
+characterizes admissibility: $\xi\in E(t)$ if and only if
+$\ell(t,\xi)\le1$, with $\ell=1$ on the boundary $\partial E(t)$.
+
+\paragraph{Hard-admissible selector parametrization}
+The selector is generated from $n_{\rm c}=24$ control nodes
+$(p^j,\rho^j)\in\mathbb{R}^2\times\mathbb{R}$, $j=0,\dots,n_{\rm c}-1$,
+linearly interpolated to the uniform time grid
+$t_i=i\,\Delta t$, $i=0,\dots,n_t-1$, $\Delta t=T/(n_t-1)$, with
+$n_t=120$; the low-dimensional nodal representation suppresses
+artificial oscillations of the selector. From the interpolated values
+$p(t_i)\in\mathbb{R}^2$, $\rho(t_i)\in\mathbb{R}$, define the unit-ball
+direction and the sigmoidal radius
+\begin{equation}
+	\label{eq:ellipse-dir-radius}
+	d(t_i)=\frac{p(t_i)}{\sqrt{\,|p(t_i)|^2+\varepsilon\,}},
+	\qquad
+	s(t_i)=\frac{1}{1+e^{-\rho(t_i)}}\in(0,1),
+\end{equation}
+with $\varepsilon=10^{-10}$ a normalization safeguard, and set
+\begin{equation}
+	\label{eq:ellipse-selector}
+	\xi(t_i)
+	=R_{\varphi(t_i)}
+	\begin{pmatrix}
+		s(t_i)\,a(t_i)\,d_1(t_i)\\
+		s(t_i)\,b(t_i)\,d_2(t_i)
+	\end{pmatrix}.
+\end{equation}
+Substituting \eqref{eq:ellipse-selector} into
+\eqref{eq:ellipse-level} gives, for every grid point,
+\begin{equation}
+	\label{eq:ellipse-admissibility}
+	\ell\bigl(t_i,\xi(t_i)\bigr)
+	=s(t_i)^2\,|d(t_i)|^2
+	\le s(t_i)^2<1,
+\end{equation}
+so the selector lies in the interior of $E(t_i)$ \emph{by construction},
+for every value of the nodal variables: no penalty for constraint
+violation is required, and the inclusion residual
+$\dist\bigl(\dot x(t_i)-g(t_i,x(t_i)),E(t_i)\bigr)$ of
+Section~\ref{sec:description-formulation} vanishes identically. This is
+the analogue, for the inclusion constraint itself, of the hard-constraint
+ansatz used for the initial condition in
+Section~\ref{subsec:linear-control} and for the initial/boundary
+conditions in Section~\ref{subsec:parabolic-PDI}.
+
+\paragraph{Steering problem and discretization}
+For a fixed selector, the state is propagated through
+\eqref{eq:ellipse-controlled} by the classical fourth-order
+Runge--Kutta scheme on the grid $\{t_i\}$, with $\xi$ evaluated between
+grid points by linear interpolation. The nodal variables
+$z=(p^0,\dots,p^{n_{\rm c}-1},\rho^0,\dots,\rho^{n_{\rm c}-1})
+\in\mathbb{R}^{3n_{\rm c}}=\mathbb{R}^{72}$
+are chosen by minimizing
+\begin{equation}
+	\label{eq:ellipse-cost}
+	J(z)=\lambda_{\rm f}\,\bigl|x_z(T)-x_{\rm f}\bigr|^2
+	+\lambda_{\xi}J_{\xi}(z)+\lambda_{\rm s}J_{\rm s}(z)
+	+\lambda_{\rm c}J_{\rm c}(z)+\lambda_{\rm b}J_{\rm b}(z)
+	+\lambda_{\rm u}J_{\rm u}(z),
+\end{equation}
+where $x_z$ denotes the discrete trajectory induced by $z$, the terminal
+term steers the state to a prescribed target $x_{\rm f}$, and the
+regularizers are the mean level
+$J_{\xi}=\frac{1}{n_t}\sum_i\ell(t_i,\xi_z(t_i))$
+(discouraging boundary-hugging selectors), the mean squared first and
+second discrete differences of $\xi_z$
+($J_{\rm s}$, $J_{\rm c}$: smoothness and curvature), the cubic soft
+barrier $J_{\rm b}=\frac{1}{n_t}\sum_i\ell(t_i,\xi_z(t_i))^3$
+(penalizing boundary saturation), and the mean squared differences of
+the nodal variables ($J_{\rm u}$). The weights are
+$\lambda_{\rm f}=2500$, $\lambda_{\rm s}=1$, $\lambda_{\rm c}=0.2$,
+$\lambda_{\rm b}=10^{-2}$, $\lambda_{\rm u}=5\cdot10^{-2}$, and the
+selector-regularization weight is driven along the continuation sequence
+$\lambda_{\xi}\in\{10^{-3},10^{-2},10^{-1}\}$, each stage warm-started
+from the previous one and solved by L-BFGS-B.
+
+The target must of course be chosen inside the reachable set of
+\eqref{eq:ellipse-inclusion}: the drift component
+$g_2=0.5\cos(x_2)-0.2\sin(2\pi t/T)$ pushes the state upward with
+magnitude $\approx0.5$ near $x_2=0$, while the vertical reach of $E(t)$
+oscillates between $0.15$ and $0.7$, so targets with markedly negative
+$x_2$ are unreachable over $[0,T]$ (an extremal selector taking, at
+every instant, the support point of $E(t)$ in the direction $-e_2$ only
+attains $x_2(T)\approx-0.05$). We take
+$x_{\rm f}=(1.8,\,0.1)^{\top}$, which lies inside but close to the
+boundary of the reachable set: steering to it forces the selector to
+operate near $\partial E(t)$ over most of the horizon, so the built-in
+admissibility guarantee \eqref{eq:ellipse-admissibility} is genuinely
+stressed.
+
+\paragraph{Numerical results}
+Table~\ref{tab:ellipse-continuation} reports, for each continuation
+stage, the terminal mismatch and the mean and maximum of the level
+function along the optimized selector. The terminal state matches the
+target to $\sim10^{-5}$ at every stage, while increasing
+$\lambda_{\xi}$ pulls the selector measurably towards the interior of
+the ellipse (mean level decreasing from $0.940$ to $0.914$) at
+essentially no cost in terminal accuracy --- the expected trade-off for
+a target close to the reachable-set boundary, where near-extremal
+velocities are necessary for most of the horizon.
+
+\begin{table}[htbp]
+	\centering
+	\begin{tabular}{cccc}
+		\toprule
+		$\lambda_{\xi}$ & $|x_z(T)-x_{\rm f}|$ & mean $\ell$ & max $\ell$ \\
+		\midrule
+		$10^{-3}$ & $9.0\times10^{-6}$ & $0.940$ & $0.948$ \\
+		$10^{-2}$ & $6.9\times10^{-6}$ & $0.919$ & $0.923$ \\
+		$10^{-1}$ & $3.2\times10^{-5}$ & $0.914$ & $0.921$ \\
+		\bottomrule
+	\end{tabular}
+	\caption{Continuation over the selector-regularization weight
+		$\lambda_{\xi}$ (warm-started L-BFGS-B): terminal mismatch and level
+		statistics of the optimized selector. Admissibility
+		$\ell(t_i,\xi_z(t_i))<1$ holds at every grid point and every stage, by
+		construction.}
+	\label{tab:ellipse-continuation}
+\end{table}
+
+Figure~\ref{fig:ellipse-tube} displays the resulting geometry in the
+space $(v_1,v_2,t)$ of velocities and time: the translated ellipses
+$g(t_i,x_z(t_i))+E(t_i)$ form a twisted tube whose centerline is the
+drift curve, and the selected velocity
+$\dot{x}_z(t_i)=g(t_i,x_z(t_i))+\xi_z(t_i)$ runs inside the tube, close
+to its wall, as quantified by the level statistics of
+Table~\ref{tab:ellipse-continuation}. Figure~\ref{fig:ellipse-selector}
+shows the same information in selector coordinates: the trajectory
+$t\mapsto\xi_z(t)$ threads the rotating ellipse $E(t)$ centered at the
+origin, with the color scale reporting the level
+$\ell(t_i,\xi_z(t_i))$. Finally, Figure~\ref{fig:ellipse-state} shows
+the optimized state trajectory from $x_0$ to $x_{\rm f}$ (left) together
+with the admissibility level along the horizon (right), which stays
+strictly below the boundary value $\ell=1$ at all times.
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.78\textwidth]{figures/ellipse_velocity_tube.png}
+	\caption{Admissible velocity tube of the inclusion
+		\eqref{eq:ellipse-inclusion} in $(v_1,v_2,t)$ space. The surface is the
+		boundary of the translated rotating ellipses $g(t,x_z(t))+E(t)$; the
+		blue curve is the centerline $g(t,x_z(t))$, the orange curve the
+		selected velocity $\dot{x}_z(t)$, and the grey segments the selector
+		displacements $\xi_z(t_i)$.}
+	\label{fig:ellipse-tube}
+\end{figure}
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.78\textwidth]{figures/ellipse_selector_level.png}
+	\caption{Optimized selector $\xi_z(t)$ inside the rotating control
+		ellipse $E(t)$ (thin blue rings, drawn every sixth grid point). The
+		color of the points encodes the level $\ell(t_i,\xi_z(t_i))$, which
+		remains strictly below $1$ by construction.}
+	\label{fig:ellipse-selector}
+\end{figure}
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=\textwidth]{figures/ellipse_state_trajectory.png}
+	\caption{Left: optimized state trajectory of
+		\eqref{eq:ellipse-controlled} from $x_0=(0,0)^{\top}$ to the target
+		$x_{\rm f}=(1.8,0.1)^{\top}$ (final continuation stage
+		$\lambda_{\xi}=10^{-1}$, terminal mismatch $3.2\times10^{-5}$). Right: admissibility level
+		$\ell(t,\xi_z(t))$ along the horizon; the dashed line marks the
+		boundary value $\ell=1$ of $\partial E(t)$.}
+	\label{fig:ellipse-state}
+\end{figure}
 %% ------------------------------------------------------------
 \subsection{A Reaction-Diffusion Inclusion with Relay (Sliding-Mode) Feedback}
 \label{subsec:parabolic-PDI}

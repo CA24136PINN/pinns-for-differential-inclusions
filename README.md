@@ -95,7 +95,7 @@ pinns-for-differential-inclusions/
 | # | Manuscript section | Notebook / source | Figures (paper/figures) |
 |---|--------------------|-------------------|--------------------------|
 | 1 | 6.1 Linear control system with polytopic input set | `code/src/dr_pinn_linear_control_qp_quickhull.ipynb` | `control_set`, `loss_single`, `trajectory_vs_tube`, `scalability` |
-| 2 | 6.2 Planar inclusion with rotating ellipsoidal constraint | `replication_package/di_convex_ellipse_example/` *(section in preparation)* | — |
+| 2 | 6.2 Planar inclusion with rotating ellipsoidal constraint | `code/src/rotating_ellipse_selector_experiment.py` | `ellipse_velocity_tube`, `ellipse_selector_level`, `ellipse_state_trajectory` |
 | 3 | 6.3 Reaction–diffusion inclusion with relay feedback | `code/src/dr_pinn_relay_parabolic_experiment.ipynb` | `reference_extinction_curves`, `training_history_relay`, `dr_pinn_vs_reference`, `branch_selection_diagnostic`, `extinction_time_sweep` |
 
 All manuscript figures must be generated with the shared style defined in
@@ -137,7 +137,12 @@ exported in the unified style (dpi=180); it exits nonzero otherwise.
 
 ## Benchmarks for Experiment 2 (replication package)
 
-The `replication_package/` directory contains two complementary benchmarks.
+The `replication_package/` directory contains two complementary geometry
+illustrations. **Note:** these scripts draw a hand-crafted illustrative
+selector on a synthetic drift; the actual Section 6.2 experiment (solved
+selector-steering problem) lives in
+`code/src/rotating_ellipse_selector_experiment.py` and writes its figures
+to `code/results/results_rotating_ellipse/`.
 
 ### 1. Convex rotating-ellipse inclusion
 
