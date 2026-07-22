@@ -105,10 +105,35 @@ start-up and write their figures into the corresponding
 `code/results/results_*` directory; copy the final PNGs into `paper/figures/`
 when updating the manuscript.
 
-> **Status note (2026-07-22).** The committed PNGs of Experiment 3 were
-> produced *before* the style unification (default fonts, dpi=150). Re-running
-> `dr_pinn_relay_parabolic_experiment.ipynb` (GPU recommended) regenerates
-> them in the unified style; afterwards refresh `paper/figures/`.
+### Central reproduction entry point
+
+All experiments and manuscript figures are reproduced through a single
+script, run from the repository root:
+
+```bash
+scripts/reproduce.sh refcurves   # Sec 6.3 reference figure only (CPU, seconds)
+scripts/reproduce.sh exp1        # Sec 6.1 notebook
+scripts/reproduce.sh exp2        # Sec 6.2 replication-package figures
+scripts/reproduce.sh exp3        # Sec 6.3 notebook (GPU: 4 x 40k epochs)
+scripts/reproduce.sh sync        # copy fresh PNGs into paper/figures/
+scripts/reproduce.sh check       # audit paper/figures vs manuscript + style
+scripts/reproduce.sh all         # everything, in order
+```
+
+Experiments only ever write into `code/results/` or
+`replication_package/*/outputs/`; `paper/figures/` is updated exclusively by
+the explicit `sync` step. `scripts/check_figures.py` verifies that every
+figure referenced by `paper/dr-pinns.tex` exists, has no orphans, and was
+exported in the unified style (dpi=180); it exits nonzero otherwise.
+
+> **Status note (2026-07-22).** `reference_extinction_curves.png` is
+> regenerated in the unified style by `scripts/reproduce.sh refcurves`
+> (training-free; the script also asserts the reference extinction times
+> against Table `tab:relay-extinction` of the manuscript). The remaining
+> four Experiment-3 PNGs still predate the style unification (default
+> fonts, dpi=150) and require the full GPU run
+> `scripts/reproduce.sh exp3` followed by `sync`; `check` flags them as
+> STALE until then.
 
 ## Benchmarks for Experiment 2 (replication package)
 

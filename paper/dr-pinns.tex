@@ -1708,7 +1708,7 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 \section{Numerical Simulations}
 \label{sec:numerics}
 %% ============================================================
-To asses the numerical performance of the DR-PINNs approach proposed in the preceding sections,
+To assess the numerical performance of the DR-PINNs approach proposed in the preceding sections,
  next we consider three numerical examples: two for the case of differential inclusions and another for a parabolic partial differential inclusion. 
 %% ------------------------------------------------------------
 \subsection{Linear control system with polytopic input set}
@@ -2068,7 +2068,7 @@ applies to this example.
 	\item[(P1)] For every $s\in\mathbb{R}$, $\Phi(s)$ is a singleton or the
 	closed interval $[-\lambda,\lambda]$, hence nonempty, closed, and convex.
 	\item[(P2)] $\Phi$ is upper semicontinuous: it is locally constant on
-	$\mathbb{R}\setminus\{0\}$, and at $s=0$, $\Phi(s_n)\subset\{-\lambda,\lambda\}\subset[-\lambda,\lambda]=\Phi(0)$
+	$\mathbb{R}\setminus\{0\}$, and at $s=0$, $\Phi(s_n)\subset[-\lambda,\lambda]=\Phi(0)$
 	for every sequence $s_n\to0$. This is the standard Filippov
 	regularization of the signum function \cite{Filippov1988}.
 	\item[(P3)] $\sup_{r\in\Phi(s)}|r| = \lambda \le \lambda(1+|s|)$ for every
@@ -2084,7 +2084,9 @@ applies to this example.
 	and $\lambda$ for $s<0$, hence is necessarily discontinuous at $s=0$.
 	Existence of a strong solution is instead obtained from the classical
 	theory of evolution equations governed by maximal monotone operators
-	\cite{Brezis1973}, since $-\Delta-\lambda\,\partial|\cdot|$ is a sum of
+	\cite{Brezis1973}: rewriting \eqref{eq:relay-pde} as
+	$\partial_t u + \bigl(-\Delta+\lambda\,\partial|\cdot|\bigr)(u)\ni 0$,
+	the operator $-\Delta+\lambda\,\partial|\cdot|$ is a sum of
 	two maximal monotone (subdifferential) operators on $L^2(\Omega)$. 
 \end{remark}
 
@@ -2147,7 +2149,7 @@ $Q$ to preserve global domain coverage.
 Unlike the bang-bang example of Section~\ref{subsec:linear-control}, where
 $F$ is genuinely multivalued and the ensemble/Hausdorff comparison of
 Section~\ref{subsec:linear-control} is required, uniqueness of strong
-solutions holds here: since $-\Delta-\lambda\,\partial|\cdot|$ is a sum of
+solutions holds here: since $-\Delta+\lambda\,\partial|\cdot|$ is a sum of
 maximal monotone operators, standard monotonicity arguments show that
 $\tfrac{d}{dt}\|u_1-u_2\|_{L^2(\Omega)}^2\le0$ for any two strong solutions
 with the same initial datum, so $S(u_0)$ is a singleton. A single trained
