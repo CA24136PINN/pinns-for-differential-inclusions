@@ -1,0 +1,21 @@
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.spl
+*.synctex.gz
+*.toc
+*.fls
+*.fdb_latexmk
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Editors / OS
+*.code-workspace
+.vscode/
+.DS_Store
