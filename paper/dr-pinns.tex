@@ -393,10 +393,11 @@ Finally, it is worth-mentioning that although the theory of differential inclusi
 	%
 	A fundamental result in convex analysis (see, e.g., \cite[Section~8.1]{boyd_vandenberghe_2004}) establishes that, whenever the distance is attained, the projection is unique provided $C$ is closed and convex and the norm $\|\cdot\|_X$ is strictly convex.
 	
-	In the case $X=\mathbb{R}^n$, we assume throughout this work that the norm is the Euclidean norm $\|\cdot\|_2$, which is strictly convex. To simplify the notation, we write $|\cdot|$ in place of $\|\cdot\|_2$. In this scenario the projection of $x_0$ onto $C$ is unique and will be denoted by $\Pi_C(x_0)$. In other words,
+	In the case $X=\mathbb{R}^n$, we assume throughout this work that the norm is the Euclidean norm $\|\cdot\|_2$, which is strictly convex. To simplify the notation, we write $|\cdot|$ in place of $\|\cdot\|_2$. In this scenario, if $C\subset\mathbb{R}^n$ is nonempty, closed, and \emph{convex}, then the Euclidean projection of $x_0$ onto $C$ is attained and unique, and will be denoted by $\Pi_C(x_0)$. In other words,
 	\begin{equation}
 		\Pi_{C}(x_0):=\argmin_{x\in C}|x_0-x|.
 	\end{equation}
+For a nonempty closed set that is \emph{not} convex, a nearest point still exists in $\mathbb{R}^n$, but it need not be unique; whenever we write $\Pi_C$ below, the set $C$ is assumed to be convex.
 	
 	
 	\subsection{Background on Differential and Partial Differential Inclusions} \label{sec:basics}
@@ -610,9 +611,17 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 	|f(s)|\le m_0(1+|s|),
 	\qquad s\in\mathbb{R},
 	\]
-	standard existence theory for semilinear parabolic equations
-	(see, e.g., \cite[Chapter~7]{Evans})
-	yields a strong solution
+	standard existence theory for semilinear parabolic equations yields a
+	strong solution with exactly the parabolic maximal $L^2$-regularity
+	stated below: the linear Dirichlet heat equation with right-hand side in
+	$L^2(Q)$ and initial datum in $H_0^1(\Omega)$ admits a unique solution in
+	$L^2(0,T;H^2(\Omega)\cap H_0^1(\Omega))\cap H^1(0,T;L^2(\Omega))$
+	(see \cite[Section~7.1.3, Theorem~5]{Evans} for smooth domains and
+	\cite[Theorem~3.2.1.2]{Grisvard1985} for the $H^2$ elliptic regularity on
+	convex or $C^{1,1}$ domains), and a Banach fixed-point (or Galerkin)
+	argument extends this to the semilinear problem under the linear growth
+	condition on $f$; see also \cite[Chapter~4]{LionsMagenes}. This
+	provides
 	\[
 	u\in
 	L^2\!\bigl(0,T;H^2(\Omega)\cap H_0^1(\Omega)\bigr)
@@ -663,20 +672,33 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		Let $X$ and $Y$ be Banach spaces and assume that $\mathcal{D}:X\to Y$ is a differential operator. Let $\mathcal{F}:X\rightrightarrows Y$ be strict and
 		closed-valued.
 		For any $u\in X$, the \emph{distance residual} of $u$ with respect to
-		\eqref{eq:abstract-inclusion} is defined as distance
+		\eqref{eq:abstract-inclusion} is defined as
 		\[
 		R(u):=\dist^2\bigl(\mathcal{D}(u),\,\mathcal{F}(u)\bigr)
 		= \inf_{v\in \mathcal{F}(u)} \|\mathcal{D}(u) - v \|_Y^2.
 		\]
 		%
-		The associated DR-PINN loss is
+		In the concrete settings considered below, $\mathcal{D}u$ and
+		$\mathcal{F}u$ are functions of a variable $z$ ranging over a time
+		interval or a space-time cylinder, and the inclusion
+		\eqref{eq:abstract-inclusion} is imposed pointwise. In that case we
+		define the \emph{pointwise distance residual}
+		\[
+		r(u;z)
+		:=
+		\dist^2\bigl((\mathcal{D}u)(z),\,(\mathcal{F}u)(z)\bigr),
+		\]
+		and the associated DR-PINN loss is
 		\[
 		\mathcal{L}(\theta)
 		:=
-		\frac{1}{N}\sum_{i=1}^{N} R(u_\theta)(z_i),
+		\frac{1}{N}\sum_{i=1}^{N} r(u_\theta;z_i),
 		\]
 		where $u_\theta$ is a neural-network surrogate and $\{z_i\}_{i=1}^N$ are
-		collocation points. 
+		collocation points. Note that $R(u)$ is a single number attached to $u$,
+		whereas $r(u;\cdot)$ is a function of the collocation variable; the loss
+		$\mathcal{L}$ is a Monte-Carlo discretization of the integral of
+		$r(u_\theta;\cdot)$. 
 	\end{definition}
 	
 	
@@ -730,7 +752,7 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 	limit satisfies the target inclusion.
 	
 	\begin{lemma}\label{lem:closed-graph}
-		Let $X$ and $Y$ be Banach spaces and let $\mathcal{F}: X \rightrightarrows Y$ be a closed set-valued function.
+		Let $X$ and $Y$ be Banach spaces and let $\mathcal{F}: X \rightrightarrows Y$ be a strict set-valued function with closed graph.
 		Suppose that $x_n \to x$ in $X$, $y_n \to y$ in $Y$, and 
 		%
 		\begin{equation} \label{eq:closed-graph-dist}
@@ -774,11 +796,15 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 	\end{proof}
 	
 	Theorem~\ref{thm:general-consistency} applies whenever the functional
-	setting provides strong enough convergence of both $u_n$ and
-	$\mathcal{D}(u_n)$.  The concrete consistency results proved in
-	Sections~\ref{subsec:consistency} and~\ref{sec:pde} are instances in
-	which this convergence is established using compactness arguments adapted
-	to the ODE and PDE settings, respectively.
+	setting provides strong convergence of both $u_n$ and
+	$\mathcal{D}(u_n)$.  The concrete ODE and PDE consistency results proved in
+	Sections~\ref{subsec:consistency} and~\ref{sec:pde} do \emph{not} follow
+	by a direct application of Theorem~\ref{thm:general-consistency}: there,
+	only \emph{weak} convergence of the differential operators is available.
+	They are instead refinements based on compactness of the states, weak
+	convergence of the differential operators, and lower semicontinuity of the
+	distance-residual functional, in the spirit of the direct method of the
+	calculus of variations.
 	
 	
 	%% ============================================================
@@ -884,23 +910,30 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 	\]
 	This covers
 	any set of the controlled form $F(t,x)=\{f(t,x,u):u\in U\}$ with $U$ a
-	polytope (whose image under an affine map is again a polytope), as well
-	as any convex set discretized by a finite point cloud.  
+	polytope, \emph{provided} $f(t,x,\cdot)$ is affine in $u$: the image of
+	a polytope under an affine map is again a polytope, with vertices among
+	the images of the vertices. For a general nonlinear $f$ the image of a
+	polytope need not be a polytope, nor even convex, and the construction
+	below does not apply verbatim. The framework also covers
+	any convex set discretized by a finite point cloud.  
 	For every $(t,x)\in[0,T]\times\mathbb{R}^d$, the projection of
 	$v\in\mathbb{R}^d$ onto
 	$F=\operatorname{conv}(V(t,x))$ satisfies
 	\begin{equation}\label{eq:projection-as-qp}
 		\Pi_F(v)
 		=
-		\sum_{k=1}^K\lambda_k v_k(t,x),
-		\quad
-		(\lambda_1,\dots,\lambda_K)
-		=
-		\argmin_{\lambda\in\Delta_K}
+		\sum_{k=1}^K\lambda_k^\ast v_k(t,x),
+		\qquad
+		\lambda^\ast
+		\in
+		\operatorname*{argmin}_{\lambda\in\Delta_K}
 		\Bigl|v-\sum_{k=1}^K\lambda_k v_k(t,x)\Bigr|^2,
 	\end{equation}
 	where $\Delta_K=\{\lambda\in\mathbb{R}^K:\lambda_k\ge0,\;\sum_k\lambda_k=1\}$
-	is the probability simplex.  Problem \eqref{eq:projection-as-qp} is a
+	is the probability simplex.  The projected point $\Pi_F(v)$ is unique,
+	since the set is convex, but its barycentric representation
+	$\lambda^\ast$ need not be: any minimizer of the quadratic program
+	yields the same projected point.  Problem \eqref{eq:projection-as-qp} is a
 	small convex quadratic program with $K$ variables, one equality
 	constraint, and non-negativity bounds.  It can be solved efficiently, even
 	inside the training loop, by standard active-set or Frank--Wolfe-type
@@ -960,7 +993,7 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		\item[(H3)] There exists $m\in L^2(0,T)$, $m\ge0$, such that
 		\[
 		\sup_{v\in F(t,x)}|v|\le m(t)(1+|x|) \qquad  
-		\text{ for a.e. } (t,x)\in[0,T]\times\mathbb{R}^d.
+		\text{ for a.e. } t\in[0,T] \text{ and every } x\in\mathbb{R}^d.
 		\]
 	\end{itemize}
 	
@@ -979,8 +1012,12 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		\end{equation}
 	\end{definition}
 	
-	Note that $\mathcal{A}$ is exactly the class of trajectories realizable
-	by the hard-constraint parametrization $x_\theta(t)=x_0+tN_\theta(t)$.
+	Note that every trajectory produced by the hard-constraint ansatz
+	$x_\theta(t)=x_0+tN_\theta(t)$, with $N_\theta$ Lipschitz on $[0,T]$
+	(as is the case for the tanh networks used below), belongs to
+	$\mathcal{A}$; a finite network realizes a strict subset of
+	$\mathcal{A}$, which is the relevant direction for the consistency
+	statement of Theorem~\ref{thm:consistency}.
 	
 	\begin{lemma}\label{lem:normal-integrand}
 		Let $F:[0,T]\times\mathbb{R}^d\rightrightarrows\mathbb{R}^d$ be a set-valued function satisfying hypothesis \textup{(H1)} and \textup{(H2)}.
@@ -1060,7 +1097,7 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		\[
 		\dist(v, F(t, x_n)) \ge d' \quad \text{ for all } n > N.
 		\]
-		This contradicts  $\dist(v, F(t, x_n))\rightarrow L < d'$ and finishes the proof of the lower semicontinuity in $x$ whenever $v\in\mathbb{R}^d$ is fixed.
+		Hence $\liminf_{n\to\infty}\dist(v, F(t, x_n))\ge d' > L$, which contradicts the definition of $L$ and finishes the proof of the lower semicontinuity in $x$ whenever $v\in\mathbb{R}^d$ is fixed.
 		
 		Next, for a fixed $x\in\mathbb{R}^d$, it is easy to check that the map $v \mapsto \text{dist}(v, F(t, x))$ is $1$-Lipschitz continuous in $v$, that is,
 		%
@@ -1109,6 +1146,7 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		\[
 		|\dot{x}_n(t) - w_n(t)| =\min_{w\in F(t, x_n(t))} |\dot{x}_n(t) - w| =r_n(t).
 		\]
+		Moreover, $t\mapsto w_n(t)$ is (Lebesgue) measurable: by \textup{(H1)}--\textup{(H2)} and the continuity of $x_n$, the multifunction $t\mapsto F(t,x_n(t))$ is measurable with compact convex values, and the metric projection of the measurable function $\dot{x}_n$ onto such a multifunction is measurable by the standard measurable-projection theorem for measurable, closed- and convex-valued multifunctions; see \cite[Theorem~8.2.11]{aubin_frankowska_2009}.
 		By the triangle inequality and (H3), for a.e. $t\in[0,T]$,
 		\begin{equation}\label{eq:consistency-inproof1}
 			|\dot{x}_n(t)| \le |\dot{x}_n(t) - w_n(t)|+|w_n(t)|= r_n(t) + m(t)(1 + |x_n(t)|).
@@ -1480,7 +1518,7 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		\Pi_{\Phi(u_n(t,x))}
 		\bigl(z_n(t,x)\bigr).
 		\]
-		The map $w_n$ is measurable and satisfies
+		The map $w_n$ is (Lebesgue) measurable on $Q$: by \textup{(P1)}--\textup{(P2)} the multifunction $\Phi$ is measurable with closed convex values, hence so is $(t,x)\mapsto\Phi(u_n(t,x))$ as the composition with the measurable function $u_n$, and the metric projection of the measurable function $z_n$ onto it is measurable by the measurable-projection theorem for measurable, closed- and convex-valued multifunctions; see \cite[Theorem~8.2.11]{aubin_frankowska_2009}. It satisfies
 		\[
 		w_n(t,x)\in\Phi(u_n(t,x))
 		\quad\text{for a.e. }(t,x)\in Q,
@@ -1586,9 +1624,12 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		\label{eq:forcing-bound}
 		\end{equation}
 		
-		We now apply the standard $L^2$ regularity estimate for the
-		Dirichlet heat equation to \eqref{eq:pde-decomposition}. Since
-		$u_0\in H_0^1(\Omega)$ and $\partial\Omega$ is smooth ($C^{1,1}$ regularity is enough; convexity of $\Omega$ also suffices, which covers the square domain used in Section~\ref{subsec:parabolic-PDI}), there exists a constant
+		We now apply the standard $L^2$ maximal-regularity estimate for the
+		Dirichlet heat equation to \eqref{eq:pde-decomposition}; see
+		\cite[Section~7.1.3, Theorem~5]{Evans} for smooth domains and
+		\cite[Theorem~3.2.1.2]{Grisvard1985} for the underlying $H^2$ elliptic
+		estimate on $C^{1,1}$ or convex domains. Since
+		$u_0\in H_0^1(\Omega)$ and $\partial\Omega$ is $C^{1,1}$ or $\Omega$ is convex (which covers the square domain used in Section~\ref{subsec:parabolic-PDI}), there exists a constant
 		$C_{\mathrm{par}}>0$, independent of $n$, such that
 		\[
 		\|u_n\|_{\mathcal{W}(0,T)}
@@ -1674,7 +1715,12 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		\end{equation}
 		Using \eqref{eq:strong-convergence-L2}, \eqref{eq:weak-convergence-operator}, and the lower
 		semicontinuity theorem for integral functionals associated with
-		normal integrands that are convex in the second variable, we obtain
+		normal integrands that are convex in the second variable
+		(\cite[Theorem~1]{berkovitz_1974}; see also \cite{ioffe_1977} and
+		\cite[Chapter~VIII]{ekeland_temam_1999}), applied with
+		$u_n\to u^\ast$ strongly in $L^2(Q)$ and
+		$\partial_t u_n-\Delta u_n\rightharpoonup\partial_t u^\ast-\Delta u^\ast$
+		weakly in $L^2(Q)$, we obtain
 		\[
 		\begin{aligned}
 			\mathcal{J}(u^\ast)
@@ -1856,20 +1902,30 @@ of admissible controls:
 	\item[(a)] \emph{Constant bang-bang controls}: one trajectory per extreme
 	vertex $u_k \in \widetilde{U}$, totalling four reference trajectories.
 	By Pontryagin's maximum principle, since the Hamiltonian of a linear
-	system is affine in the control, its maximum over the polytope $U$ is
-	attained at an extreme point; hence the boundary of $\mathcal{R}(t)$ is
-	traced by bang-bang controls taking values in $\widetilde{U}$
-	(see, e.g., \cite{LeeMarkus1967}, Chapter 4, or \cite{aubin_cellina_1984},
-	Chapter 8). This family covers the boundary of $\mathcal{R}(t)$.
+	system is affine in the control, boundary trajectories of
+	$\mathcal{R}(t)$ are generated by bang-bang controls taking values in
+	the extreme points $\widetilde{U}$, possibly \emph{switching} among
+	them in time (see, e.g., \cite{LeeMarkus1967}, Chapter 4, or
+	\cite{aubin_cellina_1984}, Chapter 8). The four \emph{constant} vertex
+	controls therefore provide representative extremal trajectories; they do
+	not, in general, trace the entire reachable-set boundary.
   \item[(b)] \emph{Piecewise-constant random controls}: 300 trajectories obtained
         by randomly switching among the vertices of $U$ at uniformly
         distributed times, each trajectory integrated with a fifth-order
         Runge--Kutta scheme (relative tolerance $10^{-9}$, absolute
         tolerance $10^{-11}$).
-        This family densely samples the interior of $\mathcal{R}(t)$.
+        This family provides an empirical sample of the interior of
+        $\mathcal{R}(t)$ (it does not densely cover it in any
+        mathematical sense).
 \end{enumerate}
 The union of all 304 trajectories evaluated on a uniform time grid of 200
 points constitutes the reference tube used for comparison.
+%% TODO [Rev.]: naprawic integracje odcinkow sterowania w kodzie referencyjnym
+%% (kazdy odcinek musi byc calkowany do rzeczywistego konca odcinka
+%% przelaczenia, a nie do ostatniego punktu globalnej siatki), po czym
+%% ponownie wygenerowac Figure~\ref{fig:phase-linear} i przeliczyc wartosc
+%% 0.0445 ponizej. Ujednolicic tez liczbe punktow siatki referencyjnej
+%% (paper: 200, kod: 150).
 
 Figure~\ref{fig:phase-linear} overlays the trained trajectory $x_\theta(t)$
 with the reference reachable tube $\mathcal{R}(t)$ of~\eqref{eq:reachable-tube}:
@@ -1903,18 +1959,21 @@ Admissibility is measured by the one-sided Hausdorff distance
   d_H^+\!\bigl(\mathcal{R}_\theta(t),\,\mathcal{R}(t)\bigr)
   = \max_{a \in \mathcal{R}_\theta(t)}\min_{b \in \mathcal{R}(t)}\|a-b\|,
 \]
-which quantifies how far the ensemble trajectories lie from the reference
-tube, averaged over the ensemble and over the time grid.
-Averaging the one-sided Hausdorff distance
-$d_H^+(\mathcal{R}_\theta(t),\mathcal{R}(t))$ over the ensemble of
-$n_{\mathrm{ens}}=5$ networks and over the time grid gives
+which, at each time $t$, already takes the maximum over the ensemble
+trajectories; averaging this quantity over the uniform time grid gives the
+reported value
 \[
   \overline{d_H^+}(\mathcal{R}_\theta,\mathcal{R}) = 0.0445,
 \]
+%% TODO [Rev.]: wartosc 0.0445 przeliczyc po poprawieniu integratora
+%% referencyjnego (patrz TODO powyzej).
 which is small relative to the scale of the problem (the control set $U$ and
-the reachable tube $\mathcal{R}(t)$ both have diameter of order $1$), showing
-that the ensemble reliably produces admissible trajectories regardless of the
-random initialization.
+the reachable tube $\mathcal{R}(t)$ both have diameter of order $1$).
+Since the reference tube is a finite sample of trajectories, this quantity
+is a \emph{one-sided discrepancy from the sampled reference cloud} rather
+than a certificate of admissibility: a small value indicates that the
+ensemble trajectories lie close to empirically generated admissible
+trajectories, regardless of the random initialization.
 
 \paragraph{Computational scalability}
 Computational efficiency is assessed by a scalability study that varies
@@ -2022,7 +2081,7 @@ complementary strategy anticipated in
 Section~\ref{sec:description-formulation}: when the admissible set has a
 tractable parametric description, admissibility can be built into the
 parametrization itself, so that the distance residual vanishes
-\emph{identically} along every candidate trajectory and the remaining
+at every evaluation point of every candidate trajectory and the remaining
 degrees of freedom can be used to select a specific element of the
 solution set $\mathcal{S}(x_0)$ --- here, the trajectory steering the
 state closest to a prescribed terminal point. This makes concrete the
@@ -2137,7 +2196,20 @@ so the selector lies in the interior of $E(t_i)$ \emph{by construction},
 for every value of the nodal variables: no penalty for constraint
 violation is required, and the inclusion residual
 $\dist\bigl(\dot x(t_i)-g(t_i,x(t_i)),E(t_i)\bigr)$ of
-Section~\ref{sec:description-formulation} vanishes identically. This is
+Section~\ref{sec:description-formulation} vanishes at every grid point
+$t_i$. We stress that the guarantee \eqref{eq:ellipse-admissibility}
+holds \emph{at the grid points}, where $\xi$ is recomputed through
+\eqref{eq:ellipse-selector}: between grid points the RK4 propagation
+below evaluates $\xi$ by linear interpolation of the already-computed
+values $\xi(t_i)$, and a convex combination of two admissible velocities
+taken at \emph{different} times need not belong to the intermediate
+(rotated and rescaled) ellipse. For the reported optimized selector we
+verified admissibility a posteriori on a dense grid of $20\,001$
+intermediate points: the maximum level is $\ell\approx0.921$, with no
+violations, consistently with Table~\ref{tab:ellipse-continuation}.
+An implementation that re-evaluates $d(t)$, $s(t)$, and $\xi(t)$ from
+interpolated nodal values $p(t)$, $\rho(t)$ at every RK4 stage would make
+the guarantee hold at every evaluation time by construction. This is
 the analogue, for the inclusion constraint itself, of the hard-constraint
 ansatz used for the initial condition in
 Section~\ref{subsec:linear-control} and for the initial/boundary
@@ -2177,8 +2249,15 @@ from the previous one and solved by L-BFGS-B.
 The target must of course be chosen inside the reachable set of
 \eqref{eq:ellipse-inclusion}: the drift component
 $g_2=0.5\cos(x_2)-0.2\sin(2\pi t/T)$ pushes the state upward with
-magnitude $\approx0.5$ near $x_2=0$, while the vertical reach of $E(t)$
-oscillates between $0.15$ and $0.7$, so targets with markedly negative
+magnitude $\approx0.5$ near $x_2=0$, while the vertical half-width of the
+rotated ellipse $E(t)$,
+\[
+h_y(t)=\sqrt{a(t)^2\sin^2\varphi(t)+b(t)^2\cos^2\varphi(t)},
+\]
+stays between $\approx0.391$ and $0.7$ for the parameters
+\eqref{eq:ellipse-axes} (the value $0.15$ is the minimal length of one
+semi-axis, not the minimal vertical reach of the rotated ellipse), so
+targets with markedly negative
 $x_2$ are unreachable over $[0,T]$ (an extremal selector taking, at
 every instant, the support point of $E(t)$ in the direction $-e_2$ only
 attains $x_2(T)\approx-0.05$). We take
@@ -2471,9 +2550,13 @@ exact proximal step,
 u^{n+1}=\mathrm{sign}(v)\max(|v|-\lambda\Delta t,\,0),
 \]
 the pointwise proximal operator of $s\mapsto\lambda\Delta t\,|s|$.
-This scheme captures finite-time extinction exactly: any grid point
-for which $|v_i|\le\lambda\Delta t$ is sent to identically zero by the
-soft-thresholding step.
+This scheme is able to represent exact zeros: any grid point for which
+$|v_i|\le\lambda\Delta t$ is set to exactly zero \emph{at that time
+step} by the soft-thresholding operation (the subsequent diffusion
+half-step may of course make it nonzero again). In particular, once the
+whole field has decayed below the threshold, the scheme reproduces the
+identically zero equilibrium without smoothing, so finite-time extinction
+is captured sharply.
 
 \paragraph{Network architecture and loss function}
 The trial solution takes the hard-constrained form
@@ -2492,6 +2575,29 @@ inclusion term: it is~\eqref{eq:pde-distance-loss} with
 $\Phi$ as in \eqref{eq:relay-Phi} and $\lambda_0=\lambda_b=0$. Since $\Phi(s)$ is an interval of
 $\mathbb{R}$, the projection $\Pi_{\Phi(u_\theta(t_i,x_i))}$ needed to
 evaluate the distance residual is explicit, requiring no quadratic program.
+In the implementation the branch selection is carried out with a numerical
+tolerance $\varepsilon=10^{-6}$: the interval branch $[-\lambda,\lambda]$
+is applied whenever $|s|\le\varepsilon$, i.e., the code works with the
+regularized multifunction
+\[
+\Phi_\varepsilon(s)
+=
+\begin{cases}
+\{-\lambda\}, & s>\varepsilon,\\[2pt]
+[-\lambda,\lambda], & |s|\le\varepsilon,\\[2pt]
+\{\lambda\}, & s<-\varepsilon,
+\end{cases}
+\]
+rather than with the exact $\Phi$ of \eqref{eq:relay-Phi}. Since
+$\Phi_\varepsilon(s)\supseteq\Phi(s)$ for every $s$, the resulting
+distance residual is a lower bound of the exact one; $\Phi_\varepsilon$
+satisfies (P1)--(P3) with the same constant $m_0=\lambda$, so the
+consistency theory of Section~\ref{sec:pde-consistency} applies to it
+verbatim. All quantitative results reported below therefore refer to
+$\Phi_\varepsilon$.
+%% TODO [Rev.]: alternatywnie ustawic eps=0 w kodzie i powtorzyc trening,
+%% wtedy powyzszy akapit mozna usunac; ewentualnie dodac test wrazliwosci
+%% na eps.
 Beyond the usual comparison against the reference solver, we recommend a
 diagnostic figure specific to this set-valued setting: superimposing, on a
 plot of the graph of $\Phi$ (a three-branch ``staircase''), the empirical
@@ -2558,7 +2664,18 @@ $\mathcal{L}\approx 20$ (epochs $0$--$4\,500$), the loss drops abruptly by
 roughly two orders of magnitude and then decreases steadily for the remainder
 of training, reaching a final validation loss of $3.9\times10^{-1}$.
 Training and validation curves track each other closely throughout,
-indicating no overfitting.
+indicating no overfitting. We emphasize that this residual level is
+\emph{not} small in absolute terms: since the loss is a mean squared
+distance, it corresponds to an RMS distance of
+$\sqrt{0.39}\approx0.62$, comparable to $\lambda=0.6$ itself, and (as
+Figure~\ref{fig:relay-branch} shows) it is dominated by a thin
+neighborhood of the extinction front where the operator values reach
+$\approx7$. This experiment therefore demonstrates an accurate
+\emph{qualitative} reproduction of the finite-time extinction dynamics
+and of the extinction times, but it does not exhibit a uniformly small
+distance residual over the whole domain, and should not be read as a
+direct numerical realization of the hypothesis
+$\mathcal{J}(u_n)\to0$ of Theorem~\ref{thm:consistency-parabolic}.
 
 \begin{figure}[htbp]
   \centering
@@ -2574,12 +2691,14 @@ indicating no overfitting.
 
 Figure~\ref{fig:relay-vs-ref} compares the DR-PINN against the reference
 solution for $\lambda=0.6$. The left panel overlays the $L^2(\Omega)$-norm
-decay curves: the two coincide to within a line width for $t\lesssim0.16$,
-with a maximum relative discrepancy of $0.76\%$ over $[0,T]$.
+decay curves: the two coincide to within a line width for $t\lesssim0.16$;
+the maximum absolute norm discrepancy, normalized by the maximum reference
+norm, is $0.76\%$ over $[0,T]$.
 After the reference solution extinguishes at $t^*_{\rm ref}=0.1645$ (dropping
-to machine zero), the DR-PINN norm stabilizes at $\approx10^{-4}$, since a
-smooth network cannot represent an identically zero function after a sharp
-front. The right panel shows the pointwise absolute error
+to machine zero), the DR-PINN norm stabilizes at $\approx10^{-4}$: a
+single analytic tanh-network trajectory generally cannot be nonzero before
+the extinction time and exactly zero on an open post-extinction interval,
+so a small residual plateau after extinction is expected. The right panel shows the pointwise absolute error
 $|u_\theta-u_{\rm ref}|$ at $t=T=0.3$: the error is at most
 $2\times10^{-3}$, smooth, and concentrated at the domain centre, a pattern
 consistent with the residual of a smooth approximation of the trivial
@@ -2602,10 +2721,11 @@ baseline run. For state values $s=u_\theta(t,x,y)\gtrsim0.05$, the cloud of
 operator values $z=\partial_tu_\theta-\Delta u_\theta$ concentrates tightly on
 the branch $z=-\lambda=-0.6$ of the graph of $\Phi$, confirming that the
 network has correctly selected the positive branch over most of $Q$.
-No collocation points appear with $s<0$: since $u_0\ge0$ and the relay
-feedback pushes $u$ towards zero without reversing sign, the exact solution
-satisfies $u(t,\cdot)\ge0$ for all $t$, and the trained network reproduces
-this property implicitly. Near $s\approx0$, corresponding to the extinction
+Almost no collocation points appear with $s<0$: since $u_0\ge0$ and the
+relay feedback pushes $u$ towards zero without reversing sign, the exact
+solution satisfies $u(t,\cdot)\ge0$ for all $t$; the trained network
+reproduces this property up to a small smooth undershoot near the
+extinction front, visible as a few points slightly to the left of $s=0$. Near $s\approx0$, corresponding to the extinction
 front, the cloud disperses vertically with values of $z$ reaching up to $7$,
 far above the segment $[-\lambda,\lambda]$ of the graph of $\Phi$. This
 scatter is a direct consequence of the jump discontinuity of $\Phi$ at
@@ -2620,10 +2740,14 @@ where the residual is hardest to reduce.
     $(u_\theta,\,\partial_tu_\theta-\Delta u_\theta)$ at $4\,000$ post-training
     collocation points (blue dots), overlaid on the graph of $\Phi$ (red).
     Points with $s\gtrsim0.05$ cluster tightly on the branch $z=-0.6$;
-    no points appear with $s<0$ (sign preservation by the relay flow);
+    almost no points appear with $s<0$ (sign preservation by the relay
+    flow, up to a small smooth undershoot near the front);
     the vertical scatter near $s\approx0$ traces the extinction front,
-    where the discontinuity of $\Phi$ limits pointwise accuracy. The inset
-    magnifies the neighborhood of the extinction front ($s$ close to $0$).}
+    where the discontinuity of $\Phi$ limits pointwise accuracy.}
+    %% TODO [Rev.]: wygenerowac finalna wersje wykresu z tego samego
+    %% uruchomienia co tekst (obecny wykres i tekst pochodza z roznych
+    %% uruchomien); jesli inset ma wrocic, dodac zdanie o insecie z powrotem
+    %% do podpisu.
   \label{fig:relay-branch}
 \end{figure}
 
@@ -2659,7 +2783,60 @@ absolute accuracy at larger $\lambda$.
 \label{sec:conclusions}
 %% ============================================================
 
-\textcolor{red}{[Conclusions to be added here.]}
+We have introduced Distance-Residual Physics-Informed Neural Networks
+(DR-PINNs), a framework that extends the PINN paradigm from equations to
+genuinely set-valued differential laws by replacing the pointwise residual
+with the squared distance from the differential operator to the admissible
+set. The construction rests on a single geometric principle --- the
+distance vanishes exactly when the inclusion holds --- and reduces to the
+classical PINN loss when the admissible set is a singleton. On the
+theoretical side, we proved consistency results for both ordinary
+differential inclusions (Theorem~\ref{thm:consistency}) and parabolic
+partial differential inclusions
+(Theorem~\ref{thm:consistency-parabolic}): any sequence of admissible
+candidates whose distance residual tends to zero converges, along a
+subsequence, to an exact solution of the target inclusion. The proofs
+combine a priori estimates, compactness, weak convergence of the
+differential operators, and the lower semicontinuity of normal convex
+integrands; in view of the intrinsic non-uniqueness of solutions of
+inclusions, this compactness-type statement is the natural analogue of
+the error bounds available in the single-valued setting. On the practical
+side, the projection defining the loss is computable: explicitly for
+intervals, balls, and boxes; by a small quadratic program, combined with
+an offline Quickhull reduction, for polytopic sets; and by a scalar
+secular equation for ellipsoidal sets.
+
+The numerical experiments illustrate three complementary regimes. For a
+linear control system with a polytopic input set, the distance residual
+is driven to machine-precision levels and the trained ensemble stays
+close to an empirically sampled reachable tube. For a planar inclusion
+with a rotating ellipsoidal constraint, a genuine DR-PINN run reaches
+collocation losses of order $10^{-14}$ with endpoint constraints enforced
+exactly, while a complementary hard-admissible parametrization
+illustrates how the residual can instead be eliminated at the evaluation
+points by construction, freeing the remaining degrees of freedom to
+select a particular element of the solution set. For a reaction-diffusion
+inclusion with relay feedback, the DR-PINN reproduces the finite-time
+extinction phenomenon and the correct ordering of extinction times across
+$\lambda$, while the branch-selection diagnostic makes visible both the
+learned selection mechanism and the concentration of the residual along
+the extinction front, where a smooth surrogate must approximate a
+discontinuous right-hand side.
+
+Several directions remain open. First, quantitative error estimates
+would require additional structure (e.g., one-sided Lipschitz or
+monotonicity conditions on $F$ or $\Phi$) beyond the compactness-based
+consistency proved here. Second, the treatment of state-dependent
+admissible sets in the backward pass --- differentiating through the
+projection when the set itself moves with the network state --- deserves
+a systematic analysis. Third, the relay experiment shows that near
+discontinuities of the multifunction the distance residual concentrates
+and remains large in absolute terms; hybrid strategies combining the
+distance residual with hard-admissible parametrizations, adaptive
+sampling, or nonsmooth network components are a natural next step.
+Finally, extensions to hyperbolic partial differential inclusions,
+sweeping processes, and differential variational inequalities appear
+within reach of the general principle of Section~\ref{sec:principle}.
 
 
 
