@@ -98,7 +98,7 @@
 		
 		\begin{abstract}
 			We introduce \emph{Distance-Residual Physics-Informed Neural Networks}
-			(DR-PINNs), a supervised learning framework for approximating solutions
+			(DR-PINNs), a physics-informed learning framework for approximating solutions
 			of differential and partial differential inclusions --- governing laws in
 			which a differential operator is constrained to lie in a set-valued map
 			rather than equaling a prescribed function.  The central idea is a single
@@ -106,7 +106,7 @@
 			the squared distance from the differential operator to the admissible set.
 			This substitution is natural (the distance vanishes precisely when the
 			inclusion is satisfied), geometrically interpretable (it measures the
-			minimum correction needed for the operator to enter the admissible set),
+			infimal correction needed for the operator to enter the admissible set),
 			and amenable to gradient-based training: for a fixed closed convex
 			admissible set, the squared distance is differentiable with respect to
 			the operator value, with gradient given by the metric projection. When
@@ -114,10 +114,12 @@
 			must additionally be included by the chain rule.
 			The framework encompasses ordinary differential inclusions and 
 			partial differential inclusions with set-valued reaction terms.
-			For both settings we prove \emph{consistency}:
-			any sequence of network approximations whose distance residual converges
-			to zero must converge, along a subsequence, to an exact solution of the
-			target inclusion.  The proofs combine a priori estimates (Gr\"onwall
+			For both settings we prove \emph{consistency}: under the stated
+			compactness, measurability, convexity, and growth assumptions, any
+			sequence of candidates satisfying the initial (and, in the parabolic
+			case, boundary) conditions whose continuous distance-residual
+			functional tends to zero admits a subsequence converging to an exact
+			solution of the target inclusion.  The proofs combine a priori estimates (Gr\"onwall
 			inequality and parabolic energy estimates), weak compactness arguments
 			(Arzel\`a--Ascoli and Aubin--Lions), and the lower semicontinuity of
 			normal convex integrands.  For admissible sets given as convex hulls of
@@ -618,9 +620,12 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 	$L^2(0,T;H^2(\Omega)\cap H_0^1(\Omega))\cap H^1(0,T;L^2(\Omega))$
 	(see \cite[Section~7.1.3, Theorem~5]{Evans} for smooth domains and
 	\cite[Theorem~3.2.1.2]{Grisvard1985} for the $H^2$ elliptic regularity on
-	convex or $C^{1,1}$ domains), and a Banach fixed-point (or Galerkin)
-	argument extends this to the semilinear problem under the linear growth
-	condition on $f$; see also \cite[Chapter~4]{LionsMagenes}. This
+	convex or $C^{1,1}$ domains), and a Galerkin compactness argument or a
+	Schauder fixed-point argument extends this to the semilinear problem
+	under the continuity and linear growth conditions on $f$ (a Banach
+	fixed-point argument would additionally require a Lipschitz condition
+	on $f$, which we do not assume); see also
+	\cite[Chapter~4]{LionsMagenes}. This
 	provides
 	\[
 	u\in
@@ -678,15 +683,23 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		= \inf_{v\in \mathcal{F}(u)} \|\mathcal{D}(u) - v \|_Y^2.
 		\]
 		%
-		In the concrete settings considered below, $\mathcal{D}u$ and
-		$\mathcal{F}u$ are functions of a variable $z$ ranging over a time
-		interval or a space-time cylinder, and the inclusion
-		\eqref{eq:abstract-inclusion} is imposed pointwise. In that case we
-		define the \emph{pointwise distance residual}
+		In the concrete settings considered below, the elements of $X$ and
+		$Y$ are functions of a variable $z$ ranging over a time interval or a
+		space--time cylinder $Z$, and the multifunction $\mathcal{F}$ acts
+		through a pointwise set-valued map: there is a multifunction
+		$G:Z\times\mathbb{R}^m\rightrightarrows\mathbb{R}^k$ such that
+		$\mathcal{F}$ is the associated Nemytskii (superposition) operator,
+		\[
+		\mathcal{F}(u)
+		=
+		\bigl\{v\in Y:\ v(z)\in G(z,u(z))\ \text{for a.e. } z\in Z\bigr\},
+		\]
+		and the inclusion \eqref{eq:abstract-inclusion} is imposed pointwise.
+		In that case we define the \emph{pointwise distance residual}
 		\[
 		r(u;z)
 		:=
-		\dist^2\bigl((\mathcal{D}u)(z),\,(\mathcal{F}u)(z)\bigr),
+		\dist^2\bigl((\mathcal{D}u)(z),\,G(z,u(z))\bigr),
 		\]
 		and the associated DR-PINN loss is
 		\[
@@ -697,9 +710,28 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		where $u_\theta$ is a neural-network surrogate and $\{z_i\}_{i=1}^N$ are
 		collocation points. Note that $R(u)$ is a single number attached to $u$,
 		whereas $r(u;\cdot)$ is a function of the collocation variable; the loss
-		$\mathcal{L}$ is a Monte-Carlo discretization of the integral of
-		$r(u_\theta;\cdot)$. 
+		$\mathcal{L}$ is an empirical collocation (quadrature) approximation of
+		the continuous residual functional $\int_Z r(u_\theta;z)\,dz$
+		(in the experiments below, both deterministic uniform grids and
+		adaptively re-weighted samples are used).
 	\end{definition}
+
+	\begin{remark}[Collocation loss versus continuous functional]
+		\label{rem:collocation-gap}
+		The consistency results of
+		Sections~\ref{subsec:consistency} and~\ref{sec:pde-consistency}
+		concern the \emph{continuous} distance-residual functional (denoted
+		$\mathcal{J}$ there), not the finite-collocation loss $\mathcal{L}$
+		minimized in practice. We do not claim that
+		$\mathcal{L}(\theta_n)\to0$ implies
+		$\mathcal{J}(u_{\theta_n})\to0$: a quantitative control of this
+		generalization gap would require assumptions on the sampling scheme
+		and on the regularity of $r(u_\theta;\cdot)$, and remains beyond the
+		scope of this work. The theorems below should therefore be read as
+		consistency statements for the continuous distance residual rather
+		than as a full convergence analysis of the discrete training
+		algorithm.
+	\end{remark}
 	
 	
 	
@@ -713,7 +745,7 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 			$R(u)=0 \iff \mathcal{D}(u)\in\mathcal{F}(u)$.
 		\end{enumerate}
 		%
-		Moreover, $R(u)^{1/2}$ admits a natural geometric interpretation: it represents the distance from $\mathcal{D}(u)$ to the admissible set $\mathcal{F}(u)$, i.e., the minimum correction needed to satisfy the inclusion at $u$.
+		Moreover, $R(u)^{1/2}$ admits a natural geometric interpretation: it represents the distance from $\mathcal{D}(u)$ to the admissible set $\mathcal{F}(u)$, i.e., the \emph{infimal} correction needed to satisfy the inclusion at $u$. In a general Banach space the infimum need not be attained; it is attained (and the correction is then a genuine minimum, realized by the metric projection) when $\mathcal{F}(u)$ is closed and convex and $Y$ is a Hilbert space, cf.\ Section~\ref{sec:projection}.
 	\end{remark}
 	
 	\begin{remark}
@@ -980,16 +1012,18 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 	\eqref{eq:inclusion}.  This is the analogue, for inclusions, of the
 	consistency statement underlying the classical PINN paradigm, with the
 	crucial difference that no uniqueness --- and hence no Gr\"onwall-type
-	error bound --- can be expected in general; the correct and strongest
-	available statement is a compactness/lower semicontinuity result in the
-	spirit of the direct method of the calculus of variations.
+	error bound --- can be expected in general; the natural statement under
+	the present assumptions is a compactness/lower semicontinuity result in
+	the spirit of the direct method of the calculus of variations.
 	
 	We work under the hypotheses of Theorem~\ref{thm:existence}, with the
 	harmless strengthening $m\in L^2(0,T)$:
 	
 	\begin{itemize}
 		\item[(H1)] $F$ is strict, compact-valued, and convex-valued.
-		\item[(H2)] $F(t,x)$ is measurable in $t$ and upper semicontinuous in $x$.
+		\item[(H2)] $t\mapsto F(t,x)$ is (Lebesgue) measurable for \emph{every}
+		$x\in\mathbb{R}^d$, and $x\mapsto F(t,x)$ is upper semicontinuous for
+		\emph{a.e.} $t\in[0,T]$.
 		\item[(H3)] There exists $m\in L^2(0,T)$, $m\ge0$, such that
 		\[
 		\sup_{v\in F(t,x)}|v|\le m(t)(1+|x|) \qquad  
@@ -1027,9 +1061,9 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		\]
 		Then, $g$ is a normal convex integrand, that is:
 		\begin{enumerate}
-			\item $g(t, x, \cdot)$ is convex in $v$ for a.e. $t \in [0,T]$ and $x\in\mathbb{R}^d$.
+			\item $g(t, x, \cdot)$ is convex in $v$ for a.e. $t \in [0,T]$ and every $x\in\mathbb{R}^d$.
 			\item $g(t, \cdot, \cdot)$ is jointly lower semicontinuous in $(x, v)$ for a.e. $t \in [0,T]$.
-			\item $g(\cdot, x, v)$ is measurable in $t$ for a.e. $x,v\in\mathbb{R}^d$.
+			\item $g(\cdot, x, v)$ is measurable in $t$ for every $(x,v)\in\mathbb{R}^d\times\mathbb{R}^d$.
 		\end{enumerate}
 	\end{lemma}
 	\begin{proof}
@@ -1118,7 +1152,13 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		\end{equation}
 		The proof of $(b)$ is completed by squaring both sides.
 		
-		Finally, the claim in $(c)$ follows directly from hypothesis (H2).
+		Finally, we prove $(c)$. Fix $(x,v)\in\mathbb{R}^d\times\mathbb{R}^d$.
+		By hypothesis (H2), the multifunction $t\mapsto F(t,x)$ is measurable
+		with closed (indeed compact) values, and the distance function to a
+		measurable closed-valued multifunction is measurable in $t$ for every
+		fixed $v$ (see, e.g., \cite[Chapter~8]{aubin_frankowska_2009}). Hence
+		$t\mapsto g(t,x,v)=\dist^2(v,F(t,x))$ is measurable, which proves
+		$(c)$.
 	\end{proof}
 	
 	
@@ -1146,7 +1186,7 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		\[
 		|\dot{x}_n(t) - w_n(t)| =\min_{w\in F(t, x_n(t))} |\dot{x}_n(t) - w| =r_n(t).
 		\]
-		Moreover, $t\mapsto w_n(t)$ is (Lebesgue) measurable: by \textup{(H1)}--\textup{(H2)} and the continuity of $x_n$, the multifunction $t\mapsto F(t,x_n(t))$ is measurable with compact convex values, and the metric projection of the measurable function $\dot{x}_n$ onto such a multifunction is measurable by the standard measurable-projection theorem for measurable, closed- and convex-valued multifunctions; see \cite[Theorem~8.2.11]{aubin_frankowska_2009}.
+		Moreover, $t\mapsto w_n(t)$ is (Lebesgue) measurable. First, by \textup{(H1)}--\textup{(H2)}, $F$ is a Carath\'eodory-type multifunction: measurable in $t$ for every $x$, upper semicontinuous in $x$ for a.e.\ $t$, with compact values. Such multifunctions are superpositionally measurable, i.e., $t\mapsto F(t,y(t))$ is measurable for every measurable (in particular, continuous) function $y$; see, e.g., \cite[Chapter~8]{aubin_frankowska_2009}. Applied with $y=x_n$, this shows that the composed multifunction $t\mapsto F(t,x_n(t))$ is measurable with compact convex values. Only then does the measurable-projection theorem apply: the metric projection of the measurable function $\dot{x}_n$ onto a measurable, closed- and convex-valued multifunction is measurable; see \cite[Theorem~8.2.11]{aubin_frankowska_2009}.
 		By the triangle inequality and (H3), for a.e. $t\in[0,T]$,
 		\begin{equation}\label{eq:consistency-inproof1}
 			|\dot{x}_n(t)| \le |\dot{x}_n(t) - w_n(t)|+|w_n(t)|= r_n(t) + m(t)(1 + |x_n(t)|).
@@ -1246,8 +1286,11 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		theorem does \emph{not} guarantee that the learned trajectory
 		approximates any particular target in $\mathcal{S}(x_0)$, only that it
 		approximates \emph{some} admissible solution. In view of
-		Theorem~\ref{thm:existence}, this is the strongest statement available for
-		a set-valued right-hand side.
+		Theorem~\ref{thm:existence}, this is the natural conclusion under the
+		present general assumptions; under additional structure (e.g.,
+		monotonicity, one-sided Lipschitz conditions, or uniqueness of
+		solutions), convergence of the full sequence, stronger modes of
+		convergence, or quantitative error estimates may be available.
 	\end{remark}
 	
 	
@@ -1919,7 +1962,18 @@ of admissible controls:
         mathematical sense).
 \end{enumerate}
 The union of all 304 trajectories evaluated on a uniform time grid of 200
-points constitutes the reference tube used for comparison.
+points constitutes the \emph{sampled reference cloud} used for comparison:
+at each grid time $t$,
+\[
+  \widehat{\mathcal{R}}_{\rm ref}(t)
+  :=
+  \bigl\{x^{(j)}(t):\ j=1,\dots,304\bigr\}
+  \subset
+  \mathcal{R}(t).
+\]
+We keep the notation deliberately distinct: $\mathcal{R}(t)$ denotes the
+exact reachable set of \eqref{eq:reachable-tube}, while
+$\widehat{\mathcal{R}}_{\rm ref}(t)$ is its finite empirical sample.
 %% TODO [Rev.]: naprawic integracje odcinkow sterowania w kodzie referencyjnym
 %% (kazdy odcinek musi byc calkowany do rzeczywistego konca odcinka
 %% przelaczenia, a nie do ostatniego punktu globalnej siatki), po czym
@@ -1928,52 +1982,65 @@ points constitutes the reference tube used for comparison.
 %% (paper: 200, kod: 150).
 
 Figure~\ref{fig:phase-linear} overlays the trained trajectory $x_\theta(t)$
-with the reference reachable tube $\mathcal{R}(t)$ of~\eqref{eq:reachable-tube}:
-the left panel shows the phase portrait, the right panel the two state
-components against time. The learned trajectory remains inside the reference
-tube throughout $[0,T]$, an empirical illustration of
-Theorem~\ref{thm:consistency}: a vanishing inclusion loss produces an
-admissible trajectory. 
+with the sampled reference cloud $\widehat{\mathcal{R}}_{\rm ref}(t)$
+approximating the reachable tube $\mathcal{R}(t)$
+of~\eqref{eq:reachable-tube}: the left panel shows the phase portrait, the
+right panel the two state components against time. The learned trajectory
+remains within the visual envelope of the sampled reference trajectories
+throughout $[0,T]$, an empirical illustration of
+Theorem~\ref{thm:consistency}: a vanishing inclusion loss produces a
+trajectory close to empirically generated admissible ones. 
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[width=\textwidth]{figures/trajectory_vs_tube.png}
 	\caption{Phase portrait (left) and state components versus time (right)
-		for the trained trajectory $x_\theta(t)$, compared with the reference
-		reachable tube $\mathcal{R}(t)$ (304 trajectories, light blue) and one
-		representative bang-bang extremal (dark blue).}
+		for the trained trajectory $x_\theta(t)$, compared with the sampled
+		reference cloud $\widehat{\mathcal{R}}_{\rm ref}(t)$ (304 trajectories,
+		light blue) and one representative bang-bang extremal (dark blue).}
 	\label{fig:phase-linear}
 \end{figure}
 
-\paragraph{Ensemble and Hausdorff metric}
+\paragraph{Ensemble and discrepancy from the sampled reference cloud}
 Since a single DR-PINN approximates one element of the solution set
-$\mathcal{S}(x_0)$ (cf.\ Section~\ref{subsec:consistency}), its distance to the
-reference tube is not, by itself, a robust check: we train an
-ensemble of $n_{\mathrm{ens}} = 5$ networks with different random seeds and
-average the resulting metric over the ensemble.
-The PINN reachable tube at time $t$ is defined as
+$\mathcal{S}(x_0)$ (cf.\ Section~\ref{subsec:consistency}), its distance to
+the sampled reference cloud is not, by itself, a robust check. We therefore
+form an ensemble of $n_{\mathrm{ens}} = 5$ trajectories (networks trained
+with different random seeds) and compute, at each time, the maximum
+distance of an ensemble member from the sampled reference cloud; this
+quantity is then averaged over time. Precisely, the ensemble of trained
+trajectories at time $t$ is
 \[
-  \mathcal{R}_\theta(t) = \bigl\{x_\theta^{(s)}(t) : s = 1,\dots,n_{\mathrm{ens}}\bigr\}.
+  \mathcal{R}_\theta(t) = \bigl\{x_\theta^{(s)}(t) : s = 1,\dots,n_{\mathrm{ens}}\bigr\},
 \]
-Admissibility is measured by the one-sided Hausdorff distance
+and the discrepancy from the sampled reference cloud is measured by the
+one-sided Hausdorff distance
 \[
-  d_H^+\!\bigl(\mathcal{R}_\theta(t),\,\mathcal{R}(t)\bigr)
-  = \max_{a \in \mathcal{R}_\theta(t)}\min_{b \in \mathcal{R}(t)}\|a-b\|,
+  d_H^+\!\bigl(\mathcal{R}_\theta(t),\,\widehat{\mathcal{R}}_{\rm ref}(t)\bigr)
+  = \max_{a \in \mathcal{R}_\theta(t)}\min_{b \in \widehat{\mathcal{R}}_{\rm ref}(t)}\|a-b\|,
 \]
 which, at each time $t$, already takes the maximum over the ensemble
 trajectories; averaging this quantity over the uniform time grid gives the
 reported value
 \[
-  \overline{d_H^+}(\mathcal{R}_\theta,\mathcal{R}) = 0.0445,
+  \overline{d_H^+}(\mathcal{R}_\theta,\widehat{\mathcal{R}}_{\rm ref}) = 0.0445,
 \]
 %% TODO [Rev.]: wartosc 0.0445 przeliczyc po poprawieniu integratora
-%% referencyjnego (patrz TODO powyzej).
+%% referencyjnego (patrz TODO powyzej). Recenzent zweryfikowal niezaleznie,
+%% ze roznice trajektorii stary-vs-poprawny integrator sa rzedu 0.05 (max)
+%% i 0.011 (srednia), czyli tego samego rzedu co 0.0445 -- przeliczenie
+%% jest wiec OBOWIAZKOWE, stara wartosc nie moze zostac.
 which is small relative to the scale of the problem (the control set $U$ and
 the reachable tube $\mathcal{R}(t)$ both have diameter of order $1$).
-Since the reference tube is a finite sample of trajectories, this quantity
-is a \emph{one-sided discrepancy from the sampled reference cloud} rather
-than a certificate of admissibility: a small value indicates that the
-ensemble trajectories lie close to empirically generated admissible
-trajectories, regardless of the random initialization.
+Since $\widehat{\mathcal{R}}_{\rm ref}(t)$ is a finite sample of
+trajectories, this quantity is a \emph{one-sided discrepancy from the
+sampled reference cloud} rather than a certificate of admissibility: a small
+value indicates that the ensemble trajectories lie close to empirically
+generated admissible trajectories, regardless of the random initialization.
+%% TODO [Rev.]: dodac niezalezna walidacje residualu na gestej siatce
+%% czasowej (mean i max inclusion distance), analogicznie do eksperymentu
+%% z elipsa w Sec. 6.2 -- loss 1.2e-12 na 300 punktach kolokacyjnych nie
+%% gwarantuje malego residualu miedzy punktami. Po przeliczeniu wstawic tu
+%% jedno zdanie z wynikami.
 
 \paragraph{Computational scalability}
 Computational efficiency is assessed by a scalability study that varies
@@ -2055,8 +2122,17 @@ then has $128$ variables instead of $6$. As a function of $d$ (right panel),
 the benefit shrinks as $\widetilde{K}$ approaches $K_{\mathrm{raw}}$: at
 $d=6$ and $d=8$, where Table~\ref{tab:quickhull-d} shows no reduction is
 achieved, the Quickhull-reduced time ($1.61\,$s, $1.48\,$s) is no longer
-lower than the unreduced time ($1.56\,$s in both cases), since the
-preprocessing step then adds overhead without shrinking the downstream QP.
+lower than the unreduced time ($1.56\,$s in both cases). Since the
+Quickhull reduction is performed \emph{offline} and does not contribute to
+the per-epoch time, when $\widetilde{K}=K_{\mathrm{raw}}$ the two variants
+solve identical QPs, and the residual differences between their timings
+are within run-to-run measurement variability rather than a preprocessing
+cost.
+%% TODO [Rev.]: powtorzyc badanie czasow w jednym spojnym uruchomieniu
+%% generujacym tabele, tekst i wykres; kilka powtorzen na punkt, raportowac
+%% srednia +/- odchylenie, dodac warm-up przed pomiarem oraz opis CPU/GPU i
+%% wersji bibliotek. Czasy w ostatnim notebooku roznia sie od czasow w
+%% tekscie -- zsynchronizowac.
 
 \begin{figure}[htbp]
   \centering
@@ -2348,7 +2424,7 @@ strictly below the boundary value $\ell=1$ at all times.
 \paragraph{DR-PINN companion run}
 The hard-admissible selector optimization above is a direct constrained
 optimal-control discretization, not a DR-PINN: it propagates the state by RK4
-and makes the inclusion hold by construction. To test the distance-residual
+and makes the inclusion hold by construction at the time-grid nodes. To test the distance-residual
 method itself on the same benchmark, we therefore performed a separate
 DR-PINN run. Because the experiment is a steering problem with prescribed
 initial and terminal states, we used the endpoint-hard neural ansatz
@@ -2387,9 +2463,11 @@ up to machine precision. The corresponding selector has mean level $0.931$
 and maximum level $1.000011$; the latter tiny overshoot is consistent with the
 reported $2.2\times10^{-6}$ distance and numerical projection tolerance. Thus
 the corrected distance-residual implementation does solve this benchmark as
-a genuine DR-PINN. The hard-admissible selector experiment remains useful as
-a complementary construction that guarantees feasibility independently of
-training, but it should not itself be labelled a DR-PINN experiment.
+a genuine DR-PINN. The hard-admissible parametrization guarantees
+feasibility at the time-grid nodes independently of training; for the
+reported optimized selector, feasibility between nodes was additionally
+confirmed on a dense validation grid of $20\,001$ points (cf.\ the level
+statistics above). It should not itself be labelled a DR-PINN experiment.
 
 %% ------------------------------------------------------------
 \subsection{A Reaction-Diffusion Inclusion with Relay (Sliding-Mode) Feedback}
@@ -2472,8 +2550,22 @@ applies to this example.
 	theory of evolution equations governed by maximal monotone operators
 	\cite{Brezis1973}: rewriting \eqref{eq:relay-pde} as
 	$\partial_t u + \bigl(-\Delta+\lambda\,\partial|\cdot|\bigr)(u)\ni 0$,
-	the operator $-\Delta+\lambda\,\partial|\cdot|$ is a sum of
-	two maximal monotone (subdifferential) operators on $L^2(\Omega)$. 
+	we identify $-\Delta+\lambda\,\partial|\cdot|$ (with the Dirichlet
+	Laplacian) as the subdifferential $\partial E$ of the functional $E$ of
+	\eqref{eq:relay-gradient-flow}, extended by $E(u)=+\infty$ for
+	$u\in L^2(\Omega)\setminus H_0^1(\Omega)$. Indeed, $E=\varphi_1+\varphi_2$
+	with $\varphi_1(u)=\tfrac12\|\nabla u\|_{L^2(\Omega)}^2$ proper, convex,
+	and lower semicontinuous on $L^2(\Omega)$, and
+	$\varphi_2(u)=\lambda\|u\|_{L^1(\Omega)}$ convex and, since $\Omega$ is
+	bounded, finite and continuous on all of $L^2(\Omega)$; the subdifferential
+	sum rule (Moreau--Rockafellar, with the qualification condition satisfied
+	because $\varphi_2$ is continuous) then gives
+	$\partial E=\partial\varphi_1+\partial\varphi_2
+	=-\Delta+\lambda\,\partial|\cdot|$. As the subdifferential of a proper,
+	convex, lower semicontinuous functional, $\partial E$ is maximal monotone
+	\cite{Brezis1973}. Note that maximal monotonicity does \emph{not} follow
+	from merely writing the operator as a sum of two maximal monotone
+	operators, since such a sum need not be maximal monotone in general.
 \end{remark}
 
 Next, we address the finite-time extinction issue. Multiplying \eqref{eq:relay-pde} by $u(t,\cdot)$, integrating over $\Omega$,
@@ -2514,9 +2606,11 @@ right-hand side, and our experiments confirm that the residual after
 training is concentrated there rather than spread uniformly over $Q$.
 Purely uniform collocation under-resolves this thin, moving region relative
 to its share of the loss. We therefore complement uniform collocation with
-a residual/state-based adaptive refinement scheme in the spirit of the RAR
-method of Lu, Meng, Mao, and Karniadakis
-\cite{LuMengMaoKarniadakis2021DeepXDE}. Precisely, at fixed intervals during training,
+a \emph{front-focused, state-based} adaptive sampling scheme inspired by
+the RAR method of Lu, Meng, Mao, and Karniadakis
+\cite{LuMengMaoKarniadakis2021DeepXDE}; unlike residual-based RAR, our
+scheme selects points by the smallest $|u_\theta|$ (a proxy for proximity
+to the extinction front) rather than by the largest residual. Precisely, at fixed intervals during training,
 a large pool of candidate points is drawn uniformly over $Q$, the points
 with the smallest $|u_\theta|$ are retained as an auxiliary ``hard pool''
 tracking the current estimate of the extinction front, and a fraction of
@@ -2535,8 +2629,9 @@ $Q$ to preserve global domain coverage.
 Unlike the bang-bang example of Section~\ref{subsec:linear-control}, where
 $F$ is genuinely multivalued and the ensemble/Hausdorff comparison of
 Section~\ref{subsec:linear-control} is required, uniqueness of strong
-solutions holds here: since $-\Delta+\lambda\,\partial|\cdot|$ is a sum of
-maximal monotone operators, standard monotonicity arguments show that
+solutions holds here: since $-\Delta+\lambda\,\partial|\cdot|=\partial E$
+is maximal monotone (cf.\ the remark above), standard monotonicity
+arguments show that
 $\tfrac{d}{dt}\|u_1-u_2\|_{L^2(\Omega)}^2\le0$ for any two strong solutions
 with the same initial datum, so $\mathcal{S}(u_0)$ is a singleton. A single trained
 DR-PINN can therefore be validated directly against one reference solution,
@@ -2593,11 +2688,18 @@ $\Phi_\varepsilon(s)\supseteq\Phi(s)$ for every $s$, the resulting
 distance residual is a lower bound of the exact one; $\Phi_\varepsilon$
 satisfies (P1)--(P3) with the same constant $m_0=\lambda$, so the
 consistency theory of Section~\ref{sec:pde-consistency} applies to it
-verbatim. All quantitative results reported below therefore refer to
-$\Phi_\varepsilon$.
-%% TODO [Rev.]: alternatywnie ustawic eps=0 w kodzie i powtorzyc trening,
-%% wtedy powyzszy akapit mozna usunac; ewentualnie dodac test wrazliwosci
-%% na eps.
+verbatim. All quantitative results for the \emph{trained network} reported
+below therefore refer to $\Phi_\varepsilon$, whereas the reference solver
+of the next paragraph solves the exact problem with $\Phi$ of
+\eqref{eq:relay-Phi}; the two multifunctions coincide outside the thin set
+$\{0<|s|\le\varepsilon\}$, so the comparison mixes two (slightly)
+different problems, a limitation to be kept in mind when reading the
+results.
+%% TODO [Rev.]: rozstrzygnac kwestie eps przed wysylka. Opcja A (najczystsza):
+%% ustawic eps=0 w kodzie, powtorzyc trening; wtedy akapit o Phi_eps mozna
+%% usunac. Opcja B: zostawic trening z Phi_eps, ale po treningu raportowac
+%% OBA residuale (wzgledem Phi_eps i dokladnego Phi) oraz wykonac test
+%% wrazliwosci dla eps in {0, 1e-8, 1e-6, 1e-4}.
 Beyond the usual comparison against the reference solver, we recommend a
 diagnostic figure specific to this set-valued setting: superimposing, on a
 plot of the graph of $\Phi$ (a three-branch ``staircase''), the empirical
@@ -2646,7 +2748,12 @@ those detected by the trained DR-PINNs.
   \end{tabular}
   \caption{Reference and DR-PINN extinction times $t^*$ for the primary sweep
     $\lambda\in\{0.4,0.6,0.8\}$. The DR-PINN extinction time is defined as
-    the first evaluation instant at which $\|u_\theta(t)\|_{L^2(\Omega)}<10^{-3}$.}
+    the first evaluation instant at which $\|u_\theta(t)\|_{L^2(\Omega)}<10^{-3}$;
+    since the network is evaluated on a time grid of step
+    $2.5\times10^{-3}$, the detected DR-PINN times carry a resolution
+    uncertainty of about half the evaluation step
+    ($\approx1.3\times10^{-3}$), so the trailing digits should not be
+    over-interpreted.}
   \label{tab:relay-extinction}
 \end{table}
 
@@ -2813,8 +2920,9 @@ close to an empirically sampled reachable tube. For a planar inclusion
 with a rotating ellipsoidal constraint, a genuine DR-PINN run reaches
 collocation losses of order $10^{-14}$ with endpoint constraints enforced
 exactly, while a complementary hard-admissible parametrization
-illustrates how the residual can instead be eliminated at the evaluation
-points by construction, freeing the remaining degrees of freedom to
+illustrates how the residual can instead be eliminated at the time-grid
+nodes by construction (with feasibility between nodes confirmed a
+posteriori on a dense validation grid), freeing the remaining degrees of freedom to
 select a particular element of the solution set. For a reaction-diffusion
 inclusion with relay feedback, the DR-PINN reproduces the finite-time
 extinction phenomenon and the correct ordering of extinction times across
