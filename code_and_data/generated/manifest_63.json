@@ -1,0 +1,57 @@
+{
+  "script": "run_experiment_63.py",
+  "generated_utc": "2026-07-24T11:33:45.983006+00:00",
+  "runtime_seconds": 3703.121194601059,
+  "n_epochs": 40000,
+  "eps_training": 0.0,
+  "extinction_tolerance": 0.001,
+  "eval_time_step": 0.0025,
+  "versions": {
+    "python": "3.11.2",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "tensorflow": "2.21.0"
+  },
+  "hardware": "INTEL(R) XEON(R) SILVER 4516Y+ (GPU x5), Python 3.11.2",
+  "reference_extinction_times": {
+    "0.0": null,
+    "0.4": 0.1845,
+    "0.6": 0.1645,
+    "0.8": 0.1505
+  },
+  "baseline": {
+    "val_loss": 0.4847573935985565,
+    "norm_disc": 0.01524074770098667,
+    "max_pt_err": 0.004861593246459961,
+    "post_ext_plateau": 0.0010454605799168348,
+    "plateau_level": 19.495509147644043,
+    "escape_epoch": 6031,
+    "z_front_max": 7.167731761932373
+  },
+  "eps_sensitivity": {
+    "values": {
+      "0.0": 0.4847573935985565,
+      "1e-08": 0.4847573935985565,
+      "1e-06": 0.48420828580856323,
+      "0.0001": 0.4619869291782379
+    },
+    "max_rel_dev": 0.04697290793500629
+  },
+  "sweep": {
+    "0.4": {
+      "t_ref": 0.1845,
+      "t_net": 0.1925,
+      "val_loss": 0.24043013155460358
+    },
+    "0.6": {
+      "t_ref": 0.1645,
+      "t_net": 0.22,
+      "val_loss": 0.4847573935985565
+    },
+    "0.8": {
+      "t_ref": 0.1505,
+      "t_net": 0.1575,
+      "val_loss": 0.6891202330589294
+    }
+  }
+}

@@ -1,0 +1,108 @@
+{
+  "generated": "2026-07-24T12:43:14.083894+00:00",
+  "seed": 0,
+  "versions": {
+    "python": "3.11.2",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "tensorflow": "2.21.0"
+  },
+  "hardware": {
+    "processor": "x86_64",
+    "system": "Linux"
+  },
+  "config": {
+    "T": 3.0,
+    "x0": [
+      0.0,
+      0.0
+    ],
+    "xf": [
+      1.8,
+      0.1
+    ],
+    "n_t": 120,
+    "n_c": 24,
+    "weights": {
+      "lam_f": 2500.0,
+      "lam_s": 1.0,
+      "lam_c": 0.2,
+      "lam_b": 0.01,
+      "lam_u": 0.05,
+      "lam_xi_stages": [
+        0.001,
+        0.01,
+        0.1
+      ]
+    },
+    "newton_iterations": 30
+  },
+  "part_a": {
+    "stages": [
+      {
+        "lam_xi": 0.001,
+        "mismatch": 1.9820015281764752e-05,
+        "mean_level": 0.9717812940618723,
+        "max_level": 0.9824344429423237,
+        "nit": 3000
+      },
+      {
+        "lam_xi": 0.01,
+        "mismatch": 4.785137888583017e-06,
+        "mean_level": 0.9711436122915021,
+        "max_level": 0.9824220207036876,
+        "nit": 3000
+      },
+      {
+        "lam_xi": 0.1,
+        "mismatch": 9.682579337562318e-06,
+        "mean_level": 0.9680429585277965,
+        "max_level": 0.9824152591469151,
+        "nit": 3000
+      }
+    ],
+    "dense_max_level": 0.9874607640607325,
+    "n_dense": 20001,
+    "extremal_down_x2T": -0.04693285947080184
+  },
+  "part_b": {
+    "final_collocation_loss": 2.6945246326941628e-14,
+    "distance_mean_dense": 2.3905376759692235e-07,
+    "distance_max_dense": 0.00018968952093885203,
+    "distance_rms_dense": 6.0184609128704455e-06,
+    "level_mean_dense": 0.937915957318999,
+    "level_max_dense": 1.0011264853075716,
+    "inside_fraction_dense": 0.992,
+    "initial_endpoint_error": 0.0,
+    "terminal_endpoint_error": 0.0,
+    "gradient_check_relative_error": 7.220533930235078e-11,
+    "gradient_check_autograd": [
+      2.7624335184804263,
+      -2.296438633935685
+    ],
+    "gradient_check_fd": [
+      2.7624335183773496,
+      -2.2964386336976617
+    ]
+  },
+  "macros": {
+    "EllipMismA": "2.0\\times10^{-5}",
+    "EllipMeanLA": "0.972",
+    "EllipMaxLA": "0.982",
+    "EllipMismB": "4.8\\times10^{-6}",
+    "EllipMeanLB": "0.971",
+    "EllipMaxLB": "0.982",
+    "EllipMismC": "9.7\\times10^{-6}",
+    "EllipMeanLC": "0.968",
+    "EllipMaxLC": "0.982",
+    "EllipDenseMaxL": "0.987",
+    "EllipNDense": "20\\,001",
+    "EllipExtremalXtwo": "-0.05",
+    "EllipCompLoss": "2.7\\times10^{-14}",
+    "EllipCompDenseMean": "2.4\\times10^{-7}",
+    "EllipCompDenseMax": "1.9\\times10^{-4}",
+    "EllipCompMeanL": "0.938",
+    "EllipCompMaxL": "1.001126",
+    "EllipCompGradCheck": "7.2\\times10^{-11}"
+  }
+}
