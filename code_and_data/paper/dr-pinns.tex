@@ -603,17 +603,56 @@ H^1\bigl(0,T;L^2(\Omega)\bigr),
 \]
 equipped with the norm
 $\|u\|_{\mathcal{W}}^2:=\|u\|_{L^2(0,T;H^2(\Omega))}^2
-+\|\partial_t u\|_{L^2(Q)}^2$.  By classical embedding theory and the
-Aubin--Lions lemma \cite{LionsMagenes},
-\begin{align*}
-	\mathcal{W}(0,T)&\hookrightarrow C\bigl([0,T];H_0^1(\Omega)\bigr)
-	\quad\text{continuously,}\\
-	\mathcal{W}(0,T)&\hookrightarrow\hookrightarrow C\bigl([0,T];L^2(\Omega)\bigr)
-	\quad\text{compactly.}
-\end{align*}
-The compact embedding into $C([0,T];L^2(\Omega))$ ensures in particular
-that the initial condition $u(0,\cdot)=u_0$ is well defined pointwise in
-time for every $u\in\mathcal{W}(0,T)$.
++\|\partial_t u\|_{L^2(Q)}^2$.  By the intermediate-derivatives and trace
+theory of \cite[Chapter~1, Theorem~3.1]{LionsMagenes} (applied with the
+interpolation identity
+$[H^2(\Omega)\cap H_0^1(\Omega),L^2(\Omega)]_{1/2}=H_0^1(\Omega)$), the
+embedding
+\begin{equation}\label{eq:W-cont-embedding}
+	\mathcal{W}(0,T)\hookrightarrow C\bigl([0,T];H_0^1(\Omega)\bigr)
+\end{equation}
+is continuous. The compactness statement used repeatedly below is stronger
+than the conclusion of the usual formulations of the Aubin--Lions lemma
+(which give compactness in $L^2(0,T;L^2(\Omega))$), so we record it as a
+lemma with a full proof.
+
+\begin{lemma}[{Compact embedding into $C([0,T];L^2(\Omega))$}]
+	\label{lem:compact-embedding}
+	The embedding
+	\[
+	\mathcal{W}(0,T)
+	\hookrightarrow\hookrightarrow
+	C\bigl([0,T];L^2(\Omega)\bigr)
+	\]
+	is compact.
+\end{lemma}
+
+\begin{proof}
+	Let $\{u_n\}_{n\in\mathbb{N}}\subset\mathcal{W}(0,T)$ be bounded, say
+	$\|u_n\|_{\mathcal{W}}\le M$ for every $n$. First, for all
+	$0\le s\le t\le T$, the fundamental theorem of calculus in
+	$L^2(\Omega)$ and the Cauchy--Schwarz inequality give
+	\[
+	\|u_n(t)-u_n(s)\|_{L^2(\Omega)}
+	\le\int_s^t\|\partial_t u_n(\tau)\|_{L^2(\Omega)}\,d\tau
+	\le|t-s|^{1/2}\,\|\partial_t u_n\|_{L^2(Q)}
+	\le M\,|t-s|^{1/2},
+	\]
+	so the sequence is uniformly equicontinuous with values in
+	$L^2(\Omega)$. Second, by the continuous embedding
+	\eqref{eq:W-cont-embedding} there is a constant $C_e>0$ such that
+	$\sup_{t\in[0,T]}\|u_n(t)\|_{H_0^1(\Omega)}\le C_eM$ for every $n$;
+	hence, for each fixed $t\in[0,T]$, the set
+	$\{u_n(t):n\in\mathbb{N}\}$ is bounded in $H_0^1(\Omega)$ and
+	therefore, by the Rellich--Kondrachov theorem, relatively compact in
+	$L^2(\Omega)$. The Arzel\`a--Ascoli theorem in the Banach space
+	$C([0,T];L^2(\Omega))$ then provides a uniformly convergent
+	subsequence, which proves the claimed compactness.
+\end{proof}
+
+The (compact, hence continuous) embedding into $C([0,T];L^2(\Omega))$
+ensures in particular that the initial condition $u(0,\cdot)=u_0$ is well
+defined pointwise in time for every $u\in\mathcal{W}(0,T)$.
 
 \begin{definition}\label{def:strong-solution-pde}
 	A function $u\in\mathcal{W}(0,T)$ is a \emph{strong solution} of
@@ -685,35 +724,95 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 	\end{cases}
 	\]
 	
-	Since $f$ is continuous and satisfies the linear growth condition
-	\[
-	|f(s)|\le m_0(1+|s|),
-	\qquad s\in\mathbb{R},
-	\]
-	standard existence theory for semilinear parabolic equations yields a
-	strong solution with exactly the parabolic maximal $L^2$-regularity
-	stated below: the linear Dirichlet heat equation with right-hand side in
-	$L^2(Q)$ and initial datum in $H_0^1(\Omega)$ admits a unique solution in
-	$L^2(0,T;H^2(\Omega)\cap H_0^1(\Omega))\cap H^1(0,T;L^2(\Omega))$
-	(see \cite[Section~7.1.3, Theorem~5]{Evans} for smooth domains and
-	\cite[Theorem~3.2.1.2]{Grisvard1985} for the $H^2$ elliptic regularity on
-	convex or $C^{1,1}$ domains), and a Galerkin compactness argument or a
-	Schauder fixed-point argument extends this to the semilinear problem
-	under the continuity and linear growth conditions on $f$ (a Banach
-	fixed-point argument would additionally require a Lipschitz condition
-	on $f$, which we do not assume); see also
-	\cite[Chapter~4]{LionsMagenes}. This
-	provides
-	\[
-	u\in
-	L^2\!\bigl(0,T;H^2(\Omega)\cap H_0^1(\Omega)\bigr)
-	\cap
-	H^1\!\bigl(0,T;L^2(\Omega)\bigr)
-	=
-	\mathcal{W}(0,T).
-	\]
+	We prove that this problem admits a solution $u\in\mathcal{W}(0,T)$ by
+	Schaefer's (Leray--Schauder-type) fixed-point theorem, see
+	\cite[Section~9.2.2, Theorem~4]{Evans}; note that a Banach fixed-point
+	argument is not available, since $f$ is not assumed to be Lipschitz.
 	
-	By construction,
+	\emph{Step 1: the solution operator of the linear problem.}
+	For $h\in L^2(Q)$, let $S(h)\in\mathcal{W}(0,T)$ denote the unique
+	solution of the linear Dirichlet problem
+	\[
+	\partial_t u-\Delta u=h \ \text{ in } Q,
+	\qquad u(0)=u_0 \ \text{ in }\Omega,
+	\qquad u=0 \ \text{ on }(0,T)\times\partial\Omega.
+	\]
+	By parabolic maximal $L^2$-regularity, $S$ is well defined and there
+	exists a constant $C_{\mathrm{par}}>0$ such that
+	\begin{equation}\label{eq:max-reg-linear}
+		\|S(h)\|_{\mathcal{W}(0,T)}
+		\le
+		C_{\mathrm{par}}\bigl(\|h\|_{L^2(Q)}+\|u_0\|_{H_0^1(\Omega)}\bigr);
+	\end{equation}
+	see \cite[Section~7.1.3, Theorem~5]{Evans} for smooth domains and
+	\cite[Theorem~3.2.1.2]{Grisvard1985} for the $H^2$ elliptic regularity
+	on convex or $C^{1,1}$ domains. Moreover, $S(h)-S(h')=S_0(h-h')$, where
+	$S_0$ denotes the solution operator with zero initial datum, so $S$ is
+	(affine and) continuous from $L^2(Q)$ into $\mathcal{W}(0,T)$.
+	
+	\emph{Step 2: continuity and boundedness of the Nemytskii operator.}
+	By \textup{(H2$'$)}--\textup{(H3$'$)}, the superposition operator
+	$N_f(v):=f(v)$ maps $L^2(Q)$ into $L^2(Q)$ and maps bounded sets to
+	bounded sets, since $|f(s)|\le m_0(1+|s|)$ gives
+	$\|f(v)\|_{L^2(Q)}\le m_0\bigl(|Q|^{1/2}+\|v\|_{L^2(Q)}\bigr)$. It is
+	also continuous: if $v_n\to v$ in $L^2(Q)$, then along any subsequence
+	there is a further subsequence $\{v_{n_k}\}$ converging almost
+	everywhere in $Q$ and dominated by a fixed function $w\in L^2(Q)$
+	(see \cite[Theorem~4.9]{brezis_2011}); by continuity of $f$,
+	$f(v_{n_k})\to f(v)$ a.e.\ in $Q$, and since
+	$|f(v_{n_k})|\le m_0(1+|v_{n_k}|)\le m_0(1+w)\in L^2(Q)$, dominated
+	convergence yields $f(v_{n_k})\to f(v)$ in $L^2(Q)$. As the limit does
+	not depend on the chosen subsequence, the whole sequence converges,
+	i.e., $N_f$ is continuous on $L^2(Q)$.
+	
+	\emph{Step 3: compactness of the fixed-point map.}
+	Define
+	\[
+	\mathcal{T}:L^2(Q)\longrightarrow L^2(Q),
+	\qquad
+	\mathcal{T}(v):=S\bigl(f(v)\bigr).
+	\]
+	By Steps~1 and~2, $\mathcal{T}$ is continuous and maps bounded subsets
+	of $L^2(Q)$ into bounded subsets of $\mathcal{W}(0,T)$. Since
+	$\mathcal{W}(0,T)$ embeds compactly into $C([0,T];L^2(\Omega))$ by
+	Lemma~\ref{lem:compact-embedding}, and hence compactly into $L^2(Q)$,
+	the operator $\mathcal{T}$ is compact.
+	
+	\emph{Step 4: a priori bound on the Schaefer set.}
+	Let $u\in L^2(Q)$ satisfy $u=\sigma\mathcal{T}(u)$ for some
+	$\sigma\in[0,1]$. By linearity of the underlying linear problem,
+	$u\in\mathcal{W}(0,T)$ and
+	\[
+	\partial_t u-\Delta u=\sigma f(u) \ \text{ in }Q,
+	\qquad u(0)=\sigma u_0,
+	\qquad u=0 \ \text{ on }(0,T)\times\partial\Omega.
+	\]
+	Testing with $u(t)$ and using \textup{(H3$'$)} together with Young's
+	inequality,
+	\[
+	\frac12\frac{d}{dt}\|u(t)\|_{L^2(\Omega)}^2
+	+\|\nabla u(t)\|_{L^2(\Omega)}^2
+	=\sigma\int_\Omega f(u)\,u\,dx
+	\le C\bigl(1+\|u(t)\|_{L^2(\Omega)}^2\bigr)
+	\quad\text{for a.e. } t,
+	\]
+	with $C>0$ depending only on $m_0$ and $|\Omega|$. Since
+	$\|u(0)\|_{L^2(\Omega)}=\sigma\|u_0\|_{L^2(\Omega)}
+	\le\|u_0\|_{L^2(\Omega)}$, Gr\"onwall's inequality yields a bound
+	$\sup_{t\in[0,T]}\|u(t)\|_{L^2(\Omega)}\le C_1$ with $C_1$ independent
+	of $\sigma$, whence $\|u\|_{L^2(Q)}\le T^{1/2}C_1$. Therefore the
+	Schaefer set
+	$\bigl\{u\in L^2(Q):u=\sigma\mathcal{T}(u)
+	\text{ for some }\sigma\in[0,1]\bigr\}$
+	is bounded in $L^2(Q)$. (Using \textup{(H3$'$)} once more,
+	$\|f(u)\|_{L^2(Q)}\le m_0(|Q|^{1/2}+\|u\|_{L^2(Q)})\le C_2$, so
+	\eqref{eq:max-reg-linear} gives in addition a $\sigma$-uniform bound
+	in $\mathcal{W}(0,T)$.)
+	
+	\emph{Step 5: conclusion.}
+	By Schaefer's fixed-point theorem, $\mathcal{T}$ admits a fixed point
+	$u=\mathcal{T}(u)$; by Step~1, $u=S(f(u))\in\mathcal{W}(0,T)$ solves
+	the semilinear problem above. By construction,
 	\[
 	\partial_t u(t,x)-\Delta u(t,x)
 	=
@@ -807,7 +906,22 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		scope of this work. The theorems below should therefore be read as
 		consistency statements for the continuous distance residual rather
 		than as a full convergence analysis of the discrete training
-		algorithm.
+		algorithm. A simple sufficient condition bridging the two is
+		available: if $Z$ is compact with $|Z|<\infty$, the maps
+		$z\mapsto r(u_{\theta_n};z)$ share a Lipschitz constant $M$ on $Z$,
+		the collocation sets $\{z_i^{(n)}\}$ have fill distance
+		$h_n:=\sup_{z\in Z}\min_i|z-z_i^{(n)}|\to0$, and the
+		\emph{maximum} pointwise residual satisfies
+		$\max_i r(u_{\theta_n};z_i^{(n)})\to0$, then
+		\[
+		\sup_{z\in Z}r(u_{\theta_n};z)
+		\le\max_i r(u_{\theta_n};z_i^{(n)})+Mh_n\longrightarrow0,
+		\]
+		and hence $\int_Z r(u_{\theta_n};z)\,dz\to0$. Note that this
+		requires control of the maximum residual at the collocation points
+		--- not merely of the mean loss $\mathcal{L}$ --- which is why the
+		dense-grid validations reported in Section~\ref{sec:numerics} track
+		maximal, and not only mean, residuals.
 	\end{remark}
 	
 	
@@ -964,9 +1078,11 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		\]
 		which is well-defined and Lipschitz. This identity differentiates
 		only with respect to $v$, with $F(t,x)$ held fixed. If the admissible
-		set depends on the learned state $x_\theta$, the corresponding chain-rule
-		term must be retained in the implementation. These properties are
-		particularly favorable for gradient-based training.
+		set depends on the learned state $x_\theta$, the corresponding
+		chain-rule term must be retained in the implementation; exact
+		formulas for the practically relevant cases, and the limits of plain
+		differentiability for general moving sets, are given in
+		Remark~\ref{rem:moving-set-gradient} below.
 	\end{remark}
 	
 	The DR-PINN loss for the differential inclusion \eqref{eq:inclusion} is
@@ -1080,6 +1196,75 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 	hence the loss \eqref{eq:main-distance-loss} --- for convex sets well
 	beyond the simple examples treated numerically below.
 	
+	\begin{remark}[Differentiating the residual when the set depends on the
+		state]\label{rem:moving-set-gradient}
+		When the admissible set depends on the learned state, the loss must
+		be differentiated through that dependence as well. We make precise
+		the two cases used in this paper.
+		
+		\emph{(i) Translations of a fixed set.} Suppose that
+		\[
+		F(t,x)=c(t,x)+C(t),
+		\]
+		where $C(t)\subset\mathbb{R}^d$ is a nonempty closed convex set not
+		depending on $x$ and $c(\cdot,\cdot)$ is $C^1$ in $x$. Since the
+		distance is translation invariant,
+		\[
+		r(t,x,v):=\dist^2\bigl(v,c(t,x)+C(t)\bigr)
+		=\dist^2\bigl(v-c(t,x),C(t)\bigr),
+		\]
+		and the set on the right-hand side no longer moves with $x$.
+		Writing $q:=\bigl(v-c(t,x)\bigr)-\Pi_{C(t)}\bigl(v-c(t,x)\bigr)$,
+		the Fr\'echet differentiability of $y\mapsto\dist^2(y,C(t))$ (with
+		gradient $2(y-\Pi_{C(t)}y)$, cf.\ Section~\ref{sec:principle})
+		combined with the chain rule gives the \emph{exact} gradients
+		\[
+		\nabla_v r=2q,
+		\qquad
+		\nabla_x r=-2\,D_xc(t,x)^{\!\top}q,
+		\]
+		so $r$ is genuinely $C^1$ in $(x,v)$. In an automatic-differentiation
+		implementation, these gradients are obtained by evaluating the
+		projection numerically and holding the \emph{projected point}
+		constant in the backward pass, while differentiating through the
+		argument $v-c(t,x)$. This covers the linear control example of
+		Section~\ref{subsec:linear-control}, where
+		$F(t,x)=Ax+BU$, $c(t,x)=Ax$, $D_xc=A$, and the ellipsoidal example
+		of Section~\ref{subsec:rotating-ellipsoidal}, where $c(t,x)=g(t,x)$.
+		
+		\emph{(ii) General moving polytopes.} For
+		$F(t,x)=\operatorname{conv}\{v_1(t,x),\dots,v_K(t,x)\}$ with
+		$v_k(t,\cdot)\in C^1$, the residual is the value function of the
+		quadratic program \eqref{eq:projection-as-qp},
+		\[
+		r(t,x,v)
+		=\min_{\lambda\in\Delta_K}
+		\Bigl|v-\sum_{k=1}^K\lambda_kv_k(t,x)\Bigr|^2 .
+		\]
+		If the minimizer $\lambda^\ast=\lambda^\ast(t,x,v)$ is \emph{unique}
+		in a neighborhood of the point of interest, then, by Danskin's
+		theorem for parametric minimization over a compact set, $r$ is
+		differentiable there, with
+		\[
+		\nabla_vr=2e,
+		\qquad
+		\nabla_xr=-2\sum_{k=1}^K\lambda_k^\ast\,
+		D_xv_k(t,x)^{\!\top}e,
+		\qquad
+		e:=v-\sum_{k=1}^K\lambda_k^\ast v_k(t,x).
+		\]
+		If $\lambda^\ast$ is \emph{not} unique (the projected point is
+		always unique, but its barycentric representation need not be, cf.\
+		the discussion after \eqref{eq:projection-as-qp}), the value
+		function is in general only directionally differentiable in $x$,
+		and training must rely on directional derivatives or Clarke
+		subgradients; no claim of $C^1$ smoothness should then be made.
+		Accordingly, our statements about plain gradients are restricted to
+		fixed sets, sets depending on $t$ only, translations of fixed sets
+		as in (i), and moving polytopes whose inner quadratic program has a
+		unique, locally stable minimizer.
+	\end{remark}
+	
 	\subsection{Consistency}
 	\label{subsec:consistency}
 	
@@ -1093,20 +1278,58 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 	the present assumptions is a compactness/lower semicontinuity result in
 	the spirit of the direct method of the calculus of variations.
 	
-	We work under the hypotheses of Theorem~\ref{thm:existence}, with the
-	harmless strengthening $m\in L^2(0,T)$:
+	We work under the hypotheses of Theorem~\ref{thm:existence}, with two
+	mild strengthenings: $m\in L^2(0,T)$, and joint (product)
+	measurability of $F$ in place of measurability in $t$ alone
+	(see Remark~\ref{rem:H2-product} below):
 	
 	\begin{itemize}
 		\item[(H1)] $F$ is strict, compact-valued, and convex-valued.
-		\item[(H2)] $t\mapsto F(t,x)$ is (Lebesgue) measurable for \emph{every}
-		$x\in\mathbb{R}^d$, and $x\mapsto F(t,x)$ is upper semicontinuous for
-		\emph{a.e.} $t\in[0,T]$.
+		\item[(H2)] $F$ is \emph{product measurable}, i.e.,
+		\[
+		\bigl\{(t,x)\in[0,T]\times\mathbb{R}^d:F(t,x)\cap
+		U\neq\varnothing\bigr\}
+		\in
+		\mathcal{L}([0,T])\otimes\mathcal{B}(\mathbb{R}^d)
+		\quad\text{for every open }U\subset\mathbb{R}^d,
+		\]
+		where $\mathcal{L}([0,T])$ and $\mathcal{B}(\mathbb{R}^d)$ denote the
+		Lebesgue and Borel $\sigma$-fields, and $x\mapsto F(t,x)$ is upper
+		semicontinuous for \emph{a.e.} $t\in[0,T]$.
 		\item[(H3)] There exists $m\in L^2(0,T)$, $m\ge0$, such that
 		\[
 		\sup_{v\in F(t,x)}|v|\le m(t)(1+|x|) \qquad  
 		\text{ for a.e. } t\in[0,T] \text{ and every } x\in\mathbb{R}^d.
 		\]
 	\end{itemize}
+	
+	\begin{remark}\label{rem:H2-product}
+		Taking sections in \textup{(H2)} shows that $t\mapsto F(t,x)$ is
+		Lebesgue measurable for every fixed $x$, so \textup{(H2)} implies the
+		measurability hypothesis of Theorem~\ref{thm:existence}. Product
+		measurability is a mild requirement: it holds, in particular,
+		whenever $F$ is jointly upper semicontinuous on
+		$[0,T]\times\mathbb{R}^d$ (then $\{F\cap U\neq\varnothing\}$ is an
+		$F_\sigma$ set for every open $U$), and whenever $F$ is measurable in
+		$t$ and \emph{continuous} in $x$ (Carath\'eodory multifunctions);
+		both cases cover all the admissible sets used in
+		Section~\ref{sec:numerics}. The strengthening is not merely
+		cosmetic: multifunctions that are measurable in $t$ and only upper
+		semicontinuous in $x$ need not be superpositionally measurable in
+		general, see \cite{zygmunt_1992}, so \textup{(H2)} is what makes the
+		measurability steps in the proof of
+		Theorem~\ref{thm:consistency} rigorous.
+		%% NOTE: add to references.bib:
+		%% @article{zygmunt_1992,
+		%%   author  = {Zygmunt, Wojciech},
+		%%   title   = {On superpositionally measurable semi-{C}arath\'eodory multifunctions},
+		%%   journal = {Commentationes Mathematicae Universitatis Carolinae},
+		%%   volume  = {33},
+		%%   number  = {1},
+		%%   pages   = {73--77},
+		%%   year    = {1992}
+		%% }
+	\end{remark}
 	
 	\begin{definition}\label{def:admissible-class}
 		Define the admissible space
@@ -1140,7 +1363,9 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		\begin{enumerate}
 			\item $g(t, x, \cdot)$ is convex in $v$ for a.e. $t \in [0,T]$ and every $x\in\mathbb{R}^d$.
 			\item $g(t, \cdot, \cdot)$ is jointly lower semicontinuous in $(x, v)$ for a.e. $t \in [0,T]$.
-			\item $g(\cdot, x, v)$ is measurable in $t$ for every $(x,v)\in\mathbb{R}^d\times\mathbb{R}^d$.
+			\item $g$ is jointly
+			$\mathcal{L}([0,T])\otimes\mathcal{B}(\mathbb{R}^d\times\mathbb{R}^d)$-measurable
+			on $[0,T]\times\mathbb{R}^d\times\mathbb{R}^d$.
 		\end{enumerate}
 	\end{lemma}
 	\begin{proof}
@@ -1229,15 +1454,123 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		\end{equation}
 		The proof of $(b)$ is completed by squaring both sides.
 		
-		Finally, we prove $(c)$. Fix $(x,v)\in\mathbb{R}^d\times\mathbb{R}^d$.
-		By hypothesis (H2), the multifunction $t\mapsto F(t,x)$ is measurable
-		with closed (indeed compact) values, and the distance function to a
-		measurable closed-valued multifunction is measurable in $t$ for every
-		fixed $v$ (see, e.g., \cite[Chapter~8]{aubin_frankowska_2009}). Hence
-		$t\mapsto g(t,x,v)=\dist^2(v,F(t,x))$ is measurable, which proves
-		$(c)$.
+		Finally, we prove $(c)$. Fix first $v_0\in\mathbb{R}^d$ and
+		$c>0$. Then
+		\[
+		\bigl\{(t,x):\dist(v_0,F(t,x))<c\bigr\}
+		=
+		\bigl\{(t,x):F(t,x)\cap B(v_0,c)\neq\varnothing\bigr\}
+		\in
+		\mathcal{L}([0,T])\otimes\mathcal{B}(\mathbb{R}^d)
+		\]
+		by the product measurability required in \textup{(H2)}, so
+		$(t,x)\mapsto\dist(v_0,F(t,x))$ is jointly measurable for each fixed
+		$v_0$. Combining this with the $1$-Lipschitz continuity
+		\eqref{eq:normal-integrand-inproof4} in $v$ and with the exact
+		representation
+		\[
+		\dist(v,F(t,x))
+		=
+		\inf_{q\in\mathbb{Q}^d}
+		\bigl[\dist(q,F(t,x))+|v-q|\bigr]
+		\]
+		(the inequality ``$\le$'' is the triangle inequality, and
+		``$\ge$'' follows by letting $q\to v$), we express
+		$(t,x,v)\mapsto\dist(v,F(t,x))$ as a countable infimum of jointly
+		measurable functions. Hence $g=\dist^2$ is jointly measurable, which
+		proves $(c)$.
 	\end{proof}
 	
+	
+	The next lemma settles the measurability of the superposed
+	multifunction and of the associated metric projection appearing in the
+	proof of Theorem~\ref{thm:consistency}.
+	
+	\begin{lemma}[Measurability of superpositions and projections]
+		\label{lem:superposition-measurable}
+		Let $F:[0,T]\times\mathbb{R}^d\rightrightarrows\mathbb{R}^d$ satisfy
+		\textup{(H1)}--\textup{(H2)}. Then:
+		\begin{enumerate}
+			\item for every Lebesgue measurable
+			$y:[0,T]\to\mathbb{R}^d$, the multifunction
+			$t\mapsto F(t,y(t))$ is Lebesgue measurable with nonempty compact
+			convex values;
+			\item if, in addition, $v:[0,T]\to\mathbb{R}^d$ is measurable,
+			then the metric projection
+			$t\mapsto \Pi_{F(t,y(t))}\bigl(v(t)\bigr)$ is measurable.
+		\end{enumerate}
+	\end{lemma}
+	
+	\begin{proof}
+		(a) The map $t\mapsto(t,y(t))$ is measurable from
+		$([0,T],\mathcal{L}([0,T]))$ into
+		$([0,T]\times\mathbb{R}^d,
+		\mathcal{L}([0,T])\otimes\mathcal{B}(\mathbb{R}^d))$, since the
+		preimage of every product set $A\times B$ is
+		$A\cap y^{-1}(B)\in\mathcal{L}([0,T])$ and such products generate
+		the product $\sigma$-field. Hence, for every open
+		$U\subset\mathbb{R}^d$,
+		\[
+		\bigl\{t\in[0,T]:F(t,y(t))\cap U\neq\varnothing\bigr\}
+		=
+		\bigl\{t:(t,y(t))\in
+		\{F\cap U\neq\varnothing\}\bigr\}
+		\in\mathcal{L}([0,T])
+		\]
+		by the product measurability in \textup{(H2)}. The values are
+		nonempty, compact, and convex by \textup{(H1)}.
+		
+		(b) Since $t\mapsto F(t,y(t))$ is measurable with closed convex
+		values and $v(\cdot)$ is measurable, the metric projection is
+		measurable by the measurable-projection theorem
+		\cite[Theorem~8.2.11]{aubin_frankowska_2009}.
+	\end{proof}
+	
+	Finally, we isolate the lower semicontinuity principle used in the
+	limit passage of both Theorem~\ref{thm:consistency} and
+	Theorem~\ref{thm:consistency-parabolic}: strong convergence in the
+	state variable combined with weak convergence in the variable in which
+	the integrand is convex.
+	
+	\begin{lemma}[Strong--weak lower semicontinuity]
+		\label{lem:strong-weak-lsc}
+		Let $Z\subset\mathbb{R}^N$ be bounded and measurable, and let
+		$g:Z\times\mathbb{R}^m\times\mathbb{R}^k\to[0,\infty]$ be a normal
+		integrand, i.e., jointly
+		$\mathcal{L}(Z)\otimes
+		\mathcal{B}(\mathbb{R}^m\times\mathbb{R}^k)$-measurable
+		and such that $g(z,\cdot,\cdot)$ is lower semicontinuous on
+		$\mathbb{R}^m\times\mathbb{R}^k$ for a.e.\ $z\in Z$. Assume in
+		addition that $g(z,x,\cdot)$ is convex for a.e.\ $z\in Z$ and every
+		$x\in\mathbb{R}^m$. If
+		\[
+		x_n\to x \ \text{ strongly in } L^2(Z;\mathbb{R}^m),
+		\qquad
+		v_n\rightharpoonup v \ \text{ weakly in } L^2(Z;\mathbb{R}^k),
+		\]
+		then
+		\[
+		\int_Z g\bigl(z,x(z),v(z)\bigr)\,dz
+		\le
+		\liminf_{n\to\infty}\int_Z g\bigl(z,x_n(z),v_n(z)\bigr)\,dz.
+		\]
+	\end{lemma}
+	
+	\begin{proof}
+		Since $|Z|<\infty$, strong convergence in $L^2(Z;\mathbb{R}^m)$
+		implies convergence in (Lebesgue) measure, and weak convergence in
+		$L^2(Z;\mathbb{R}^k)$ implies weak convergence in
+		$L^1(Z;\mathbb{R}^k)$, because every $L^\infty$ test function
+		belongs to $L^2(Z)$. Moreover, $g\ge0$, so the lower-bound
+		(negative-part) condition required in
+		\cite[Theorem~1]{berkovitz_1974} is trivially satisfied. The claim
+		is then exactly the lower semicontinuity theorem for integral
+		functionals whose integrand is measurable in $z$, lower
+		semicontinuous in $(x,v)$, and convex in $v$, with the first
+		argument converging in measure and the second weakly in $L^1$; see
+		\cite[Theorem~1]{berkovitz_1974}, and also \cite{ioffe_1977} and
+		\cite[Chapter~VIII]{ekeland_temam_1999}.
+	\end{proof}
 	
 	\begin{theorem}[Consistency of the distance residual] \label{thm:consistency}
 		Let $F:[0,T]\times\mathbb{R}^d\rightrightarrows\mathbb{R}^d$ be a set-valued function satisfying hypothesis \textup{(H1)}, \textup{(H2)}, and \textup{(H3)}.
@@ -1263,7 +1596,9 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		\[
 		|\dot{x}_n(t) - w_n(t)| =\min_{w\in F(t, x_n(t))} |\dot{x}_n(t) - w| =r_n(t).
 		\]
-		Moreover, $t\mapsto w_n(t)$ is (Lebesgue) measurable. First, by \textup{(H1)}--\textup{(H2)}, $F$ is a Carath\'eodory-type multifunction: measurable in $t$ for every $x$, upper semicontinuous in $x$ for a.e.\ $t$, with compact values. Such multifunctions are superpositionally measurable, i.e., $t\mapsto F(t,y(t))$ is measurable for every measurable (in particular, continuous) function $y$; see, e.g., \cite[Chapter~8]{aubin_frankowska_2009}. Applied with $y=x_n$, this shows that the composed multifunction $t\mapsto F(t,x_n(t))$ is measurable with compact convex values. Only then does the measurable-projection theorem apply: the metric projection of the measurable function $\dot{x}_n$ onto a measurable, closed- and convex-valued multifunction is measurable; see \cite[Theorem~8.2.11]{aubin_frankowska_2009}.
+		Moreover, $t\mapsto w_n(t)$ is (Lebesgue) measurable by
+		Lemma~\ref{lem:superposition-measurable}, applied with $y=x_n$ and
+		$v=\dot{x}_n$.
 		By the triangle inequality and (H3), for a.e. $t\in[0,T]$,
 		\begin{equation}\label{eq:consistency-inproof1}
 			|\dot{x}_n(t)| \le |\dot{x}_n(t) - w_n(t)|+|w_n(t)|= r_n(t) + m(t)(1 + |x_n(t)|).
@@ -1348,7 +1683,12 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		hence $x^* \in \mathcal{A}$ and $\dot{x}^* = v^*$ a.e.
 		
 		Finally, set $g(t, x, v) := \operatorname{dist}^2(v, F(t,x))$. 
-		By Lemma~\ref{lem:normal-integrand}, $g$ is a normal convex integrand. The classical lower semicontinuity theorem for integral functionals with normal convex integrands (\cite[Theorem~1]{berkovitz_1974}; see also \cite{ioffe_1977} and \cite[Chapter~VIII]{ekeland_temam_1999}), applied with $x_n \to x^*$ uniformly and $\dot{x}_n \rightharpoonup \dot{x}^*$ weakly in $L^2(0,T;\mathbb{R}^d)$, yields
+		By Lemma~\ref{lem:normal-integrand}, $g$ is a normal convex
+		integrand. Since $x_n\to x^*$ uniformly on $[0,T]$, in particular
+		$x_n\to x^*$ strongly in $L^2(0,T;\mathbb{R}^d)$, while
+		$\dot{x}_n\rightharpoonup\dot{x}^*$ weakly in
+		$L^2(0,T;\mathbb{R}^d)$. Lemma~\ref{lem:strong-weak-lsc}, applied
+		with $Z=(0,T)$ and $m=k=d$, yields
 		%
 		\[
 		\mathcal{J}(x^*) \le \liminf_{n \to \infty} \mathcal{J}(x_n) = 0.
@@ -1638,7 +1978,20 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		\Pi_{\Phi(u_n(t,x))}
 		\bigl(z_n(t,x)\bigr).
 		\]
-		The map $w_n$ is (Lebesgue) measurable on $Q$: by \textup{(P1)}--\textup{(P2)} the multifunction $\Phi$ is measurable with closed convex values, hence so is $(t,x)\mapsto\Phi(u_n(t,x))$ as the composition with the measurable function $u_n$, and the metric projection of the measurable function $z_n$ onto it is measurable by the measurable-projection theorem for measurable, closed- and convex-valued multifunctions; see \cite[Theorem~8.2.11]{aubin_frankowska_2009}. It satisfies
+		The map $w_n$ is (Lebesgue) measurable on $Q$. Indeed, by
+		\textup{(P2)}, for every closed $C\subset\mathbb{R}$ the set
+		$\{s\in\mathbb{R}:\Phi(s)\subset\mathbb{R}\setminus C\}$ is open,
+		so $\{s:\Phi(s)\cap C\neq\varnothing\}$ is closed; writing an open
+		set $U\subset\mathbb{R}$ as a countable union of closed sets shows
+		that $\{s:\Phi(s)\cap U\neq\varnothing\}$ is Borel for every open
+		$U$, i.e., $\Phi$ is a Borel measurable multifunction with closed
+		convex values. Consequently, $(t,x)\mapsto\Phi(u_n(t,x))$ is
+		Lebesgue measurable on $Q$, as the composition of a Borel measurable
+		multifunction with the measurable function $u_n$, and the metric
+		projection of the measurable function $z_n$ onto it is measurable by
+		the measurable-projection theorem for measurable, closed- and
+		convex-valued multifunctions; see
+		\cite[Theorem~8.2.11]{aubin_frankowska_2009}. It satisfies
 		\[
 		w_n(t,x)\in\Phi(u_n(t,x))
 		\quad\text{for a.e. }(t,x)\in Q,
@@ -1777,8 +2130,8 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		\end{equation}
 		By the compact parabolic embedding	$\mathcal{W}(0,T)
 		\hookrightarrow\hookrightarrow
-		C\bigl([0,T];L^2(\Omega)\bigr),
-		$
+		C\bigl([0,T];L^2(\Omega)\bigr)$ of
+		Lemma~\ref{lem:compact-embedding},
 		\begin{equation}
 		u_n\longrightarrow u^\ast
 		\quad\text{strongly in }
@@ -1810,14 +2163,6 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		\qquad
 		g(s,z):=\operatorname{dist}^2(z,\Phi(s)).
 		\]
-		By Lemma~\ref{lem:normal-integrand-parabolic}, the function
-		$g(s,z):=\operatorname{dist}^2(z,\Phi(s))$ is a normal convex integrand. Furthermore, for every fixed $s\in\mathbb{R}$,
-		the map
-		\[
-		z\longmapsto g(s,z)
-		\]
-		is convex, since $\Phi(s)$ is closed and convex.
-		
 		The linear operator
 		\[
 		\mathcal{D}:
@@ -1833,14 +2178,17 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		\quad\text{weakly in }L^2(Q).
 		\label{eq:weak-convergence-operator}
 		\end{equation}
-		Using \eqref{eq:strong-convergence-L2}, \eqref{eq:weak-convergence-operator}, and the lower
-		semicontinuity theorem for integral functionals associated with
-		normal integrands that are convex in the second variable
-		(\cite[Theorem~1]{berkovitz_1974}; see also \cite{ioffe_1977} and
-		\cite[Chapter~VIII]{ekeland_temam_1999}), applied with
-		$u_n\to u^\ast$ strongly in $L^2(Q)$ and
-		$\partial_t u_n-\Delta u_n\rightharpoonup\partial_t u^\ast-\Delta u^\ast$
-		weakly in $L^2(Q)$, we obtain
+		By Lemma~\ref{lem:normal-integrand-parabolic}, $g$ is Borel
+		measurable, jointly lower semicontinuous, and convex in its second
+		argument. Hence $\widetilde g(z,s,\zeta):=g(s,\zeta)$, regarded as an
+		integrand on $Q\times\mathbb{R}\times\mathbb{R}$ independent of
+		$z=(t,x)$, satisfies the hypotheses of
+		Lemma~\ref{lem:strong-weak-lsc} with $Z=Q$ and $m=k=1$. Applying
+		that lemma with \eqref{eq:strong-convergence-L2}
+		($u_n\to u^\ast$ strongly in $L^2(Q)$) and
+		\eqref{eq:weak-convergence-operator}
+		($\partial_t u_n-\Delta u_n\rightharpoonup
+		\partial_t u^\ast-\Delta u^\ast$ weakly in $L^2(Q)$), we obtain
 		\[
 		\begin{aligned}
 			\mathcal{J}(u^\ast)
@@ -1985,6 +2333,16 @@ term
     \dist^2\!\bigl(\dot{x}_\theta(t_i),\, F(x_\theta(t_i))\bigr),
 \end{equation}
 evaluated at $N = 300$ collocation points distributed uniformly on $[0, T]$.
+Since $F(x_\theta(t_i))=Ax_\theta(t_i)+B\widetilde{U}$ is a translation of
+the \emph{fixed} polytope $B\widetilde{U}$, the residual is evaluated in the
+equivalent translated form
+$\dist^2\!\bigl(\dot x_\theta(t_i)-Ax_\theta(t_i),\,B\widetilde{U}\bigr)$ of
+Remark~\ref{rem:moving-set-gradient}(i): the projection is computed
+numerically by the QP~\eqref{eq:projection-as-qp} and the projected point is
+held constant in the backward pass, so automatic differentiation returns the
+exact gradients $2q$ and $-2A^{\top}q$ with respect to
+$\dot x_\theta$ and $x_\theta$, respectively (the same practice as in the
+DR-PINN companion run of Section~\ref{subsec:rotating-ellipsoidal}).
 Training is performed with the Adam optimizer at learning rate $10^{-3}$ for
 $1\,000$ epochs. Figure~\ref{fig:loss-linear} shows the inclusion loss $\mathcal{L}(\theta)$
 of~\eqref{eq:loss-linear} along training. Starting from
@@ -2071,9 +2429,12 @@ approximating the reachable tube $\mathcal{R}(t)$
 of~\eqref{eq:reachable-tube}: the left panel shows the phase portrait, the
 right panel the two state components against time. The learned trajectory
 remains within the visual envelope of the sampled reference trajectories
-throughout $[0,T]$, an empirical illustration of
-Theorem~\ref{thm:consistency}: a vanishing inclusion loss produces a
-trajectory close to empirically generated admissible ones. 
+throughout $[0,T]$, in line with the consistency mechanism of
+Theorem~\ref{thm:consistency} (which concerns the continuous residual
+functional; cf.\ Remark~\ref{rem:collocation-gap}): a small inclusion
+loss --- corroborated here by the independent dense-grid residual
+validation reported below --- produces a trajectory close to empirically
+generated admissible ones. 
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[width=\textwidth]{figures/trajectory_vs_tube.png}
@@ -2614,8 +2975,8 @@ We take $\Omega=(0,1)^2$ and
 \end{equation}
 which is smooth, nonnegative, and satisfies $u_0\in H_0^1(\Omega)$, and take
 $\lambda=0.6$ as a baseline value, together with a primary comparison sweep
-$\lambda\in\{0.4,0.6,0.8\}$ to illustrate how the extinction time (see below)
-decreases as $\lambda$ increases. The time horizon is fixed at $T=0.3$, which
+$\lambda\in\{0.4,0.6,0.8\}$ to illustrate how the extinction time decreases
+as $\lambda$ increases (cf.\ Proposition~\ref{prop:extinction} below). The time horizon is fixed at $T=0.3$, which
 is large enough that all three relay cases have visibly reached extinction while
 the $\lambda=0$ (classical heat equation) case has not, making the qualitative
 contrast visible in a single plot (see Figure~\ref{fig:relay-extinction-ref} below).
@@ -2635,7 +2996,7 @@ applies to this example.
 \end{itemize}
 
 
-\begin{remark}
+\begin{remark}\label{rem:relay-wellposed}
 	This example lies outside the scope of the existence theory of
 	Theorem~\ref{thm:existence-pde}, which requires a \emph{continuous}
 	selection $f(s)\in\Phi(s)$ (hypothesis~(H2$'$)). Indeed, any selection of
@@ -2661,6 +3022,56 @@ applies to this example.
 	\cite{Brezis1973}. Note that maximal monotonicity does \emph{not} follow
 	from merely writing the operator as a sum of two maximal monotone
 	operators, since such a sum need not be maximal monotone in general.
+	
+	This abstract theory does more than provide existence in $L^2$: it
+	yields a strong solution in the sense of
+	Definition~\ref{def:strong-solution-pde}, defined for every time
+	horizon. Indeed, since $u_0\in H_0^1(\Omega)$ and $\Omega$ is bounded,
+	$E(u_0)<\infty$, and the theory of subgradient flows with initial datum
+	in the domain of the energy \cite{Brezis1973} produces, for every
+	$T>0$, a unique function $u\in H^1(0,T;L^2(\Omega))$ with
+	$u(t)\in D(\partial E)$ and
+	$-\partial_tu(t)\in\partial E(u(t))$ for a.e.\ $t$. By the
+	subdifferential sum rule above, for a.e.\ $t$ one has
+	$u(t)\in H^2(\Omega)\cap H_0^1(\Omega)$ and there exists
+	$\xi(t,\cdot)\in\partial\|\cdot\|_{L^1(\Omega)}(u(t))$, i.e.,
+	$\xi(t,x)\in\Sign(u(t,x))$ a.e., such that
+	\[
+	\partial_tu-\Delta u+\lambda\,\xi=0
+	\quad\text{a.e.\ in }Q.
+	\]
+	The selection is automatically measurable, since
+	$\xi=(\Delta u-\partial_tu)/\lambda$ pointwise a.e., and
+	$|\xi|\le1$ gives $\xi\in L^\infty(Q)\subset L^2(Q)$. Consequently
+	\[
+	\Delta u=\partial_tu+\lambda\,\xi\in L^2(Q),
+	\]
+	and the $H^2$ elliptic regularity on convex or $C^{1,1}$ domains
+	\cite[Theorem~3.2.1.2]{Grisvard1985} (recall that $\Omega=(0,1)^2$ is
+	convex) yields
+	$u\in L^2\bigl(0,T;H^2(\Omega)\cap H_0^1(\Omega)\bigr)$. Hence
+	$u\in\mathcal{W}(0,T)$ is a strong solution of
+	\eqref{eq:relay-pde}, so $\mathcal{S}(u_0)\neq\varnothing$ also for
+	this example.
+	
+	Uniqueness of strong solutions also holds. Let
+	$u_1,u_2\in\mathcal{W}(0,T)$ be strong solutions with the same initial
+	datum, with pointwise selections $\xi_i(t,x)\in\Sign(u_i(t,x))$ such
+	that $\partial_tu_i-\Delta u_i=-\lambda\,\xi_i$ a.e.\ in $Q$.
+	Subtracting the two equations and testing with $u_1-u_2$ gives, for
+	a.e.\ $t\in(0,T)$,
+	\[
+	\frac12\frac{d}{dt}\|u_1-u_2\|_{L^2(\Omega)}^2
+	+\|\nabla(u_1-u_2)\|_{L^2(\Omega)}^2
+	+\lambda\int_\Omega(\xi_1-\xi_2)(u_1-u_2)\,dx
+	=0.
+	\]
+	Since the graph of $\Sign$ is monotone,
+	$(\xi_1-\xi_2)(u_1-u_2)\ge0$ a.e., whence
+	$\frac{d}{dt}\|u_1-u_2\|_{L^2(\Omega)}^2\le0$; as $u_1(0)=u_2(0)=u_0$,
+	we conclude $u_1=u_2$. Thus $\mathcal{S}(u_0)$ is a singleton, in sharp
+	contrast with the genuinely multivalued solution sets of
+	Section~\ref{subsec:linear-control}.
 \end{remark}
 
 Next, we address the finite-time extinction issue. Multiplying \eqref{eq:relay-pde} by $u(t,\cdot)$, integrating over $\Omega$,
@@ -2677,20 +3088,124 @@ the energy identity
 \end{equation}
 The extra dissipation term $-\lambda\|u(t)\|_{L^1(\Omega)}$, absent in the
 classical heat equation ($\lambda=0$), is responsible for a qualitatively
-different phenomenon: solutions of gradient flows of linear-growth
-functionals such as \eqref{eq:relay-gradient-flow} are known to reach their
-equilibrium in \emph{finite time} rather than merely decaying exponentially,
-see \cite{AndreuCaselleMazon2004}. Once $u(t,\cdot)$ vanishes on part of
-$\Omega$, the relay may ``slide'' there ($\Delta u(t,x)\in[-\lambda,\lambda]$
+different phenomenon: the solution reaches the equilibrium $u\equiv0$ in
+\emph{finite time} rather than merely decaying exponentially --- a behavior
+familiar from evolution problems governed by dissipation terms that are
+positively homogeneous of degree one, such as the total variation flow
+\cite{AndreuCaselleMazon2004}. We stress that the energy identity
+\eqref{eq:relay-energy} alone does \emph{not} prove finite-time extinction;
+for the nonnegative initial datum \eqref{eq:relay-u0} used here, extinction
+--- together with an explicit upper bound on the extinction time and its
+monotonicity with respect to $\lambda$ --- follows from the elementary
+comparison arguments recorded in the next proposition. Once $u(t,\cdot)$
+vanishes on part of $\Omega$, the relay may ``slide'' there
+($\Delta u(t,x)\in[-\lambda,\lambda]$
 pointwise, consistently with $u\equiv0$), anchoring the solution at
 equilibrium. This behavior is invisible to a classical pointwise-residual
 PINN, which would require committing in advance to one branch of $\Phi$,
 and is precisely the phenomenon this benchmark is designed to showcase.
-Identity~\eqref{eq:relay-energy} also provides a solver-independent
-numerical check: the decay of $\|u_\theta(t)\|_{L^2(\Omega)}^2$ along the
+
+\begin{proposition}[Finite-time extinction and monotonicity in $\lambda$]
+	\label{prop:extinction}
+	Let $u_0\in H_0^1(\Omega)\cap L^\infty(\Omega)$ with $u_0\ge0$, and,
+	for $\lambda>0$, let $u_\lambda$ denote the unique strong solution of
+	\eqref{eq:relay-pde}--\eqref{eq:relay-Phi} provided by
+	Remark~\ref{rem:relay-wellposed}, regarded as defined for all
+	$t\ge0$. Then:
+	\begin{enumerate}
+		\item[\rm(a)] $u_\lambda(t,x)\ge0$ for a.e.\ $(t,x)$;
+		\item[\rm(b)] $0\le u_\lambda(t,x)\le
+		\bigl(\|u_0\|_{L^\infty(\Omega)}-\lambda t\bigr)_+$ a.e.; in
+		particular, $u_\lambda(t,\cdot)\equiv0$ for every
+		$t\ge\|u_0\|_{L^\infty(\Omega)}/\lambda$, so the extinction time
+		$t^*(\lambda):=\inf\{t\ge0:u_\lambda(t,\cdot)\equiv0\}$ satisfies
+		\[
+		t^*(\lambda)\le\frac{\|u_0\|_{L^\infty(\Omega)}}{\lambda};
+		\]
+		\item[\rm(c)] if $\lambda_2>\lambda_1>0$, then
+		$0\le u_{\lambda_2}\le u_{\lambda_1}$ a.e., and consequently
+		$t^*(\lambda_2)\le t^*(\lambda_1)$.
+	\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+	Throughout, $u=u_\lambda$ denotes the strong solution and
+	$\xi(t,x)\in\Sign(u(t,x))$ the associated selection with
+	$\partial_tu-\Delta u=-\lambda\xi$ a.e.\ (cf.\
+	Remark~\ref{rem:relay-wellposed}); all the test computations below are
+	rigorous for strong solutions.
+	
+	(a) Let $u^-:=\max(-u,0)$, so that $u^-(t,\cdot)\in H_0^1(\Omega)$ for
+	a.e.\ $t$. Multiplying the equation by $-u^-$ and integrating over
+	$\Omega$ gives, for a.e.\ $t$,
+	\[
+	\frac12\frac{d}{dt}\|u^-(t)\|_{L^2(\Omega)}^2
+	+\|\nabla u^-(t)\|_{L^2(\Omega)}^2
+	=\lambda\int_\Omega\xi\,u^-\,dx
+	=-\lambda\int_\Omega u^-\,dx\le0,
+	\]
+	where we used that $\xi=-1$ a.e.\ on $\{u<0\}$ and $u^-=0$ elsewhere.
+	Since $u^-(0)=u_0^-=0$, we conclude $u^-\equiv0$, i.e., $u\ge0$.
+	
+	(b) Set $M:=\|u_0\|_{L^\infty(\Omega)}$, $t_0:=M/\lambda$, and
+	consider the spatially constant supersolution
+	$v(t):=M-\lambda t$ on $[0,t_0)$. Let $w:=u-v$. For $t\in(0,t_0)$ one
+	has $v(t)>0$, hence $w<0$ on $(0,t_0)\times\partial\Omega$ and
+	$w^+:=\max(w,0)$ satisfies $w^+(t,\cdot)\in H_0^1(\Omega)$. Moreover,
+	$\partial_tv-\Delta v=-\lambda$, so
+	\[
+	\partial_tw-\Delta w=\lambda(1-\xi)
+	\quad\text{a.e.\ in }(0,t_0)\times\Omega,
+	\]
+	and on $\{w>0\}$ we have $u>v>0$, hence $\xi=1$ and the right-hand
+	side vanishes there. Testing with $w^+$ therefore gives
+	\[
+	\frac12\frac{d}{dt}\|w^+(t)\|_{L^2(\Omega)}^2
+	+\|\nabla w^+(t)\|_{L^2(\Omega)}^2
+	=\lambda\int_{\{w>0\}}(1-\xi)\,w^+\,dx=0,
+	\]
+	and since $w^+(0)=(u_0-M)^+=0$, we obtain $u\le v$ on $[0,t_0)$.
+	Together with (a), this proves the pointwise bound in (b) on
+	$[0,t_0)$; by continuity of $t\mapsto u(t)$ in $L^2(\Omega)$,
+	$u(t_0)=0$. Finally, the identically zero function is a strong
+	solution of \eqref{eq:relay-pde} with zero initial datum
+	(indeed $0=\partial_t0-\Delta 0\in[-\lambda,\lambda]=\Phi(0)$), so by
+	the uniqueness established in Remark~\ref{rem:relay-wellposed},
+	restarted at time $t_0$, $u(t)\equiv0$ for all $t\ge t_0$.
+	
+	(c) Let $w:=u_{\lambda_2}-u_{\lambda_1}$, with selections
+	$\xi_i\in\Sign(u_{\lambda_i})$. Then
+	$\partial_tw-\Delta w=-\lambda_2\xi_2+\lambda_1\xi_1$, and on
+	$\{w>0\}$ we have $u_{\lambda_2}>u_{\lambda_1}\ge0$ by (a), hence
+	$\xi_2=1$ and
+	$-\lambda_2\xi_2+\lambda_1\xi_1\le-\lambda_2+\lambda_1<0$. Both
+	$u_{\lambda_i}$ vanish on $\partial\Omega$, so
+	$w^+(t,\cdot)\in H_0^1(\Omega)$, and testing with $w^+$ gives
+	\[
+	\frac12\frac{d}{dt}\|w^+(t)\|_{L^2(\Omega)}^2
+	+\|\nabla w^+(t)\|_{L^2(\Omega)}^2
+	\le\int_{\{w>0\}}(\lambda_1\xi_1-\lambda_2)\,w^+\,dx\le0 .
+	\]
+	With $w^+(0)=0$ this yields $w^+\equiv0$, i.e.,
+	$u_{\lambda_2}\le u_{\lambda_1}$, and the ordering of the extinction
+	times follows immediately from the definition of $t^*$.
+\end{proof}
+
+For the initial datum \eqref{eq:relay-u0} one has
+$\|u_0\|_{L^\infty(\Omega)}=1$, so Proposition~\ref{prop:extinction}(b)
+gives the a priori bound $t^*(\lambda)\le1/\lambda$, i.e., $2.5$, $1.6\overline{6}$,
+and $1.25$ for $\lambda\in\{0.4,0.6,0.8\}$. The bound is far from sharp
+(the observed extinction times reported below are an order of magnitude
+smaller), since the comparison argument discards the additional decay
+produced by diffusion; its role is purely qualitative: it certifies
+finite-time extinction and the monotone dependence on $\lambda$.
+Identity~\eqref{eq:relay-energy} and
+Proposition~\ref{prop:extinction} also provide solver-independent
+numerical checks: the decay of $\|u_\theta(t)\|_{L^2(\Omega)}^2$ along the
 trained trajectory should be strictly faster than that of the corresponding
-heat equation ($\lambda=0$) with the same initial datum, and the extinction
-time should decrease as $\lambda$ increases.
+heat equation ($\lambda=0$) with the same initial datum, and the detected
+extinction times must be nonincreasing in $\lambda$ (strictly decreasing in
+our experiments).
 
 \paragraph{Adaptive collocation sampling}
 Because $\Phi$ has a genuine jump discontinuity at $s=0$, the distance
@@ -2724,11 +3239,8 @@ $Q$ to preserve global domain coverage.
 Unlike the bang-bang example of Section~\ref{subsec:linear-control}, where
 $F$ is genuinely multivalued and the ensemble/Hausdorff comparison of
 Section~\ref{subsec:linear-control} is required, uniqueness of strong
-solutions holds here: since $-\Delta+\lambda\,\partial|\cdot|=\partial E$
-is maximal monotone (cf.\ the remark above), standard monotonicity
-arguments show that
-$\tfrac{d}{dt}\|u_1-u_2\|_{L^2(\Omega)}^2\le0$ for any two strong solutions
-with the same initial datum, so $\mathcal{S}(u_0)$ is a singleton. A single trained
+solutions holds here, as proved in Remark~\ref{rem:relay-wellposed}:
+$\mathcal{S}(u_0)$ is a singleton. A single trained
 DR-PINN can therefore be validated directly against one reference solution,
 obtained by a first-order operator-splitting scheme on a uniform
 $49\times49$ interior grid with time step $\Delta t=5\times10^{-4}$.
@@ -2999,8 +3511,11 @@ theoretical side, we proved consistency results for both ordinary
 differential inclusions (Theorem~\ref{thm:consistency}) and parabolic
 partial differential inclusions
 (Theorem~\ref{thm:consistency-parabolic}): any sequence of admissible
-candidates whose distance residual tends to zero converges, along a
-subsequence, to an exact solution of the target inclusion. The proofs
+candidates whose \emph{continuous} distance-residual functional tends to
+zero converges, along a subsequence, to an exact solution of the target
+inclusion; relating the finite-collocation training loss to the continuous
+functional requires the additional sampling and regularity assumptions
+discussed in Remark~\ref{rem:collocation-gap}. The proofs
 combine a priori estimates, compactness, weak convergence of the
 differential operators, and the lower semicontinuity of normal convex
 integrands; in view of the intrinsic non-uniqueness of solutions of

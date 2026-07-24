@@ -434,6 +434,88 @@ def scalability_study(cfg):
 
 
 # ----------------------------------------------------------------------------
+# Finite-difference gradient check for the dist^2(xdot - Ax, BU) loss
+# (referee item: verify the custom projection backward pass in 6.1).
+# Uses a small freshly initialised model; no retraining needed.
+# ----------------------------------------------------------------------------
+
+
+def gradient_check_61(cfg, A, BU_ext, n_params=15, fd_eps=1e-4, seed=1234):
+    set_seed(seed)
+    model = TrialSolution(x0, width=16, depth=2)
+    rng = np.random.default_rng(seed)
+    t_c = tf.constant(rng.uniform(0.0, cfg.T, (64, 1)), tf.float32)
+
+    def loss_fn():
+        with tf.GradientTape() as tape:
+            tape.watch(t_c)
+            xt = model(t_c, training=False)
+        dx = tape.batch_jacobian(xt, t_c)[:, :, 0]
+        q = dx - tf.linalg.matmul(
+            xt, tf.constant(A, dtype=dx.dtype), transpose_b=True)
+        proj = tf.stop_gradient(tf.constant(
+            project_batch(q.numpy().astype(np.float64), BU_ext),
+            dtype=q.dtype))
+        return tf.reduce_mean(tf.reduce_sum((q - proj) ** 2, axis=1))
+
+    # NOTE on the projection: dist^2 to a convex set is C^1 with gradient
+    # 2 (q - P(q)); differentiating through a FROZEN projection point is
+    # exact almost everywhere, so autodiff and finite differences must
+    # agree away from face switches.  We recompute the projection at each
+    # perturbed point in the FD pass (true loss), and compare against the
+    # frozen-projection autodiff gradient.
+    def true_loss():
+        with tf.GradientTape() as tape:
+            tape.watch(t_c)
+            xt = model(t_c, training=False)
+        dx = tape.batch_jacobian(xt, t_c)[:, :, 0]
+        q = (dx - xt.numpy() @ A.T).numpy().astype(np.float64)
+        d = q - project_batch(q, BU_ext)
+        return float(np.mean(np.sum(d ** 2, axis=1)))
+
+    with tf.GradientTape() as tape:
+        val = loss_fn()
+    grads = tape.gradient(val, model.trainable_variables)
+
+    flat = []
+    for v, g in zip(model.trainable_variables, grads):
+        gn = np.zeros_like(v.numpy()) if g is None else g.numpy()
+        for idx in np.ndindex(tuple(v.shape)):
+            flat.append((v, idx, float(gn[idx])))
+    # Restrict to parameters with non-negligible gradient: central FD in a
+    # float32 forward pass cannot resolve directions with |g| near zero
+    # (cancellation noise), which would only test numerical noise, not the
+    # backward pass.  The threshold is recorded in the manifest.
+    g_floor = 1e-3 * max(abs(g) for _, _, g in flat)
+    flat = [f for f in flat if abs(f[2]) >= g_floor]
+    rng.shuffle(flat)
+    checked, rel_errs = [], []
+    for v, idx, g_ad in flat[:n_params]:
+        orig = float(v.numpy()[idx])
+        for sgn, store in ((+1, "p"), (-1, "m")):
+            arr = v.numpy()
+            arr[idx] = orig + sgn * fd_eps
+            v.assign(arr)
+            if sgn > 0:
+                fp = true_loss()
+            else:
+                fm = true_loss()
+        arr = v.numpy(); arr[idx] = orig; v.assign(arr)
+        g_fd = (fp - fm) / (2 * fd_eps)
+        denom = max(abs(g_ad), abs(g_fd), 1e-10)
+        rel_errs.append(abs(g_ad - g_fd) / denom)
+        checked.append({"param": getattr(v, "path", None) or v.name,
+                        "index": list(idx),
+                        "autodiff": g_ad, "fd": g_fd,
+                        "rel_err": rel_errs[-1]})
+    return {"n_params": len(checked), "fd_eps": fd_eps,
+            "grad_floor_relative": 1e-3,
+            "max_rel_err": float(np.max(rel_errs)),
+            "median_rel_err": float(np.median(rel_errs)),
+            "details": checked}
+
+
+# ----------------------------------------------------------------------------
 # Stage 1: TRAIN -- all heavy computation; writes results/raw/exp61/
 # (raw_data.npz + manifest_61.json).  NO figures here.
 # ----------------------------------------------------------------------------
@@ -480,19 +562,23 @@ def stage_train(cfg, smoke=False):
     # ---- Ensemble, Hausdorff ----------------------------------------------
     print(f"Training ensemble of {cfg.n_ensemble} DR-PINNs ...")
     ensemble_trajs, resid_means, resid_maxes = [], [], []
+    seed_list, member_final_losses = [], []
     for s in range(cfg.n_ensemble):
         seed_s = cfg.seed + s * 100
+        seed_list.append(seed_s)
         set_seed(seed_s)
         m = TrialSolution(x0, width=cfg.width, depth=cfg.depth)
         print(f"  [seed {seed_s}]")
-        train_dr_pinn(m, cfg, A_np, BU_extreme, verbose=False)
+        hist_s = train_dr_pinn(m, cfg, A_np, BU_extreme, verbose=False)
+        member_final_losses.append(float(hist_s["loss"][-1]))
         ensemble_trajs.append(m(t_eval, training=False).numpy())
         # (F4) dense-grid residual per member
         rm, rx = dense_grid_residual(m, cfg, A_np, BU_extreme,
                                      seed=54321 + s)
         resid_means.append(rm)
         resid_maxes.append(rx)
-        print(f"    dense-grid residual: mean {rm:.2e}, max {rx:.2e}")
+        print(f"    final loss {member_final_losses[-1]:.2e}, "
+              f"dense-grid residual: mean {rm:.2e}, max {rx:.2e}")
     ensemble_arr = np.array(ensemble_trajs)  # (n_ens, n_ref_t, 2)
     raw["ensemble_arr"] = ensemble_arr
 
@@ -500,10 +586,33 @@ def stage_train(cfg, smoke=False):
     for ti in range(len(t_ref)):
         hd[ti] = one_sided_hausdorff(ensemble_arr[:, ti, :], tube[:, ti, :])
     mean_dh = float(hd.mean())
-    print(f"Mean one-sided Hausdorff d_H+ = {mean_dh:.4f}")
+    print(f"Mean one-sided Hausdorff d_H+ (pooled) = {mean_dh:.4f}")
+
+    # Per-seed distance-to-tube (mean/max over time of the distance from
+    # the member's trajectory to the reference tube point cloud) -- basis
+    # of the per-seed table requested by the referee.
+    member_dist_mean, member_dist_max = [], []
+    for e in range(ensemble_arr.shape[0]):
+        d_t = np.array([
+            np.min(np.linalg.norm(tube[:, ti, :]
+                                  - ensemble_arr[e, ti, :], axis=1))
+            for ti in range(len(t_ref))])
+        member_dist_mean.append(float(d_t.mean()))
+        member_dist_max.append(float(d_t.max()))
+
+    def med_range(v):
+        return {"median": float(np.median(v)), "min": float(np.min(v)),
+                "max": float(np.max(v))}
 
     resid_mean_worst = float(np.max(resid_means))
     resid_max_worst = float(np.max(resid_maxes))
+
+    # (referee) finite-difference check of the projection backward pass
+    print("Finite-difference gradient check of dist^2 loss ...")
+    gc = gradient_check_61(cfg, A_np, BU_extreme)
+    print(f"  {gc['n_params']} random parameters: "
+          f"max rel err = {gc['max_rel_err']:.2e}, "
+          f"median = {gc['median_rel_err']:.2e}")
 
     # ---- Scalability (F5) --------------------------------------------------
     print("Scalability study (warm-up + repetitions) ...")
@@ -553,6 +662,20 @@ def stage_train(cfg, smoke=False):
             "integrator_selfcheck_max_abs": float(selfcheck),
         },
         "hausdorff": {"mean_dh_plus": mean_dh},
+        "per_seed": {
+            "seeds": seed_list,
+            "final_loss": member_final_losses,
+            "final_loss_agg": med_range(member_final_losses),
+            "dense_resid_mean": [float(v) for v in resid_means],
+            "dense_resid_mean_agg": med_range(resid_means),
+            "dense_resid_max": [float(v) for v in resid_maxes],
+            "dense_resid_max_agg": med_range(resid_maxes),
+            "dist_to_tube_mean": member_dist_mean,
+            "dist_to_tube_mean_agg": med_range(member_dist_mean),
+            "dist_to_tube_max": member_dist_max,
+        },
+        "gradient_check": {k: v for k, v in gc.items() if k != "details"},
+        "gradient_check_details": gc["details"],
         "dense_residual": {
             "n_dense": cfg.n_dense,
             "per_member_mean": [float(v) for v in resid_means],
@@ -611,9 +734,45 @@ def stage_tables():
         if "8" in sc["d"] else "--",
         "LCHardware": man["hardware"].replace("_", r"\_"),
     }
+    ps = man.get("per_seed")
+    if ps:
+        macros["LCSeedList"] = ", ".join(str(x) for x in ps["seeds"])
+        la = ps["final_loss_agg"]
+        macros["LCLossMedian"] = R.sci_tex(la["median"])
+        macros["LCLossRange"] = (rf"[{R.sci_tex(la['min'])},\,"
+                                 rf"{R.sci_tex(la['max'])}]")
+        ra = ps["dense_resid_mean_agg"]
+        macros["LCResidMeanMedian"] = R.sci_tex(ra["median"])
+        macros["LCResidMeanRange"] = (rf"[{R.sci_tex(ra['min'])},\,"
+                                      rf"{R.sci_tex(ra['max'])}]")
+        da = ps["dist_to_tube_mean_agg"]
+        macros["LCDistTubeMedian"] = f"{da['median']:.4f}"
+        macros["LCDistTubeRange"] = f"[{da['min']:.4f}, {da['max']:.4f}]"
+    gc = man.get("gradient_check")
+    if gc:
+        macros["LCGradCheckMaxRel"] = R.sci_tex(gc["max_rel_err"])
+        macros["LCGradCheckNParams"] = str(gc["n_params"])
+        macros["LCGradCheckEps"] = R.sci_tex(gc["fd_eps"], 0)
     out = R.aggregated_dir()
     R.write_macros(os.path.join(out, "results_61.tex"), macros,
                    "run_experiment_61.py --stage tables")
+    # per-seed tabular (referee: report each of the seeds explicitly)
+    if ps:
+        path = os.path.join(out, "table_61_seeds.tex")
+        with open(path, "w") as f:
+            f.write("% AUTO-GENERATED -- per-seed results, Example 6.1\n")
+            f.write("\\begin{tabular}{ccccc}\n\\toprule\n")
+            f.write("seed & final loss & dense resid.\\ mean & "
+                    "dense resid.\\ max & mean dist.\\ to tube "
+                    "\\\\\n\\midrule\n")
+            for i, sd in enumerate(ps["seeds"]):
+                f.write(
+                    f"{sd} & ${R.sci_tex(ps['final_loss'][i])}$ & "
+                    f"${R.sci_tex(ps['dense_resid_mean'][i])}$ & "
+                    f"${R.sci_tex(ps['dense_resid_max'][i])}$ & "
+                    f"{ps['dist_to_tube_mean'][i]:.4f} \\\\\n")
+            f.write("\\bottomrule\n\\end{tabular}\n")
+        print(f"Wrote {path}")
     with open(os.path.join(out, "manifest_61.json"), "w") as f:
         json.dump(man, f, indent=2)
 

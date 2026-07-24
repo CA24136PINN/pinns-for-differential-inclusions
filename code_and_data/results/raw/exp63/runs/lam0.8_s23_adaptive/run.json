@@ -1,0 +1,19 @@
+{
+  "status": "done",
+  "tag": "lam0.8_s23_adaptive",
+  "lam": 0.8,
+  "net_seed": 23,
+  "sample_seed": 1023,
+  "sampling": "adaptive",
+  "n_epochs": 200,
+  "val_loss": 33.139461517333984,
+  "train_seconds": 19.19551682472229,
+  "generated_utc": "2026-07-24T19:38:36.323965+00:00",
+  "hardware": "Linux-6.18.5-x86_64-with-glibc2.39 | x86_64 | GPU: none | RAM: 4 GiB",
+  "cuda_visible_devices": "<unset>",
+  "versions": {
+    "python": "3.12.3",
+    "numpy": "2.4.4",
+    "tensorflow": "2.21.0"
+  }
+}

@@ -37,6 +37,7 @@ Usage:  python run_experiment_63.py            # full run (GPU recommended)
 """
 
 import argparse
+import glob
 import json
 import os
 import platform
@@ -211,20 +212,42 @@ class HoldThenExponentialDecay(tf.keras.optimizers.schedules.LearningRateSchedul
 
 def train_dr_pinn(lam, T, n_epochs=40000, n_colloc=2000, lr=2e-3,
                   hidden=128, n_hidden_layers=5, log_every=2000,
-                  val_every=250, n_val=4000, seed=0,
+                  val_every=250, n_val=4000, seed=0, sample_seed=None,
                   hold_steps=5000, decay_steps=3000, decay_rate=0.85,
                   adaptive_fraction=0.3, n_hard_pool=4000,
-                  n_candidate_pool=20000, refine_every=500):
-    """Train with the EXACT-Phi distance-residual loss (eps = 0)."""
+                  n_candidate_pool=20000, refine_every=500,
+                  sampling="adaptive"):
+    """Train with the EXACT-Phi distance-residual loss (eps = 0).
+
+    seed        controls the NETWORK INITIALISATION,
+    sample_seed controls the COLLOCATION SAMPLING stream (defaults to
+                seed + 1000); the two are deliberately independent
+                (referee request: separate init and sampling seeds).
+    sampling    'adaptive'  30% of the batch drawn from a pool of points
+                            with smallest |u_theta| (state-based, as in the
+                            original submission),
+                'uniform'   100% uniform sampling (ablation),
+                'rar'       30% of the batch drawn from a pool of points
+                            with LARGEST distance-residual (residual-based
+                            adaptive refinement, ablation).
+    """
+    if sample_seed is None:
+        sample_seed = seed + 1000
     tf.random.set_seed(seed)
     np.random.seed(seed)
     net = build_mlp(in_dim=3, hidden=hidden, n_hidden_layers=n_hidden_layers)
+    # From here on the global TF stream drives sampling only (the network
+    # weights are already initialised), so re-seed it independently:
+    tf.random.set_seed(sample_seed)
     schedule = HoldThenExponentialDecay(lr, hold_steps, decay_steps,
                                         decay_rate)
     optimizer = tf.keras.optimizers.Adam(learning_rate=schedule)
+    if sampling == "uniform":
+        adaptive_fraction = 0.0
 
-    # Fixed validation set (also reused by the eps-sensitivity check, F2)
-    rng_val = np.random.default_rng(seed + 777)
+    # Fixed validation set, IDENTICAL across all runs/seeds/strategies
+    # (also reused by the eps-sensitivity check, F2)
+    rng_val = np.random.default_rng(20261777)
     t_val = tf.constant(rng_val.uniform(0.0, T, (n_val, 1)), tf.float32)
     x_val = tf.constant(rng_val.uniform(0.0, 1.0, (n_val, 1)), tf.float32)
     y_val = tf.constant(rng_val.uniform(0.0, 1.0, (n_val, 1)), tf.float32)
@@ -251,13 +274,21 @@ def train_dr_pinn(lam, T, n_epochs=40000, n_colloc=2000, lr=2e-3,
         tc = tf.random.uniform((n_candidate_pool, 1), 0.0, T)
         xc = tf.random.uniform((n_candidate_pool, 1), 0.0, 1.0)
         yc = tf.random.uniform((n_candidate_pool, 1), 0.0, 1.0)
-        uc = u_theta(net, tc, xc, yc)
-        idx = tf.argsort(tf.abs(uc[:, 0]))[:n_hard_pool]
+        if sampling == "rar":
+            # residual-based adaptive refinement: keep LARGEST residuals
+            uc, zc = pde_operator(net, tc, xc, yc)
+            score = relay_distance_squared(zc, uc, lam, eps=0.0)[:, 0]
+            idx = tf.argsort(score, direction="DESCENDING")[:n_hard_pool]
+        else:
+            # state-based (original): keep points closest to the free
+            # boundary |u_theta| = 0
+            uc = u_theta(net, tc, xc, yc)
+            idx = tf.argsort(tf.abs(uc[:, 0]))[:n_hard_pool]
         return (tf.gather(tc, idx), tf.gather(xc, idx), tf.gather(yc, idx))
 
     loss_history, val_history = [], []
     for epoch in range(1, n_epochs + 1):
-        if epoch == 1 or epoch % refine_every == 0:
+        if n_adapt > 0 and (epoch == 1 or epoch % refine_every == 0):
             hard_pool = refresh_hard_pool()
         t_u = tf.random.uniform((n_unif, 1), 0.0, T)
         x_u = tf.random.uniform((n_unif, 1), 0.0, 1.0)
@@ -324,218 +355,750 @@ def eps_sensitivity(net, lam, val_points, eps_grid=(0.0, 1e-8, 1e-6, 1e-4)):
     return out, float(max_rel)
 
 
-# ----------------------------------------------------------------------------
-# Stage 1: TRAIN -- all heavy computation; writes results/raw/exp63/
-# (raw_data.npz with every array any figure needs, manifest_63.json with
-# every number any table/macro needs, checkpoints/).  NO figures here.
-# ----------------------------------------------------------------------------
+# ============================================================================
+# Staged pipeline (referee revision):
+#
+#   --stage reference   reference solver + grid/time-step CONVERGENCE study
+#   --stage train       ONE training run:  --lam L --net-seed S
+#                       --sampling {adaptive,uniform,rar}
+#                       (launched in parallel over GPUs by
+#                        scripts/gpu_launcher.py; resumable, one dir per run)
+#   --stage analyze     postprocessing of ALL runs from their checkpoints:
+#                       threshold-crossing metrics t_first / t_persistent,
+#                       rebound, plateau stats, residual distributions on an
+#                       independent 100k-point set, multi-seed aggregation
+#   --stage tables      LaTeX macros + ready-made tabulars
+#   --stage figures     all figures (seconds, from analyze outputs)
+#
+# Terminology (referee): the network never reaches exact zero, so the
+# quantity extracted from a threshold is reported as a THRESHOLD-CROSSING
+# time, not an extinction time.  For each epsilon we report
+#   t_first(eps)      = min{t : ||u(t)|| < eps},
+#   t_persistent(eps) = min{t : ||u(s)|| < eps for all s in [t, T]},
+#   r_post            = max_{t >= t*_ref} ||u(t)||.
+# ============================================================================
 
 EXP = "exp63"
+EPS_GRID = [5e-4, 1e-3, 2e-3, 5e-3]
+REFINEMENT_CONFIGS = [(49, 5e-4), (49, 2.5e-4), (97, 5e-4), (97, 2.5e-4)]
+RESIDUAL_FRONT_THRESHOLD = 0.01     # |u_theta| < 0.01  <=>  "near the front"
 
 
-def stage_train(params):
-    n_epochs = int(params["n_epochs"])
-    ckpt_dir = R.checkpoints_dir(EXP)
-    t_run_start = time.time()
+def _dt_tag(dt):
+    return f"{dt:.1e}".replace("-0", "-").replace("e-", "em")
+
+
+def runs_root():
+    d = os.path.join(R.raw_dir(EXP), "runs")
+    os.makedirs(d, exist_ok=True)
+    return d
+
+
+def run_tag(lam, net_seed, sampling):
+    return f"lam{lam}_s{net_seed}_{sampling}"
+
+
+def run_dir_for(tag):
+    d = os.path.join(runs_root(), tag)
+    os.makedirs(d, exist_ok=True)
+    return d
+
+
+def job_grid(params):
+    """The pre-registered training grid.  Seeds are FIXED IN THE CONFIG
+    (configs/exp63.json) before looking at any results, with the network
+    initialisation seed and the sampling seed decoupled inside
+    train_dr_pinn (sample_seed = net_seed + 1000)."""
+    jobs = []
+    for lam in params["lambdas"]:
+        for seed in params["seeds"]:
+            jobs.append(dict(lam=lam, net_seed=seed, sampling="adaptive"))
+    for sampling in params["ablation_samplings"]:
+        jobs.append(dict(lam=params["ablation_lambda"],
+                         net_seed=params["ablation_seed"],
+                         sampling=sampling))
+    return jobs
+
+
+# ----------------------------------------------------------------------------
+# Stage: REFERENCE -- baseline curves + a-posteriori convergence check of
+# the reference solver (grid refinement 49 -> 97, time step 5e-4 -> 2.5e-4).
+# CPU only, minutes.  (Referee item 1.5.)
+# ----------------------------------------------------------------------------
+
+
+def _interp_to_coarse(u_fine, N_fine, N_coarse):
+    from scipy.interpolate import RegularGridInterpolator
+    hf = 1.0 / (N_fine + 1)
+    hc = 1.0 / (N_coarse + 1)
+    xf = np.linspace(hf, 1 - hf, N_fine)
+    xc = np.linspace(hc, 1 - hc, N_coarse)
+    itp = RegularGridInterpolator((xf, xf), u_fine, bounds_error=False,
+                                  fill_value=None)
+    Xc, Yc = np.meshgrid(xc, xc, indexing="ij")
+    return itp(np.stack([Xc.ravel(), Yc.ravel()], axis=1)).reshape(
+        N_coarse, N_coarse)
+
+
+def stage_reference(params):
+    t0 = time.time()
     raw = {}
+    man = {"generated_utc": datetime.now(timezone.utc).isoformat(),
+           "baseline_config": {"N": REF_N, "dt": REF_DT},
+           "refinement_configs": [list(c) for c in REFINEMENT_CONFIGS],
+           "curves": {}, "refinement": {}}
 
-    # ---- 1. Reference solutions -----------------------------------------
-    print("Reference solver sweep ...")
-    ref = {}
+    # Baseline curves for all lambdas (incl. the lambda = 0 control case)
     for lam in LAMBDA_SWEEP_REF:
         times, norms, u_fin, text, X, Y = run_reference_solver(lam)
-        ref[lam] = dict(times=times, norms=norms, u_final=u_fin, text=text)
-        st = f"t* = {text:.4f}" if text is not None else "not extinguished"
-        print(f"  lambda = {lam}: {st}")
         raw[f"ref_times_{lam}"] = times
         raw[f"ref_norms_{lam}"] = norms
-        raw[f"ref_text_{lam}"] = np.float64(text if text is not None
-                                            else np.nan)
-    raw["ref_ufinal_baseline"] = ref[LAMBDA_BASELINE]["u_final"]
+        raw[f"ref_text_{lam}"] = np.float64(np.nan if text is None else text)
+        man["curves"][str(lam)] = {"t_ext": text}
+        st = f"t* = {text:.4f}" if text is not None else "not extinguished"
+        print(f"  baseline lambda = {lam}: {st}")
+    raw["ref_ufinal_baseline"] = run_reference_solver(LAMBDA_BASELINE)[2]
 
-    # ---- 2. Baseline training (lambda = 0.6, exact Phi) ------------------
-    print(f"\nTraining baseline (lambda = {LAMBDA_BASELINE}, eps = 0) ...")
-    net0, loss_hist0, val_hist0, val_pts0 = train_dr_pinn(
-        lam=LAMBDA_BASELINE, T=T_HORIZON, n_epochs=n_epochs, seed=0)
-    net0.save_weights(os.path.join(
-        ckpt_dir, f"relay_lam{LAMBDA_BASELINE}.weights.h5"))  # (F3)
-    val_loss0 = val_hist0[-1][1] if val_hist0 else loss_hist0[-1]
-    raw["baseline_loss_hist"] = np.asarray(loss_hist0, dtype=np.float64)
-    raw["baseline_val_epochs"] = np.asarray([e for e, _ in val_hist0])
-    raw["baseline_val_vals"] = np.asarray([v for _, v in val_hist0])
-
-    # Training-narrative diagnostics (auto-detected, not hand-quoted):
-    plateau_window = loss_hist0[100:min(4000, len(loss_hist0))]
-    plateau_level = float(np.median(plateau_window)) if plateau_window else 0.0
-    escape_epoch = next(
-        (i for i, v in enumerate(loss_hist0)
-         if plateau_level > 0 and i > 100 and v < plateau_level / 10),
-        None)
-
-    # ---- 3. Validation vs reference (same run, same net) ------------------
-    times_net, l2_net, snaps_net, X, Y = evaluate_network_on_grid(
-        net0, T_HORIZON)
-    r0 = ref[LAMBDA_BASELINE]
-    l2_ref_interp = np.interp(times_net, r0["times"], r0["norms"])
-    norm_disc = float(np.max(np.abs(l2_net - l2_ref_interp))
-                      / (l2_ref_interp.max() + 1e-12))
-    max_pt_err = float(np.abs(snaps_net[-1] - r0["u_final"]).max())
-    post_ext_mask = times_net > (r0["text"] + 0.02) if r0["text"] else None
-    post_ext_plateau = (float(np.median(l2_net[post_ext_mask]))
-                        if post_ext_mask is not None and post_ext_mask.any()
-                        else float("nan"))
-    print(f"  norm discrepancy {norm_disc:.2%}, "
-          f"max pointwise err at T: {max_pt_err:.2e}, "
-          f"post-extinction plateau ~{post_ext_plateau:.1e}")
-    raw["baseline_times_net"] = times_net
-    raw["baseline_l2_net"] = l2_net
-    raw["baseline_snap_final"] = snaps_net[-1]
-
-    # ---- 4. Branch-selection diagnostic data (SAME net; F3) ---------------
-    tf.random.set_seed(1)
-    n_diag = 4000
-    t_d = tf.random.uniform((n_diag, 1), 0.0, T_HORIZON)
-    x_d = tf.random.uniform((n_diag, 1), 0.0, 1.0)
-    y_d = tf.random.uniform((n_diag, 1), 0.0, 1.0)
-    u_d, z_d = pde_operator(net0, t_d, x_d, y_d)
-    s_vals = u_d.numpy().flatten()
-    z_vals = z_d.numpy().flatten()
-    z_front_max = float(np.max(np.abs(z_vals)))
-    raw["diag_s_vals"] = s_vals
-    raw["diag_z_vals"] = z_vals
-
-    # ---- 5. eps-sensitivity check (F2) ------------------------------------
-    eps_vals, eps_max_rel = eps_sensitivity(net0, LAMBDA_BASELINE, val_pts0)
-    print("  eps-sensitivity:",
-          {f"{e:g}": f"{v:.6e}" for e, v in eps_vals.items()},
-          f"max rel dev = {eps_max_rel:.2e}")
-
-    # ---- 6. Sweep over lambda (fixed tolerance) ----------------------------
-    sweep = {}
+    # Convergence study for the main sweep (referee item 1.5): report the
+    # change of t*, of the L2 curve, and of the profile just before
+    # extinction, under grid and time-step refinement.
     for lam in LAMBDA_SWEEP_MAIN:
-        if lam == LAMBDA_BASELINE:
-            net_l, val_l = net0, val_loss0
-            times_l, l2_l = times_net, l2_net
-        else:
-            print(f"\nTraining lambda = {lam} ...")
-            net_l, _, val_hist_l, _ = train_dr_pinn(
-                lam=lam, T=T_HORIZON, n_epochs=n_epochs, seed=0,
-                log_every=8000)
-            net_l.save_weights(os.path.join(ckpt_dir,
-                                            f"relay_lam{lam}.weights.h5"))
-            val_l = val_hist_l[-1][1] if val_hist_l else float("nan")
-            times_l, l2_l, _, _, _ = evaluate_network_on_grid(net_l,
-                                                              T_HORIZON)
-        text_net = detect_extinction(times_l, l2_l)
-        sweep[lam] = dict(text_net=text_net, text_ref=ref[lam]["text"],
-                          val_loss=val_l)
-        raw[f"net_times_{lam}"] = times_l
-        raw[f"net_l2_{lam}"] = l2_l
-        print(f"  lambda={lam}: t*_ref = {ref[lam]['text']}, "
-              f"t*_net = {text_net}, val loss = {val_l:.4e}")
+        base = None
+        man["refinement"][str(lam)] = {}
+        for (N, dt) in REFINEMENT_CONFIGS:
+            times, norms, u_fin, text, _, _ = run_reference_solver(
+                lam, N=N, dt=dt)
+            key = f"N{N}_dt{_dt_tag(dt)}"
+            raw[f"refine_times_{lam}_{key}"] = times
+            raw[f"refine_norms_{lam}_{key}"] = norms
+            t_pre = 0.9 * text if text is not None else 0.9 * T_HORIZON
+            # profile shortly before extinction, on this config's grid
+            u_pre = _profile_at_time(lam, N, dt, t_pre)
+            entry = {"N": N, "dt": dt, "t_ext": text}
+            if base is None:
+                base = {"times": times, "norms": norms, "t_ext": text,
+                        "u_pre": u_pre, "N": N}
+                entry.update(dict(dt_ext_vs_base=0.0, curve_maxdiff=0.0,
+                                  profile_maxdiff=0.0))
+            else:
+                nb = np.interp(base["times"], times, norms)
+                u_cmp = (u_pre if N == base["N"]
+                         else _interp_to_coarse(u_pre, N, base["N"]))
+                entry.update(dict(
+                    dt_ext_vs_base=(None if text is None or
+                                    base["t_ext"] is None
+                                    else text - base["t_ext"]),
+                    curve_maxdiff=float(np.max(np.abs(nb - base["norms"]))),
+                    profile_maxdiff=float(np.max(np.abs(u_cmp
+                                                        - base["u_pre"])))))
+            man["refinement"][str(lam)][key] = entry
+            print(f"  refine lambda={lam} N={N} dt={dt:g}: t*={text}, "
+                  f"d(t*)={entry['dt_ext_vs_base']}, "
+                  f"curve maxdiff={entry['curve_maxdiff']:.2e}")
 
-    # ---- 7. Raw data + manifest -------------------------------------------
-    R.save_raw(EXP, **raw)
+    np.savez_compressed(os.path.join(R.raw_dir(EXP), "reference.npz"), **raw)
+    with open(os.path.join(R.raw_dir(EXP), "reference_manifest.json"),
+              "w") as f:
+        json.dump(man, f, indent=2)
+    print(f"[reference] done in {time.time() - t0:.0f} s.")
+
+
+def _profile_at_time(lam, N, dt, t_stop):
+    """Reference profile u(t_stop) for one solver configuration."""
+    Lap, h = build_laplacian(N)
+    x = np.linspace(h, 1 - h, N)
+    X, Y = np.meshgrid(x, x, indexing="ij")
+    Asys = (sp.identity(N * N, format="csc") - dt * Lap).tocsc()
+    solve = spla.factorized(Asys)
+    u = u0_numpy(X, Y).flatten()
+    n_steps = int(round(t_stop / dt))
+    for _ in range(n_steps):
+        u = soft_threshold(solve(u), dt * lam)
+    return u.reshape(N, N)
+
+
+def load_reference():
+    path = os.path.join(R.raw_dir(EXP), "reference.npz")
+    manp = os.path.join(R.raw_dir(EXP), "reference_manifest.json")
+    if not (os.path.exists(path) and os.path.exists(manp)):
+        raise FileNotFoundError(
+            "reference outputs not found -- run "
+            "`python3 experiments/run_experiment_63.py --stage reference`")
+    with open(manp) as f:
+        man = json.load(f)
+    return np.load(path), man
+
+
+# ----------------------------------------------------------------------------
+# Stage: TRAIN -- ONE run (one lambda, one seed, one sampling strategy).
+# Designed to be launched many times in parallel by scripts/gpu_launcher.py
+# (one process per GPU).  Writes results/raw/exp63/runs/<tag>/.
+# ----------------------------------------------------------------------------
+
+
+def _setup_gpu():
+    """Never grab the whole card: the 4x10GB machine is shared."""
+    for g in tf.config.list_physical_devices("GPU"):
+        try:
+            tf.config.experimental.set_memory_growth(g, True)
+        except Exception:
+            pass
+
+
+def stage_train_single(params, lam, net_seed, sampling):
+    _setup_gpu()
+    tag = run_tag(lam, net_seed, sampling)
+    rdir = run_dir_for(tag)
+    done_marker = os.path.join(rdir, "run.json")
+    if os.path.exists(done_marker):
+        with open(done_marker) as f:
+            if json.load(f).get("status") == "done":
+                print(f"[train {tag}] already done -- skipping.")
+                return
+
+    n_epochs = int(params["n_epochs"])
+    print(f"[train {tag}] n_epochs={n_epochs}, "
+          f"net_seed={net_seed}, sample_seed={net_seed + 1000}, "
+          f"sampling={sampling}")
+    t0 = time.time()
+    net, loss_hist, val_hist, _ = train_dr_pinn(
+        lam=lam, T=T_HORIZON, n_epochs=n_epochs,
+        seed=net_seed, sample_seed=net_seed + 1000, sampling=sampling)
+    train_seconds = time.time() - t0
+    net.save_weights(os.path.join(rdir, "net.weights.h5"))
+
+    times, l2, snaps, _, _ = evaluate_network_on_grid(net, T_HORIZON)
+    val_loss = val_hist[-1][1] if val_hist else float("nan")
+
+    np.savez_compressed(
+        os.path.join(rdir, "run.npz"),
+        loss_hist=np.asarray(loss_hist, dtype=np.float64),
+        val_epochs=np.asarray([e for e, _ in val_hist]),
+        val_vals=np.asarray([v for _, v in val_hist]),
+        times=times, l2=l2, snap_final=snaps[-1])
+    with open(done_marker, "w") as f:
+        json.dump({
+            "status": "done", "tag": tag, "lam": lam,
+            "net_seed": net_seed, "sample_seed": net_seed + 1000,
+            "sampling": sampling, "n_epochs": n_epochs,
+            "val_loss": float(val_loss),
+            "train_seconds": train_seconds,
+            "generated_utc": datetime.now(timezone.utc).isoformat(),
+            "hardware": R.hardware_string(),
+            "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES",
+                                                   "<unset>"),
+            "versions": {"python": platform.python_version(),
+                         "numpy": np.__version__,
+                         "tensorflow": tf.__version__},
+        }, f, indent=2)
+    print(f"[train {tag}] done in {train_seconds:.0f} s, "
+          f"val loss = {val_loss:.4e}")
+
+
+# ----------------------------------------------------------------------------
+# Stage: ANALYZE -- postprocessing of every finished run FROM ITS CHECKPOINT.
+# No retraining.  (Referee items 1.1, 1.2, 1.4, 1.6, 2.)
+# ----------------------------------------------------------------------------
+
+
+def threshold_metrics(times, l2, eps, text_ref):
+    """t_first, t_persistent, rebound after first crossing; plus min-norm
+    and post-t*_ref statistics (eps-independent)."""
+    below = l2 < eps
+    idx = np.where(below)[0]
+    t_first = float(times[idx[0]]) if len(idx) else None
+    # persistent: from the first index such that all later values are below
+    t_persistent = None
+    if below[-1]:
+        k = len(below) - 1
+        while k >= 0 and below[k]:
+            k -= 1
+        t_persistent = float(times[k + 1])
+    rebound = float(np.max(l2[idx[0]:])) if len(idx) else None
+    out = {"eps": eps, "t_first": t_first, "t_persistent": t_persistent,
+           "rebound_after_first_crossing": rebound}
+    return out
+
+
+def norm_curve_stats(times, l2, text_ref):
+    stats = {"min_norm": float(np.min(l2)),
+             "t_argmin": float(times[int(np.argmin(l2))])}
+    if text_ref is not None:
+        m = times >= text_ref
+        if m.any():
+            post = l2[m]
+            stats["post_ref_max"] = float(np.max(post))       # r_post
+            stats["post_ref_median"] = float(np.median(post))
+            stats["post_ref_min"] = float(np.min(post))
+    return stats
+
+
+def residual_statistics(net, lam, n_points, batch, seed=20260999):
+    """Pointwise distance residual r = dist(z, Phi(s)) on an INDEPENDENT
+    freshly sampled set (identical across runs), split near/away from the
+    free boundary |u_theta| < 0.01.  (Referee item 1.4.)"""
+    rng = np.random.default_rng(seed)
+    t_np = rng.uniform(0.0, T_HORIZON, (n_points, 1)).astype(np.float32)
+    x_np = rng.uniform(0.0, 1.0, (n_points, 1)).astype(np.float32)
+    y_np = rng.uniform(0.0, 1.0, (n_points, 1)).astype(np.float32)
+    rs, us = [], []
+    for k in range(0, n_points, batch):
+        tb = tf.constant(t_np[k:k + batch])
+        xb = tf.constant(x_np[k:k + batch])
+        yb = tf.constant(y_np[k:k + batch])
+        u, z = pde_operator(net, tb, xb, yb)
+        d2 = relay_distance_squared(z, u, lam, eps=0.0)
+        rs.append(np.sqrt(np.maximum(d2.numpy()[:, 0], 0.0)))
+        us.append(u.numpy()[:, 0])
+    r = np.concatenate(rs)
+    u = np.concatenate(us)
+    front = np.abs(u) < RESIDUAL_FRONT_THRESHOLD
+
+    def _s(v):
+        if len(v) == 0:
+            return {"n": 0}
+        return {"n": int(len(v)), "mean": float(np.mean(v)),
+                "rms": float(np.sqrt(np.mean(v ** 2))),
+                "median": float(np.median(v)),
+                "p90": float(np.percentile(v, 90)),
+                "p95": float(np.percentile(v, 95)),
+                "p99": float(np.percentile(v, 99)),
+                "max": float(np.max(v))}
+
+    stats = {"global": _s(r), "front": _s(r[front]),
+             "away": _s(r[~front]),
+             "front_threshold": RESIDUAL_FRONT_THRESHOLD,
+             "front_fraction": float(np.mean(front))}
+    return stats, r, front
+
+
+def _load_net_from_run(rdir):
+    net = build_mlp()
+    # build variables with a dummy forward pass, then load
+    z = tf.zeros((1, 1), tf.float32)
+    u_theta(net, z, z, z)
+    net.load_weights(os.path.join(rdir, "net.weights.h5"))
+    return net
+
+
+def _agg(vals):
+    v = [x for x in vals if x is not None and np.isfinite(x)]
+    if not v:
+        return {"n": 0}
+    return {"n": len(v), "median": float(np.median(v)),
+            "min": float(np.min(v)), "max": float(np.max(v))}
+
+
+def stage_analyze(params):
+    _setup_gpu()
+    t0 = time.time()
+    ref_raw, ref_man = load_reference()
+    n_res = int(params["n_residual_points"])
+    res_batch = int(params["residual_batch"])
+
+    run_jsons = sorted(glob.glob(os.path.join(runs_root(), "*", "run.json")))
+    runs = []
+    for rj in run_jsons:
+        with open(rj) as f:
+            meta = json.load(f)
+        if meta.get("status") == "done":
+            runs.append(meta)
+    if not runs:
+        raise FileNotFoundError(
+            "no finished runs under results/raw/exp63/runs/ -- launch the "
+            "training grid first (python3 scripts/gpu_launcher.py)")
+    print(f"[analyze] {len(runs)} finished runs found")
+
+    fig_raw = {}   # arrays for the figures stage
+    per_run = {}
+    for meta in runs:
+        tag = meta["tag"]
+        lam = meta["lam"]
+        rdir = run_dir_for(tag)
+        d = np.load(os.path.join(rdir, "run.npz"))
+        text_ref = ref_man["curves"][str(lam)]["t_ext"]
+        times, l2 = d["times"], d["l2"]
+
+        thr = {f"{eps:g}": threshold_metrics(times, l2, eps, text_ref)
+               for eps in EPS_GRID}
+        curve = norm_curve_stats(times, l2, text_ref)
+
+        print(f"  {tag}: residual stats on {n_res} fresh points ...")
+        net = _load_net_from_run(rdir)
+        res, r, front = residual_statistics(net, lam, n_res, res_batch)
+
+        analysis = {"tag": tag, "lam": lam, "sampling": meta["sampling"],
+                    "net_seed": meta["net_seed"],
+                    "val_loss": meta["val_loss"],
+                    "train_seconds": meta.get("train_seconds"),
+                    "t_ext_ref": text_ref,
+                    "thresholds": thr, "norm_curve": curve,
+                    "residuals": res}
+        with open(os.path.join(rdir, "analysis.json"), "w") as f:
+            json.dump(analysis, f, indent=2)
+        per_run[tag] = analysis
+
+        fig_raw[f"curve_times_{tag}"] = times
+        fig_raw[f"curve_l2_{tag}"] = l2
+        rng_sub = np.random.default_rng(7)
+        for name, mask in (("front", front), ("away", ~front)):
+            v = r[mask]
+            if len(v) > 5000:
+                v = rng_sub.choice(v, 5000, replace=False)
+            fig_raw[f"res_{name}_{tag}"] = v
+
+    # ---- multi-seed aggregation per (lambda, sampling) --------------------
+    def sel(lam, sampling):
+        return [a for a in per_run.values()
+                if a["lam"] == lam and a["sampling"] == sampling]
+
+    aggregated = {}
+    for lam in params["lambdas"]:
+        rs = sel(lam, "adaptive")
+        entry = {"n_runs": len(rs),
+                 "seeds": sorted(a["net_seed"] for a in rs),
+                 "n_failed": 0,
+                 "val_loss": _agg([a["val_loss"] for a in rs]),
+                 "rms_global": _agg([a["residuals"]["global"].get("rms")
+                                     for a in rs]),
+                 "post_ref_max": _agg([a["norm_curve"].get("post_ref_max")
+                                       for a in rs]),
+                 "min_norm": _agg([a["norm_curve"]["min_norm"]
+                                   for a in rs])}
+        for eps in EPS_GRID:
+            k = f"{eps:g}"
+            entry[f"t_first_{k}"] = _agg(
+                [a["thresholds"][k]["t_first"] for a in rs])
+            entry[f"t_persistent_{k}"] = _agg(
+                [a["thresholds"][k]["t_persistent"] for a in rs])
+            entry[f"n_no_persistent_{k}"] = sum(
+                1 for a in rs if a["thresholds"][k]["t_persistent"] is None)
+        aggregated[str(lam)] = entry
+
+    # ---- diagnostics tied to ONE representative checkpoint ----------------
+    # median-val-loss adaptive run for the baseline lambda; the branch
+    # diagnostic and the eps-sensitivity check are recomputed from its
+    # saved weights (no retraining).
+    base_runs = sorted(sel(LAMBDA_BASELINE, "adaptive"),
+                       key=lambda a: a["val_loss"])
+    rep = base_runs[len(base_runs) // 2] if base_runs else None
+    eps_sens = None
+    if rep is not None:
+        rep_dir = run_dir_for(rep["tag"])
+        net = _load_net_from_run(rep_dir)
+        tf.random.set_seed(1)
+        n_diag = 4000
+        t_d = tf.random.uniform((n_diag, 1), 0.0, T_HORIZON)
+        x_d = tf.random.uniform((n_diag, 1), 0.0, 1.0)
+        y_d = tf.random.uniform((n_diag, 1), 0.0, 1.0)
+        u_d, z_d = pde_operator(net, t_d, x_d, y_d)
+        fig_raw["diag_s_vals"] = u_d.numpy().flatten()
+        fig_raw["diag_z_vals"] = z_d.numpy().flatten()
+        fig_raw["rep_snap_final"] = np.load(
+            os.path.join(rep_dir, "run.npz"))["snap_final"]
+        rng_val = np.random.default_rng(20261777)
+        val_pts = tuple(tf.constant(rng_val.uniform(lo, hi, (4000, 1)),
+                                    tf.float32)
+                        for lo, hi in ((0.0, T_HORIZON), (0.0, 1.0),
+                                       (0.0, 1.0)))
+        vals, max_rel = eps_sensitivity(net, LAMBDA_BASELINE, val_pts)
+        eps_sens = {"values": {f"{k:g}": v for k, v in vals.items()},
+                    "max_rel_dev": max_rel}
+        # legacy single-run diagnostics for the representative checkpoint
+        # (kept so the current manuscript still compiles; the multi-seed
+        # aggregates supersede them in the revised text)
+        rep_npz = np.load(os.path.join(rep_dir, "run.npz"))
+        lh = rep_npz["loss_hist"]
+        plateau_window = lh[100:min(4000, len(lh))]
+        plateau_level = (float(np.median(plateau_window))
+                         if len(plateau_window) else 0.0)
+        escape_epoch = next(
+            (int(i) for i, v in enumerate(lh)
+             if plateau_level > 0 and i > 100 and v < plateau_level / 10),
+            None)
+        tr = ref_raw[f"ref_times_{LAMBDA_BASELINE}"]
+        nr = ref_raw[f"ref_norms_{LAMBDA_BASELINE}"]
+        l2i = np.interp(rep_npz["times"], tr, nr)
+        rep_metrics = {
+            "plateau_level": plateau_level,
+            "escape_epoch": escape_epoch,
+            "norm_disc": float(np.max(np.abs(rep_npz["l2"] - l2i))
+                               / (l2i.max() + 1e-12)),
+            "max_pt_err": float(np.abs(rep_npz["snap_final"]
+                                       - ref_raw["ref_ufinal_baseline"])
+                                .max()),
+            "z_front_max": float(np.max(np.abs(fig_raw["diag_z_vals"]))),
+        }
 
     manifest = {
-        "script": "run_experiment_63.py",
+        "script": "run_experiment_63.py --stage analyze",
         "generated_utc": datetime.now(timezone.utc).isoformat(),
-        "runtime_seconds": time.time() - t_run_start,
+        "runtime_seconds": time.time() - t0,
+        "n_epochs": int(params["n_epochs"]),
         "smoke": bool(params.get("_smoke", False)),
-        "n_epochs": n_epochs,
-        "eps_training": 0.0,
-        "extinction_tolerance": EXTINCTION_TOL,
-        "eval_time_step": T_HORIZON / (EVAL_N_TIMES - 1),
+        "hardware": R.hardware_string(),
         "versions": {"python": platform.python_version(),
                      "numpy": np.__version__,
-                     "scipy": scipy.__version__,
                      "tensorflow": tf.__version__},
-        "hardware": R.hardware_string(),
-        "reference_extinction_times": {str(l): ref[l]["text"]
-                                       for l in LAMBDA_SWEEP_REF},
-        "baseline": {"val_loss": float(val_loss0), "norm_disc": norm_disc,
-                     "max_pt_err": max_pt_err,
-                     "post_ext_plateau": post_ext_plateau,
-                     "plateau_level": plateau_level,
-                     "escape_epoch": escape_epoch,
-                     "z_front_max": z_front_max},
-        "eps_sensitivity": {"values": {str(k): v for k, v in eps_vals.items()},
-                            "max_rel_dev": eps_max_rel},
-        "sweep": {str(l): {"t_ref": sweep[l]["text_ref"],
-                           "t_net": sweep[l]["text_net"],
-                           "val_loss": float(sweep[l]["val_loss"])}
-                  for l in LAMBDA_SWEEP_MAIN},
+        "eps_grid": EPS_GRID,
+        "n_residual_points": n_res,
+        "extinction_tolerance_paper": EXTINCTION_TOL,
+        "eval_time_step": T_HORIZON / (EVAL_N_TIMES - 1),
+        "reference": ref_man,
+        "representative_run": rep["tag"] if rep else None,
+        "representative_metrics": rep_metrics if rep is not None else None,
+        "eps_sensitivity": eps_sens,
+        "runs": per_run,
+        "aggregated": aggregated,
     }
     R.save_manifest(EXP, manifest, "63")
-    print(f"\n[train] done in {time.time() - t_run_start:.0f} s.")
+    np.savez_compressed(os.path.join(R.raw_dir(EXP), "analysis.npz"),
+                        **{k: np.asarray(v) for k, v in fig_raw.items()})
+    print(f"[analyze] done in {time.time() - t0:.0f} s.")
 
 
 # ----------------------------------------------------------------------------
-# Stage 2: TABLES -- results/aggregated/results_63.tex from the manifest.
+# Stage: TABLES -- LaTeX macros + ready-made tabulars in results/aggregated/.
+# Honest terminology: "threshold-crossing time", never "extinction time".
 # ----------------------------------------------------------------------------
 
+NO_PERSISTENT = r"no persistent ext.\ before $T$"
 
-def stage_tables():
+
+def _fmt_med_range(agg, digits=4, none_text="--"):
+    if agg.get("n", 0) == 0:
+        return none_text
+    if agg["n"] == 1:
+        return f"{agg['median']:.{digits}f}"
+    return (f"{agg['median']:.{digits}f} "
+            f"[{agg['min']:.{digits}f}, {agg['max']:.{digits}f}]")
+
+
+def stage_tables(params):
     man = R.load_manifest(EXP, "63")
-    base = man["baseline"]
-    sweep = man["sweep"]
+    agg = man["aggregated"]
+    runs = man["runs"]
+    ref = man["reference"]
+    out = R.aggregated_dir()
 
-    def relerr(lam):
-        tr, tn = sweep[str(lam)]["t_ref"], sweep[str(lam)]["t_net"]
-        if tr is None or tn is None:
-            return None
-        return abs(tn - tr) / tr
+    # ---- macros ------------------------------------------------------------
+    macros = {}
+    for lam, key in zip(params["lambdas"], ["A", "B", "C"]):
+        a = agg[str(lam)]
+        macros[f"RelayTRef{key}"] = \
+            f"{ref['curves'][str(lam)]['t_ext']:.4f}"
+        macros[f"RelayTFirst{key}"] = _fmt_med_range(a["t_first_0.001"])
+        tp = a["t_persistent_0.001"]
+        macros[f"RelayTPersist{key}"] = (
+            _fmt_med_range(tp) if tp.get("n", 0) > 0 else NO_PERSISTENT)
+        macros[f"RelayNoPersist{key}"] = str(a["n_no_persistent_0.001"])
+        macros[f"RelayRPost{key}"] = (
+            R.sci_tex(a["post_ref_max"]["median"])
+            if a["post_ref_max"].get("n") else r"\text{--}")
+        macros[f"RelayValLoss{key}"] = (
+            R.sci_tex(a["val_loss"]["median"])
+            if a["val_loss"].get("n") else r"\text{--}")
+        macros[f"RelayNSeeds{key}"] = str(a["n_runs"])
+    macros["RelaySeedList"] = ", ".join(
+        str(s) for s in agg[str(params['lambdas'][0])]["seeds"])
+    macros["RelayEpochs"] = f"{man['n_epochs']:,}".replace(",", r"\,")
+    macros["RelayNResPoints"] = \
+        f"{man['n_residual_points']:,}".replace(",", r"\,")
+    if man.get("eps_sensitivity"):
+        macros["RelayEpsSens"] = R.sci_tex(
+            man["eps_sensitivity"]["max_rel_dev"])
+    if man.get("representative_run"):
+        macros["RelayRepRun"] = man["representative_run"].replace("_", r"\_")
 
-    macros = {
-        "RelayValLoss": R.sci_tex(base["val_loss"]),  # math-mode body
-        "RelayRMS": f"{np.sqrt(base['val_loss']):.2f}",
-        "RelayPlateauLevel": f"{base['plateau_level']:.0f}",
-        "RelayEscapeEpoch": (f"{base['escape_epoch']:,}".replace(",", r"\,")
-                             if base["escape_epoch"] else "--"),
-        "RelayNormDisc": f"{base['norm_disc']*100:.2f}\\%",
-        "RelayMaxPtErr": R.sci_tex(base["max_pt_err"]),
-        "RelayPostExtPlateau": rf"\approx{R.sci_tex(base['post_ext_plateau'], 0)}",
-        "RelayZFrontMax": f"{base['z_front_max']:.0f}",
-        "RelayTRefBase": f"{man['reference_extinction_times'][str(LAMBDA_BASELINE)]:.4f}",
-        "RelayEpsSens": (R.sci_tex(man["eps_sensitivity"]["max_rel_dev"])
-                         if man["eps_sensitivity"]["max_rel_dev"] > 0 else "0"),
-    }
-    for lam, key in zip(LAMBDA_SWEEP_MAIN, ["A", "B", "C"]):
-        s = sweep[str(lam)]
-        macros[f"RelayTRef{key}"] = f"{s['t_ref']:.4f}"
-        macros[f"RelayTNet{key}"] = (f"{s['t_net']:.4f}"
-                                     if s["t_net"] else "--")
-        re_ = relerr(lam)
-        macros[f"RelayRelErr{key}"] = (f"${re_*100:.1f}\\%$"
-                                       if re_ is not None else "--")
-    abs_errs = [abs(sweep[str(l)]["t_net"] - sweep[str(l)]["t_ref"])
-                for l in LAMBDA_SWEEP_MAIN
-                if sweep[str(l)]["t_net"] and sweep[str(l)]["t_ref"]]
+    # ---- legacy aliases so the CURRENT manuscript keeps compiling ----------
+    # (values are the HONEST multi-seed / representative-run quantities;
+    # the revised text should switch to the new macro names above)
+    rm = man.get("representative_metrics") or {}
+    base = agg[str(LAMBDA_BASELINE)]
+    if base["val_loss"].get("n"):
+        macros["RelayValLoss"] = R.sci_tex(base["val_loss"]["median"])
+        macros["RelayRMS"] = f"{np.sqrt(base['val_loss']['median']):.2f}"
+    if rm:
+        macros["RelayPlateauLevel"] = f"{rm['plateau_level']:.0f}"
+        macros["RelayEscapeEpoch"] = (
+            f"{rm['escape_epoch']:,}".replace(",", r"\,")
+            if rm.get("escape_epoch") else "--")
+        macros["RelayNormDisc"] = f"{rm['norm_disc'] * 100:.2f}" + r"\%"
+        macros["RelayMaxPtErr"] = R.sci_tex(rm["max_pt_err"])
+        macros["RelayZFrontMax"] = f"{rm['z_front_max']:.0f}"
+    if base["post_ref_max"].get("n"):
+        macros["RelayPostExtPlateau"] = (
+            r"\approx" + R.sci_tex(base["post_ref_max"]["median"], 0))
+    macros["RelayTRefBase"] =         f"{ref['curves'][str(LAMBDA_BASELINE)]['t_ext']:.4f}"
+    abs_errs = []
+    for lam, key in zip(params["lambdas"], ["A", "B", "C"]):
+        a = agg[str(lam)]["t_first_0.001"]
+        t_ext = ref["curves"][str(lam)]["t_ext"]
+        if a.get("n") and t_ext:
+            macros[f"RelayTNet{key}"] = f"{a['median']:.4f}"
+            rel = abs(a["median"] - t_ext) / t_ext
+            macros[f"RelayRelErr{key}"] = f"${rel * 100:.1f}" + r"\%$"
+            abs_errs.append(abs(a["median"] - t_ext))
+        else:
+            macros[f"RelayTNet{key}"] = "--"
+            macros[f"RelayRelErr{key}"] = "--"
     if abs_errs:
         macros["RelayAbsErrMin"] = f"{min(abs_errs):.3f}"
         macros["RelayAbsErrMax"] = f"{max(abs_errs):.3f}"
 
-    out = R.aggregated_dir()
+    # solver convergence deltas (worst over lambdas, finest vs baseline)
+    fin_key = f"N97_dt{_dt_tag(2.5e-4)}"
+    dts, curves = [], []
+    for lam in params["lambdas"]:
+        e = ref["refinement"][str(lam)].get(fin_key)
+        if e:
+            if e["dt_ext_vs_base"] is not None:
+                dts.append(abs(e["dt_ext_vs_base"]))
+            curves.append(e["curve_maxdiff"])
+    if dts:
+        macros["RelaySolverDtExtMax"] = f"{max(dts):.4f}"
+    if curves:
+        macros["RelaySolverCurveMax"] = R.sci_tex(max(curves))
+
+    # ablation macros (same seed, lambda = ablation_lambda)
+    ab_lam = params["ablation_lambda"]
+    ab_seed = params["ablation_seed"]
+    for sampling, key in (("adaptive", "Adap"), ("uniform", "Unif"),
+                          ("rar", "Rar")):
+        a = runs.get(run_tag(ab_lam, ab_seed, sampling))
+        if a is None:
+            continue
+        macros[f"RelayAbl{key}ValLoss"] = R.sci_tex(a["val_loss"])
+        macros[f"RelayAbl{key}RMSFront"] = R.sci_tex(
+            a["residuals"]["front"].get("rms"))
+        tf_ = a["thresholds"]["0.001"]["t_first"]
+        macros[f"RelayAbl{key}TFirst"] = (f"{tf_:.4f}" if tf_ else "--")
+
     R.write_macros(os.path.join(out, "results_63.tex"), macros,
                    "run_experiment_63.py --stage tables")
+
+    # ---- ready-made tabulars ----------------------------------------------
+    def tab(fname, header, rows, caption_comment):
+        with open(os.path.join(out, fname), "w") as f:
+            f.write(f"% AUTO-GENERATED -- {caption_comment}\n")
+            f.write(r"\begin{tabular}{" + header[0] + "}\n\\toprule\n")
+            f.write(header[1] + r" \\" + "\n\\midrule\n")
+            for r_ in rows:
+                f.write(r_ + r" \\" + "\n")
+            f.write("\\bottomrule\n\\end{tabular}\n")
+        print(f"Wrote {os.path.join(out, fname)}")
+
+    # Table: threshold sensitivity (per lambda, adaptive runs, median[range])
+    rows = []
+    for lam in params["lambdas"]:
+        a = agg[str(lam)]
+        for eps in EPS_GRID:
+            k = f"{eps:g}"
+            tp = a[f"t_persistent_{k}"]
+            rows.append(
+                rf"${lam}$ & ${R.sci_tex(eps, 0)}$ & "
+                f"{_fmt_med_range(a[f't_first_{k}'])} & "
+                + (f"{_fmt_med_range(tp)}" if tp.get("n", 0) > 0
+                   else NO_PERSISTENT)
+                + f" & {a[f'n_no_persistent_{k}']}/{a['n_runs']}")
+    tab("table_63_thresholds.tex",
+        ("llllc",
+         r"$\lambda$ & $\varepsilon$ & $t_{\mathrm{first}}$ & "
+         r"$t_{\mathrm{persistent}}$ & no pers."),
+        rows, "threshold sensitivity (referee item 1.2)")
+
+    # Table: residual distribution per lambda (median run per lambda)
+    rows = []
+    for lam in params["lambdas"]:
+        rs = sorted([a for a in runs.values()
+                     if a["lam"] == lam and a["sampling"] == "adaptive"],
+                    key=lambda a: a["val_loss"])
+        if not rs:
+            continue
+        a = rs[len(rs) // 2]["residuals"]
+        rows.append(
+            rf"${lam}$ & ${R.sci_tex(a['global']['rms'])}$ & "
+            rf"${R.sci_tex(a['global']['p95'])}$ & "
+            rf"${R.sci_tex(a['global']['max'])}$ & "
+            rf"${R.sci_tex(a['front']['rms'])}$ & "
+            rf"${R.sci_tex(a['away']['rms'])}$")
+    tab("table_63_residuals.tex",
+        ("lccccc",
+         r"$\lambda$ & RMS & $p_{95}$ & max & RMS front & RMS away"),
+        rows, "residual distribution on independent points "
+              "(referee item 1.4; front = $|u_\\theta|<0.01$)")
+
+    # Table: per-run (seed) results
+    rows = []
+    for a in sorted(runs.values(),
+                    key=lambda a: (a["lam"], a["sampling"], a["net_seed"])):
+        t1 = a["thresholds"]["0.001"]
+        rows.append(
+            rf"${a['lam']}$ & {a['sampling']} & {a['net_seed']} & "
+            rf"${R.sci_tex(a['val_loss'])}$ & "
+            + (f"{t1['t_first']:.4f}" if t1["t_first"] else "--") + " & "
+            + (f"{t1['t_persistent']:.4f}" if t1["t_persistent"]
+               else NO_PERSISTENT) + " & "
+            + (f"${R.sci_tex(a['norm_curve'].get('post_ref_max'))}$"
+               if a["norm_curve"].get("post_ref_max") is not None else "--"))
+    tab("table_63_runs.tex",
+        ("llccccc",
+         r"$\lambda$ & sampling & seed & val.\ loss & "
+         r"$t_{\mathrm{first}}(10^{-3})$ & $t_{\mathrm{persistent}}$ & "
+         r"$r_{\mathrm{post}}$"),
+        rows, "per-run results (referee item 2)")
+
+    # Table: reference-solver convergence
+    rows = []
+    for lam in params["lambdas"]:
+        for key, e in ref["refinement"][str(lam)].items():
+            rows.append(
+                rf"${lam}$ & ${e['N']}\times{e['N']}$ & ${e['dt']:g}$ & "
+                + (f"{e['t_ext']:.4f}" if e["t_ext"] else "--") + " & "
+                + (f"{e['dt_ext_vs_base']:+.4f}"
+                   if e["dt_ext_vs_base"] is not None else "--") + " & "
+                rf"${R.sci_tex(e['curve_maxdiff'])}$ & "
+                rf"${R.sci_tex(e['profile_maxdiff'])}$")
+    tab("table_63_solver_convergence.tex",
+        ("lcccccc",
+         r"$\lambda$ & grid & $\Delta t$ & $t^*$ & $\Delta t^*$ & "
+         r"$\max|\Delta\|u\||$ & $\max|\Delta u_{\mathrm{pre}}|$"),
+        rows, "reference-solver convergence (referee item 1.5)")
+
+    # Table: plateau statistics after t*_ref (referee item 1.6)
+    rows = []
+    for a in sorted(runs.values(),
+                    key=lambda a: (a["lam"], a["sampling"], a["net_seed"])):
+        nc = a["norm_curve"]
+        if "post_ref_median" not in nc:
+            continue
+        rows.append(
+            rf"${a['lam']}$ & {a['sampling']} & {a['net_seed']} & "
+            rf"${R.sci_tex(nc['post_ref_median'])}$ & "
+            rf"${R.sci_tex(nc['post_ref_min'])}$ & "
+            rf"${R.sci_tex(nc['post_ref_max'])}$")
+    tab("table_63_plateau.tex",
+        ("llcccc",
+         r"$\lambda$ & sampling & seed & median & min & max"),
+        rows, r"$\|u_\theta(t)\|$ for $t \ge t^*_{\mathrm{ref}}$ "
+              "(referee item 1.6)")
+
     with open(os.path.join(out, "manifest_63.json"), "w") as f:
         json.dump(man, f, indent=2)
 
 
 # ----------------------------------------------------------------------------
-# Stage 3: FIGURES -- all Section 6.3 figures from raw_data.npz (seconds,
-# no TensorFlow computation, no retraining).
+# Stage: FIGURES -- from reference.npz + analysis.npz (seconds).
 # ----------------------------------------------------------------------------
 
 
-def _ref(raw, lam):
-    text = float(raw[f"ref_text_{lam}"])
-    return (raw[f"ref_times_{lam}"], raw[f"ref_norms_{lam}"],
+def _refc(ref_raw, lam):
+    text = float(ref_raw[f"ref_text_{lam}"])
+    return (ref_raw[f"ref_times_{lam}"], ref_raw[f"ref_norms_{lam}"],
             None if np.isnan(text) else text)
 
 
 def plot_phi_graph(ax, lam, s_min, s_max, lw=2, label=r"graph of $\Phi$"):
-    """Three-branch relay graph on [s_min, s_max]."""
     if s_max > 0:
         ax.plot([max(s_min, 0), s_max], [-lam, -lam], color="tab:red", lw=lw,
                 label=label, zorder=3)
@@ -547,22 +1110,28 @@ def plot_phi_graph(ax, lam, s_min, s_max, lw=2, label=r"graph of $\Phi$"):
     ax.plot([0, 0], [-lam, lam], color="tab:red", lw=lw, label=label, zorder=3)
 
 
-def stage_figures():
-    raw = R.load_raw(EXP)
+def stage_figures(params):
+    ref_raw, ref_man = load_reference()
+    ana = np.load(os.path.join(R.raw_dir(EXP), "analysis.npz"))
+    man = R.load_manifest(EXP, "63")
     fig_dir = R.figures_dir()
+    runs = man["runs"]
 
-    # ---- Figure: reference_extinction_curves ------------------------------
+    def tags(lam, sampling="adaptive"):
+        return sorted(t for t, a in runs.items()
+                      if a["lam"] == lam and a["sampling"] == sampling)
+
+    # ---- reference_extinction_curves (unchanged) ---------------------------
     fig, ax = plt.subplots(figsize=(6.5, 4.5))
     for lam in LAMBDA_SWEEP_REF:
-        times, norms, text = _ref(raw, lam)
+        times, norms, text = _refc(ref_raw, lam)
         label = rf"$\lambda={lam}$" + (" (heat eq.)" if lam == 0.0 else "")
         ax.semilogy(times, np.maximum(norms, 1e-16),
                     color=LAMBDA_COLORS[lam], lw=2, label=label)
         if text is not None:
             ax.axvline(text, color=LAMBDA_COLORS[lam], ls=":", lw=0.9,
                        alpha=0.8)
-            ax.annotate(rf"$t^*={text:.4f}$",
-                        xy=(text, NORM_FLOOR * 4),
+            ax.annotate(rf"$t^*={text:.4f}$", xy=(text, NORM_FLOOR * 4),
                         xytext=(text + 0.004, NORM_FLOOR * 4),
                         fontsize=10, color=LAMBDA_COLORS[lam], rotation=90,
                         va="bottom")
@@ -576,31 +1145,37 @@ def stage_figures():
                 dpi=180)
     plt.close(fig)
 
-    # ---- Figure: training_history_relay -----------------------------------
-    fig, ax = plt.subplots(figsize=(7, 4.5))
-    ax.semilogy(raw["baseline_loss_hist"], color="lightsteelblue", lw=0.8,
-                label="training loss (per step)", rasterized=True)
-    ax.semilogy(raw["baseline_val_epochs"], raw["baseline_val_vals"],
-                color="tab:red", lw=1.6, marker="o", markersize=2.5,
-                label="validation loss (fixed batch)")
-    ax.axvline(5000, color="0.4", ls="--", lw=0.9)
-    ax.set_xlabel("Epoch")
-    ax.set_ylabel(r"$\mathcal{L}_{\mathrm{incl}}(\theta)$")
-    ax.grid(True, which="major", alpha=0.25)
-    ax.legend()
-    fig.tight_layout()
-    fig.savefig(os.path.join(fig_dir, "training_history_relay.png"), dpi=180)
-    plt.close(fig)
+    rep_tag = man.get("representative_run")
 
-    # ---- Figure: dr_pinn_vs_reference -------------------------------------
-    times_ref, norms_ref, text_ref = _ref(raw, LAMBDA_BASELINE)
-    times_net = raw["baseline_times_net"]
-    l2_net = raw["baseline_l2_net"]
+    # ---- training_history_relay (representative run) -----------------------
+    if rep_tag:
+        d = np.load(os.path.join(run_dir_for(rep_tag), "run.npz"))
+        fig, ax = plt.subplots(figsize=(7, 4.5))
+        ax.semilogy(d["loss_hist"], color="lightsteelblue", lw=0.8,
+                    label="training loss (per step)", rasterized=True)
+        ax.semilogy(d["val_epochs"], d["val_vals"], color="tab:red", lw=1.6,
+                    marker="o", markersize=2.5,
+                    label="validation loss (fixed batch)")
+        ax.axvline(5000, color="0.4", ls="--", lw=0.9)
+        ax.set_xlabel("Epoch")
+        ax.set_ylabel(r"$\mathcal{L}_{\mathrm{incl}}(\theta)$")
+        ax.grid(True, which="major", alpha=0.25)
+        ax.legend(title=rep_tag.replace("_", r"\_"), fontsize=9)
+        fig.tight_layout()
+        fig.savefig(os.path.join(fig_dir, "training_history_relay.png"),
+                    dpi=180)
+        plt.close(fig)
+
+    # ---- dr_pinn_vs_reference (rep run + seed envelope) --------------------
+    times_ref, norms_ref, text_ref = _refc(ref_raw, LAMBDA_BASELINE)
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.2))
     axes[0].semilogy(times_ref, np.maximum(norms_ref, 1e-16),
                      color="tab:blue", label="Reference solution", lw=2)
-    axes[0].semilogy(times_net, np.maximum(l2_net, 1e-16), "--",
-                     color="tab:orange", label="DR-PINN", lw=2)
+    for i, t_ in enumerate(tags(LAMBDA_BASELINE)):
+        axes[0].semilogy(ana[f"curve_times_{t_}"],
+                         np.maximum(ana[f"curve_l2_{t_}"], 1e-16), "--",
+                         color="tab:orange", lw=1.2, alpha=0.9,
+                         label="DR-PINN (per seed)" if i == 0 else None)
     if text_ref is not None:
         axes[0].axvline(text_ref, color="gray", ls=":", lw=0.9)
         axes[0].annotate(rf"$t^*_{{\rm ref}}={text_ref:.4f}$",
@@ -611,82 +1186,152 @@ def stage_figures():
     axes[0].set_xlabel("$t$")
     axes[0].set_ylabel(r"$\|u(t)\|_{L^2(\Omega)}$")
     axes[0].grid(True, which="major", alpha=0.25)
-    axes[0].legend(loc="lower left")
-    im = axes[1].imshow(
-        np.abs(raw["baseline_snap_final"] - raw["ref_ufinal_baseline"]).T,
-        origin="lower", extent=[0, 1, 0, 1], cmap="viridis")
-    axes[1].set_title(rf"$|u_\theta - u_{{\mathrm{{ref}}}}|$ at $t=T={T_HORIZON}$")
-    axes[1].set_xlabel("$x$")
-    axes[1].set_ylabel("$y$")
-    cbar = fig.colorbar(im, ax=axes[1])
-    cbar.formatter.set_powerlimits((0, 0))
-    cbar.update_ticks()
+    axes[0].legend(loc="lower left", fontsize=9)
+    if "rep_snap_final" in ana:
+        im = axes[1].imshow(
+            np.abs(ana["rep_snap_final"] - ref_raw["ref_ufinal_baseline"]).T,
+            origin="lower", extent=[0, 1, 0, 1], cmap="viridis")
+        axes[1].set_title(
+            rf"$|u_\theta - u_{{\mathrm{{ref}}}}|$ at $t=T={T_HORIZON}$")
+        axes[1].set_xlabel("$x$")
+        axes[1].set_ylabel("$y$")
+        cbar = fig.colorbar(im, ax=axes[1])
+        cbar.formatter.set_powerlimits((0, 0))
+        cbar.update_ticks()
     fig.tight_layout()
     fig.savefig(os.path.join(fig_dir, "dr_pinn_vs_reference.png"), dpi=180)
     plt.close(fig)
 
-    # ---- Figure: branch_selection_diagnostic (with zoom inset) ------------
-    # Restored to the notebook layout: main cloud over the graph of Phi,
-    # plus an inset magnifying the neighbourhood of the extinction front
-    # (s near 0), where the paper text discusses the vertical scatter
-    # caused by the jump of Phi.
-    s_vals = raw["diag_s_vals"]
-    z_vals = raw["diag_z_vals"]
-    lam = LAMBDA_BASELINE
-    fig, ax = plt.subplots(figsize=(6.8, 5.2))
-    ax.scatter(s_vals, z_vals, s=5, alpha=0.20, color="tab:blue",
-               edgecolors="none", label="Collocation points", rasterized=True)
-    s_min = min(s_vals.min(), -0.1)
-    s_max = max(s_vals.max(), 0.1)
-    plot_phi_graph(ax, lam, s_min, s_max)
-    ax.annotate(rf"$z=-\lambda={-lam}$", xy=(0.55, -lam),
-                xytext=(0.55, -lam - 0.55), fontsize=11, color="tab:red",
-                ha="center",
-                arrowprops=dict(arrowstyle="->", color="tab:red", lw=0.8))
-    ax.set_xlabel(r"$s = u_\theta(t,x,y)$")
-    ax.set_ylabel(r"$z = \partial_t u_\theta - \Delta u_\theta$")
-    ax.grid(True, alpha=0.2)
-    ax.legend(loc="lower right")
+    # ---- branch_selection_diagnostic (with the zoom inset) -----------------
+    if "diag_s_vals" in ana:
+        s_vals = ana["diag_s_vals"]
+        z_vals = ana["diag_z_vals"]
+        lam = LAMBDA_BASELINE
+        fig, ax = plt.subplots(figsize=(6.8, 5.2))
+        ax.scatter(s_vals, z_vals, s=5, alpha=0.20, color="tab:blue",
+                   edgecolors="none", label="Collocation points",
+                   rasterized=True)
+        s_min = min(s_vals.min(), -0.1)
+        s_max = max(s_vals.max(), 0.1)
+        plot_phi_graph(ax, lam, s_min, s_max)
+        ax.annotate(rf"$z=-\lambda={-lam}$", xy=(0.55, -lam),
+                    xytext=(0.55, -lam - 0.55), fontsize=11, color="tab:red",
+                    ha="center",
+                    arrowprops=dict(arrowstyle="->", color="tab:red", lw=0.8))
+        ax.set_xlabel(r"$s = u_\theta(t,x,y)$")
+        ax.set_ylabel(r"$z = \partial_t u_\theta - \Delta u_\theta$")
+        ax.grid(True, alpha=0.2)
+        ax.legend(loc="lower right")
+        axins = ax.inset_axes([0.52, 0.55, 0.44, 0.40])
+        axins.scatter(s_vals, z_vals, s=4, alpha=0.25, color="tab:blue",
+                      edgecolors="none", rasterized=True)
+        plot_phi_graph(axins, lam, -0.02, 0.10, lw=1.6, label=None)
+        axins.set_xlim(-0.02, 0.10)
+        axins.set_ylim(-1.1, 1.1)
+        axins.tick_params(labelsize=9)
+        axins.grid(True, alpha=0.2)
+        ax.indicate_inset_zoom(axins, edgecolor="0.4")
+        fig.tight_layout()
+        fig.savefig(os.path.join(fig_dir, "branch_selection_diagnostic.png"),
+                    dpi=180)
+        plt.close(fig)
 
-    axins = ax.inset_axes([0.52, 0.55, 0.44, 0.40])
-    axins.scatter(s_vals, z_vals, s=4, alpha=0.25, color="tab:blue",
-                  edgecolors="none", rasterized=True)
-    plot_phi_graph(axins, lam, -0.02, 0.10, lw=1.6, label=None)
-    axins.set_xlim(-0.02, 0.10)
-    axins.set_ylim(-1.1, 1.1)
-    axins.tick_params(labelsize=9)
-    axins.grid(True, alpha=0.2)
-    ax.indicate_inset_zoom(axins, edgecolor="0.4")
-
-    fig.tight_layout()
-    fig.savefig(os.path.join(fig_dir, "branch_selection_diagnostic.png"),
-                dpi=180)
-    plt.close(fig)
-
-    # ---- Figure: extinction_time_sweep -------------------------------------
+    # ---- extinction_time_sweep -> threshold-crossing sweep with seeds ------
     fig, ax = plt.subplots(figsize=(7, 5))
-    for lam in LAMBDA_SWEEP_MAIN:
-        times_r, norms_r, text_r = _ref(raw, lam)
+    for lam in params["lambdas"]:
+        times_r, norms_r, text_r = _refc(ref_raw, lam)
         ax.semilogy(times_r, np.maximum(norms_r, 1e-16),
                     color=LAMBDA_COLORS[lam], lw=2,
                     label=rf"$\lambda={lam}$ (reference)")
-        ax.semilogy(raw[f"net_times_{lam}"],
-                    np.maximum(raw[f"net_l2_{lam}"], 1e-16),
-                    color=LAMBDA_COLORS[lam], lw=2, ls="--",
-                    label=rf"$\lambda={lam}$ (DR-PINN)")
+        for i, t_ in enumerate(tags(lam)):
+            ax.semilogy(ana[f"curve_times_{t_}"],
+                        np.maximum(ana[f"curve_l2_{t_}"], 1e-16),
+                        color=LAMBDA_COLORS[lam], lw=1.0, ls="--", alpha=0.8,
+                        label=(rf"$\lambda={lam}$ (DR-PINN, seeds)"
+                               if i == 0 else None))
         if text_r is not None:
-            ax.axvline(text_r, color=LAMBDA_COLORS[lam], ls=":",
-                       lw=0.9, alpha=0.7)
+            ax.axvline(text_r, color=LAMBDA_COLORS[lam], ls=":", lw=0.9,
+                       alpha=0.7)
+    ax.axhline(EXTINCTION_TOL, color="0.3", lw=0.8, ls="-.",
+               label=rf"$\varepsilon={EXTINCTION_TOL:g}$")
     ax.set_ylim(NORM_FLOOR, 2.0)
     ax.set_xlabel("$t$")
     ax.set_ylabel(r"$\|u(t)\|_{L^2(\Omega)}$")
     ax.grid(True, which="major", alpha=0.25)
-    ax.legend(fontsize=10, ncol=2, loc="lower left", framealpha=0.9)
+    ax.legend(fontsize=9, ncol=2, loc="lower left", framealpha=0.9)
     fig.tight_layout()
     fig.savefig(os.path.join(fig_dir, "extinction_time_sweep.png"), dpi=180)
     plt.close(fig)
 
-    print(f"[figures] wrote 5 figures to {fig_dir}")
+    # ---- NEW: residual_distribution (front vs away, per lambda) ------------
+    fig, ax = plt.subplots(figsize=(7.5, 4.6))
+    data, labels, colors = [], [], []
+    for lam in params["lambdas"]:
+        ts = tags(lam)
+        if not ts:
+            continue
+        rep = sorted(ts, key=lambda t_: runs[t_]["val_loss"])[len(ts) // 2]
+        for name, pretty in (("front", "front"), ("away", "away")):
+            v = ana[f"res_{name}_{rep}"]
+            data.append(np.log10(np.maximum(v, 1e-16)))
+            labels.append(rf"$\lambda={lam}$" + f"\n{pretty}")
+            colors.append(LAMBDA_COLORS[lam])
+    bp = ax.boxplot(data, tick_labels=labels, whis=(5, 99), showfliers=False,
+                    patch_artist=True)
+    for patch, c in zip(bp["boxes"], colors):
+        patch.set_facecolor(c)
+        patch.set_alpha(0.45)
+    ax.set_ylabel(r"$\log_{10}\,\mathrm{dist}(z_\theta,\Phi(u_\theta))$")
+    ax.grid(True, axis="y", alpha=0.25)
+    ax.set_title(rf"Residual distribution (independent points; "
+                 rf"front: $|u_\theta|<{RESIDUAL_FRONT_THRESHOLD}$)",
+                 fontsize=11)
+    fig.tight_layout()
+    fig.savefig(os.path.join(fig_dir, "residual_distribution.png"), dpi=180)
+    plt.close(fig)
+
+    # ---- NEW: threshold_sensitivity ----------------------------------------
+    fig, ax = plt.subplots(figsize=(7, 4.6))
+    for lam in params["lambdas"]:
+        text_r = ref_man["curves"][str(lam)]["t_ext"]
+        if text_r is not None:
+            ax.axhline(text_r, color=LAMBDA_COLORS[lam], ls=":", lw=1.0)
+        for t_ in tags(lam):
+            tf_vals = [runs[t_]["thresholds"][f"{e:g}"]["t_first"]
+                       for e in EPS_GRID]
+            xs = [e for e, v in zip(EPS_GRID, tf_vals) if v is not None]
+            ys = [v for v in tf_vals if v is not None]
+            ax.semilogx(xs, ys, "o-", color=LAMBDA_COLORS[lam], lw=1.0,
+                        ms=4, alpha=0.85)
+        ax.plot([], [], "o-", color=LAMBDA_COLORS[lam],
+                label=rf"$\lambda={lam}$ (dotted: $t^*_{{\rm ref}}$)")
+    ax.set_xlabel(r"threshold $\varepsilon$")
+    ax.set_ylabel(r"$t_{\mathrm{first}}(\varepsilon)$")
+    ax.grid(True, which="both", alpha=0.25)
+    ax.legend(fontsize=9)
+    fig.tight_layout()
+    fig.savefig(os.path.join(fig_dir, "threshold_sensitivity.png"), dpi=180)
+    plt.close(fig)
+
+    # ---- NEW: solver_convergence -------------------------------------------
+    fig, ax = plt.subplots(figsize=(6.8, 4.2))
+    keys = [f"N{N}_dt{_dt_tag(dt)}" for (N, dt) in REFINEMENT_CONFIGS]
+    xt = [rf"${N}^2$, ${dt:g}$" for (N, dt) in REFINEMENT_CONFIGS]
+    for lam in params["lambdas"]:
+        ys = [ref_man["refinement"][str(lam)][k]["t_ext"] for k in keys]
+        ax.plot(range(len(keys)), ys, "o-", color=LAMBDA_COLORS[lam],
+                label=rf"$\lambda={lam}$")
+    ax.set_xticks(range(len(keys)))
+    ax.set_xticklabels(xt, fontsize=9)
+    ax.set_xlabel(r"solver configuration (grid, $\Delta t$)")
+    ax.set_ylabel(r"$t^*_{\mathrm{ref}}$")
+    ax.grid(True, alpha=0.25)
+    ax.legend(fontsize=9)
+    fig.tight_layout()
+    fig.savefig(os.path.join(fig_dir, "solver_convergence.png"), dpi=180)
+    plt.close(fig)
+
+    print(f"[figures] wrote 8 figures to {fig_dir}")
 
 
 # ----------------------------------------------------------------------------
@@ -694,22 +1339,46 @@ def stage_figures():
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--stage", choices=["train", "tables", "figures",
-                                            "all"], default="all")
+    parser.add_argument("--stage",
+                        choices=["reference", "train", "analyze", "tables",
+                                 "figures", "post"],
+                        required=True,
+                        help="'post' = analyze + tables + figures")
     parser.add_argument("--smoke", action="store_true")
+    parser.add_argument("--lam", type=float, help="train stage only")
+    parser.add_argument("--net-seed", type=int, help="train stage only")
+    parser.add_argument("--sampling", default="adaptive",
+                        choices=["adaptive", "uniform", "rar"])
+    parser.add_argument("--print-jobs", action="store_true",
+                        help="print the pre-registered training grid as "
+                             "JSON and exit (used by gpu_launcher.py)")
     args = parser.parse_args()
 
-    if args.stage in ("train", "all"):
-        params = R.load_config("exp63", smoke=args.smoke)
-        params["_smoke"] = args.smoke
-        if args.smoke:
-            print(">>> SMOKE MODE: truncated budgets, "
-                  "results not publication-grade.")
-        stage_train(params)
-    if args.stage in ("tables", "all"):
-        stage_tables()
-    if args.stage in ("figures", "all"):
-        stage_figures()
+    params = R.load_config("exp63", smoke=args.smoke)
+    params["_smoke"] = args.smoke
+    if args.smoke:
+        print(">>> SMOKE MODE: truncated budgets, "
+              "results not publication-grade.")
+
+    if args.print_jobs:
+        print(json.dumps(job_grid(params)))
+        return 0
+    if args.stage == "reference":
+        stage_reference(params)
+    elif args.stage == "train":
+        if args.lam is None or args.net_seed is None:
+            parser.error("--stage train requires --lam and --net-seed")
+        stage_train_single(params, args.lam, args.net_seed, args.sampling)
+    elif args.stage == "analyze":
+        stage_analyze(params)
+    elif args.stage == "tables":
+        stage_tables(params)
+    elif args.stage == "figures":
+        stage_figures(params)
+    elif args.stage == "post":
+        stage_analyze(params)
+        stage_tables(params)
+        stage_figures(params)
     return 0
 
 

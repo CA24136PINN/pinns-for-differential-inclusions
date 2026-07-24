@@ -2,14 +2,14 @@
 # =====================================================================
 # DR-PINNs -- full replication in one command.
 #
-#   bash reproduce_all.sh            # full run (6.3 alone: ~6 h, GPU rec.)
+#   bash reproduce_all.sh            # full run (6.3 grid: ~66 GPU-h; ~3x6 h on 4 GPUs)
 #   bash reproduce_all.sh --smoke    # end-to-end pipeline test (~5-10 min)
 #
 # Order:
 #   0. scripts/system_info.sh          record hardware/software environment
 #   1. scripts/run_experiment_61.sh    Example 6.1  (training stage only)
 #   2. scripts/run_experiment_62.sh    Example 6.2  (training stage only)
-#   3. scripts/run_experiment_63.sh    Example 6.3  (training stage only)
+#   3. scripts/run_experiment_63.sh    Example 6.3  (reference + GPU grid + analyze)
 #   4. scripts/make_tables.sh          LaTeX macros from the raw manifests
 #   5. scripts/make_figures.sh         all figures from the raw data
 #   6. scripts/build_paper.sh          sync into paper/ + pdflatex + TBD check

@@ -1,9 +1,19 @@
 {
-  "description": "Example 6.3: reaction-diffusion inclusion with relay (sliding-mode) feedback. Full run: 4 trainings x 40k epochs (GPU recommended; ~6 h).",
+  "description": "Example 6.3: relay parabolic inclusion. Referee revision: pre-registered multi-seed grid (3 seeds x 3 lambdas, adaptive sampling) + sampling ablation (uniform, residual-RAR) for the hardest case. Seeds fixed BEFORE looking at results; net-init seed and sampling seed are decoupled (sample_seed = net_seed + 1000). Full grid: 11 runs x ~6 h GPU.",
   "full": {
-    "n_epochs": 40000
+    "n_epochs": 40000,
+    "lambdas": [0.4, 0.6, 0.8],
+    "seeds": [11, 23, 47],
+    "ablation_lambda": 0.6,
+    "ablation_seed": 11,
+    "ablation_samplings": ["uniform", "rar"],
+    "n_residual_points": 100000,
+    "residual_batch": 20000
   },
   "smoke": {
-    "n_epochs": 200
+    "n_epochs": 200,
+    "seeds": [11, 23],
+    "n_residual_points": 20000,
+    "residual_batch": 10000
   }
 }

@@ -299,6 +299,29 @@ def project_ellipse_tf(v, t):
     return proj, lev, inside
 
 
+def newton_final_residual(v, t):
+    """Measured a-posteriori tolerance of the fixed-iteration Newton
+    projection: |f(mu_final)| of the secular equation, on points OUTSIDE
+    the ellipse (inside points need no projection).  Reported to document
+    the exact projection accuracy (referee request for 6.2)."""
+    a, b, phi = axes_angle_tf(t)
+    c, s_ = tf.cos(phi), tf.sin(phi)
+    u = c * v[:, 0] + s_ * v[:, 1]
+    w = -s_ * v[:, 0] + c * v[:, 1]
+    lev = (u / a) ** 2 + (w / b) ** 2
+    mu = tf.zeros_like(lev)
+    for _ in range(NEWTON_ITERS):
+        f = (a * u / (a ** 2 + mu)) ** 2 + (b * w / (b ** 2 + mu)) ** 2 - 1.0
+        df = (-2.0 * (a * u) ** 2 / (a ** 2 + mu) ** 3
+              - 2.0 * (b * w) ** 2 / (b ** 2 + mu) ** 3)
+        mu = tf.maximum(mu - f / df, 0.0)
+    f = (a * u / (a ** 2 + mu)) ** 2 + (b * w / (b ** 2 + mu)) ** 2 - 1.0
+    outside = lev > 1.0
+    fa = tf.where(outside, tf.abs(f), tf.zeros_like(f)).numpy()
+    n_out = int(np.sum(outside.numpy()))
+    return (float(np.max(fa)) if n_out else 0.0), n_out
+
+
 def dist2_tf(v, t):
     """Squared inclusion distance with the exact envelope gradient: the
     entire projected point is held constant in the backward pass."""
@@ -375,9 +398,16 @@ def run_part_b(n_epochs, lr_hold, lr_decay_every, lr_decay_rate,
     v = dx - drift_tf(t_dense, x)
     d2, lev = dist2_tf(v, t_dense)
     dist = np.sqrt(np.maximum(d2.numpy(), 0.0))
+    newton_res, n_outside = newton_final_residual(v, t_dense)
     metrics = {
         "final_collocation_loss": final_loss,
+        "newton_iterations": NEWTON_ITERS,
+        "newton_final_secular_residual_max": newton_res,
+        "newton_points_outside": n_outside,
         "distance_mean_dense": float(np.mean(dist)),
+        "distance_median_dense": float(np.median(dist)),
+        "distance_p95_dense": float(np.percentile(dist, 95)),
+        "distance_p99_dense": float(np.percentile(dist, 99)),
         "distance_max_dense": float(np.max(dist)),
         "distance_rms_dense": float(np.sqrt(np.mean(dist ** 2))),
         "level_mean_dense": float(np.mean(lev.numpy())),
@@ -629,6 +659,11 @@ def stage_tables():
         "EllipCompMaxL": f"{comp['level_max_dense']:.6f}",
         "EllipCompGradCheck": R.sci_tex(
             comp["gradient_check_relative_error"]),
+        "EllipCompDenseMedian": R.sci_tex(comp["distance_median_dense"]),
+        "EllipCompDensePNinetyFive": R.sci_tex(comp["distance_p95_dense"]),
+        "EllipNewtonIters": str(comp["newton_iterations"]),
+        "EllipNewtonResidual": R.sci_tex(
+            comp["newton_final_secular_residual_max"]),
     }
     out = R.aggregated_dir()
     R.write_macros(os.path.join(out, "results_62.tex"), macros,

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Regenerates results/aggregated/results_6{1,2,3}.tex (LaTeX macros with
-# every number quoted in the paper) from the raw manifests. Cheap (seconds);
-# requires the corresponding training stage to have been run.
+# Regenerates results/aggregated/results_6X.tex (LaTeX macros) and the
+# ready-made tabulars table_63_*.tex from the raw manifests. Cheap
+# (seconds); requires the corresponding training/analysis stage.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 for exp in 61 62 63; do

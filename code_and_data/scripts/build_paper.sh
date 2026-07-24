@@ -10,7 +10,8 @@ PAPER_FIGS=(control_set loss_single trajectory_vs_tube scalability
             ellipse_velocity_tube ellipse_selector_level ellipse_state_trajectory
             reference_extinction_curves training_history_relay
             dr_pinn_vs_reference branch_selection_diagnostic
-            extinction_time_sweep)
+            extinction_time_sweep
+            residual_distribution threshold_sensitivity solver_convergence)
 missing=0
 for f in "${PAPER_FIGS[@]}"; do
     if [[ -f "results/figures/${f}.png" ]]; then
@@ -26,6 +27,9 @@ for t in 61 62 63; do
     else
         echo "!! missing macros: results/aggregated/results_${t}.tex" >&2
     fi
+done
+for f in results/aggregated/table_*.tex; do
+    if [[ -f "$f" ]]; then cp "$f" paper/generated/; fi
 done
 if [[ $missing -eq 1 ]]; then
     echo ">>> (paper will compile with fallbacks/TBD)"
