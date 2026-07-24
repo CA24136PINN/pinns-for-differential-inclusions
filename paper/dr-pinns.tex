@@ -12,92 +12,13 @@
 \usepackage{booktabs}
 \usepackage{graphicx}
 
-%% --------------------------------------------------------
-%%  Auto-generated numerical results (single-run synchronization)
-%% --------------------------------------------------------
-%% The replication scripts code/src/run_experiment_6{1,2,3}.py write
-%% generated/results_6{1,2,3}.tex in a single documented run each, together
-%% with all figures and a JSON manifest. Every experiment-dependent number
-%% quoted in Section 6 is a macro defined in those files, so the text, the
-%% tables and the figures provably originate from the same run. If a
-%% generated file is missing, the \providecommand fallbacks below render a
-%% visible red TBD marker instead of silently keeping a stale value.
 \InputIfFileExists{generated/results_61.tex}{}{}
 \InputIfFileExists{generated/results_62.tex}{}{}
 \InputIfFileExists{generated/results_63.tex}{}{}
-%\newcommand{\TBD}[1]{{\color{red}\textbf{[TBD: #1]}}}
-%%% ---- fallbacks, Section 6.1 (filled by run_experiment_61.py) ----
-%\providecommand{\LCLossInit}{\TBD{run 6.1}}
-%\providecommand{\LCLossFinal}{\TBD{run 6.1}}
-%\providecommand{\LCIntSelfCheck}{\TBD{run 6.1}}
-%\providecommand{\LCMeanDH}{\TBD{run 6.1}}
-%\providecommand{\LCnDense}{5\,000}
-%\providecommand{\LCResidMeanDense}{\TBD{run 6.1}}
-%\providecommand{\LCResidMaxDense}{\TBD{run 6.1}}
-%\providecommand{\LCtimingReps}{5}
-%\providecommand{\LCtimeQHmin}{\TBD{run 6.1}}
-%\providecommand{\LCtimeQHmax}{\TBD{run 6.1}}
-%\providecommand{\LCtimeNoQHfirst}{\TBD{run 6.1}}
-%\providecommand{\LCtimeNoQHlast}{\TBD{run 6.1}}
-%\providecommand{\LCslowdown}{\TBD{run 6.1}}
-%\providecommand{\LCtimeQHdSix}{\TBD{run 6.1}}
-%\providecommand{\LCtimeNoQHdSix}{\TBD{run 6.1}}
-%\providecommand{\LCtimeQHdEight}{\TBD{run 6.1}}
-%\providecommand{\LCtimeNoQHdEight}{\TBD{run 6.1}}
-%%% ---- fallbacks, Section 6.2 (filled by run_experiment_62.py) ----
-%\providecommand{\EllipMismA}{\TBD{run 6.2}}
-%\providecommand{\EllipMeanLA}{\TBD{run 6.2}}
-%\providecommand{\EllipMaxLA}{\TBD{run 6.2}}
-%\providecommand{\EllipMismB}{\TBD{run 6.2}}
-%\providecommand{\EllipMeanLB}{\TBD{run 6.2}}
-%\providecommand{\EllipMaxLB}{\TBD{run 6.2}}
-%\providecommand{\EllipMismC}{\TBD{run 6.2}}
-%\providecommand{\EllipMeanLC}{\TBD{run 6.2}}
-%\providecommand{\EllipMaxLC}{\TBD{run 6.2}}
-%\providecommand{\EllipDenseMaxL}{\TBD{run 6.2}}
-%\providecommand{\EllipNDense}{20\,001}
-%\providecommand{\EllipExtremalXtwo}{\TBD{run 6.2}}
-%\providecommand{\EllipCompLoss}{\TBD{run 6.2}}
-%\providecommand{\EllipCompDenseMean}{\TBD{run 6.2}}
-%\providecommand{\EllipCompDenseMax}{\TBD{run 6.2}}
-%\providecommand{\EllipCompMeanL}{\TBD{run 6.2}}
-%\providecommand{\EllipCompMaxL}{\TBD{run 6.2}}
-%\providecommand{\EllipCompGradCheck}{\TBD{run 6.2}}
-%%% ---- fallbacks, Section 6.3 (filled by run_experiment_63.py) ----
-%%% Reference-solver extinction times are deterministic and have been
-%%% independently verified (operator splitting, N=49, dt=5e-4); the trained
-%%% network quantities are TBD until the replication script has been run.
-%\providecommand{\RelayTRefA}{0.1845}
-%\providecommand{\RelayTRefB}{0.1645}
-%\providecommand{\RelayTRefC}{0.1505}
-%\providecommand{\RelayTRefBase}{0.1645}
-%\providecommand{\RelayTNetA}{\TBD{run 6.3}}
-%\providecommand{\RelayTNetB}{\TBD{run 6.3}}
-%\providecommand{\RelayTNetC}{\TBD{run 6.3}}
-%\providecommand{\RelayRelErrA}{\TBD{run 6.3}}
-%\providecommand{\RelayRelErrB}{\TBD{run 6.3}}
-%\providecommand{\RelayRelErrC}{\TBD{run 6.3}}
-%\providecommand{\RelayValLoss}{\TBD{run 6.3}}
-%\providecommand{\RelayRMS}{\TBD{run 6.3}}
-%\providecommand{\RelayPlateauLevel}{\TBD{run 6.3}}
-%\providecommand{\RelayEscapeEpoch}{\TBD{run 6.3}}
-%\providecommand{\RelayNormDisc}{\TBD{run 6.3}}
-%\providecommand{\RelayMaxPtErr}{\TBD{run 6.3}}
-%\providecommand{\RelayPostExtPlateau}{\TBD{run 6.3}}
-%\providecommand{\RelayZFrontMax}{\TBD{run 6.3}}
-%\providecommand{\RelayEpsSens}{\TBD{run 6.3}}
-%\providecommand{\RelayAbsErrMin}{\TBD{run 6.3}}
-%\providecommand{\RelayAbsErrMax}{\TBD{run 6.3}}
 
-%% --------------------------------------------------------
-%%  Enumeration style
-%% --------------------------------------------------------
 \setenumerate{label=(\alph*)}
 \setenumerate[2]{label=(\Alph*)}
 
-%% --------------------------------------------------------
-%%  Theorem environments (numbered within sections)
-%% --------------------------------------------------------
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{proposition}[theorem]{Proposition}
 \newtheorem{lemma}[theorem]{Lemma}
@@ -112,9 +33,6 @@
 
 \numberwithin{equation}{section}
 
-%% --------------------------------------------------------
-%%  Math operators
-%% --------------------------------------------------------
 \def\diam{\operatorname{diam}}
 \def\dist{\operatorname{dist}}
 \def\supp{\operatorname{supp}}
@@ -126,8 +44,6 @@
 \DeclareMathOperator*{\essinf}{ess\,inf}
 \DeclareMathOperator{\argmin}{argmin}
 \DeclareMathOperator{\Sign}{Sign}
-
-%% --------------------------------------------------------
 
 \setcounter{tocdepth}{2}% to get subsubsections in toc
 
