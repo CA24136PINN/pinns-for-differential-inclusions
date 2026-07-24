@@ -1,0 +1,9 @@
+{
+  "description": "Example 6.3: reaction-diffusion inclusion with relay (sliding-mode) feedback. Full run: 4 trainings x 40k epochs (GPU recommended; ~6 h).",
+  "full": {
+    "n_epochs": 40000
+  },
+  "smoke": {
+    "n_epochs": 200
+  }
+}

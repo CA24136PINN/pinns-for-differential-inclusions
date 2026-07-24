@@ -1,0 +1,19 @@
+{
+  "description": "Example 6.2: rotating ellipsoidal control set; Part A selector + Part B DR-PINN companion.",
+  "full": {
+    "maxiter": 3000,
+    "epochs": 7000,
+    "n_dense": 20001,
+    "lr_hold": 4000,
+    "lr_decay_every": 500,
+    "lr_decay_rate": 0.9
+  },
+  "smoke": {
+    "maxiter": 80,
+    "epochs": 200,
+    "n_dense": 2001,
+    "lr_hold": 100,
+    "lr_decay_every": 50,
+    "lr_decay_rate": 0.9
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "script": "run_experiment_62.py",
+  "generated_utc": "2026-07-24T15:04:36.793341+00:00",
+  "runtime_seconds": 12.670818567276001,
+  "smoke": true,
+  "seed": 0,
+  "versions": {
+    "python": "3.12.3",
+    "numpy": "2.4.4",
+    "scipy": "1.17.1",
+    "tensorflow": "2.21.0"
+  },
+  "hardware": "Linux-6.18.5-x86_64-with-glibc2.39 | x86_64 | GPU: none | RAM: 4 GiB",
+  "config": {
+    "T": 3.0,
+    "x0": [
+      0.0,
+      0.0
+    ],
+    "xf": [
+      1.8,
+      0.1
+    ],
+    "n_t": 120,
+    "n_c": 24,
+    "weights": {
+      "lam_f": 2500.0,
+      "lam_s": 1.0,
+      "lam_c": 0.2,
+      "lam_b": 0.01,
+      "lam_u": 0.05,
+      "lam_xi_stages": [
+        0.001,
+        0.01,
+        0.1
+      ]
+    },
+    "newton_iterations": 30,
+    "maxiter": 80,
+    "epochs": 200,
+    "n_dense": 2001
+  },
+  "part_a": {
+    "stages": [
+      {
+        "lam_xi": 0.001,
+        "mismatch": 0.0001364593397783414,
+        "mean_level": 0.9660561894139705,
+        "max_level": 0.9816385445128574,
+        "nit": 80
+      },
+      {
+        "lam_xi": 0.01,
+        "mismatch": 5.809150217943724e-05,
+        "mean_level": 0.9664883049486487,
+        "max_level": 0.9809959267543249,
+        "nit": 80
+      },
+      {
+        "lam_xi": 0.1,
+        "mismatch": 0.00014086721647388383,
+        "mean_level": 0.966178985347707,
+        "max_level": 0.9804529635311038,
+        "nit": 80
+      }
+    ],
+    "dense_max_level": 0.980415947679836,
+    "dense_violations": 0,
+    "n_dense": 2001,
+    "extremal_down_x2T": -0.04693285947080184
+  },
+  "part_b": {
+    "final_collocation_loss": 0.001635134435883203,
+    "distance_mean_dense": 0.029776442332189543,
+    "distance_max_dense": 0.18266372796091945,
+    "distance_rms_dense": 0.040071807091971896,
+    "level_mean_dense": 1.1582633300157013,
+    "level_max_dense": 2.5170821843829874,
+    "inside_fraction_dense": 0.266,
+    "initial_endpoint_error": 0.0,
+    "terminal_endpoint_error": 0.0,
+    "gradient_check_relative_error": 9.061411138250066e-11,
+    "gradient_check_autograd": [
+      2.7624335184804263,
+      -2.2964386339356855
+    ],
+    "gradient_check_fd": [
+      2.762433518155305,
+      -2.2964386339197063
+    ]
+  }
+}

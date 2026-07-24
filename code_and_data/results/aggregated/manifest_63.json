@@ -1,0 +1,58 @@
+{
+  "script": "run_experiment_63.py",
+  "generated_utc": "2026-07-24T15:11:52.502363+00:00",
+  "runtime_seconds": 56.884477376937866,
+  "smoke": true,
+  "n_epochs": 200,
+  "eps_training": 0.0,
+  "extinction_tolerance": 0.001,
+  "eval_time_step": 0.0025,
+  "versions": {
+    "python": "3.12.3",
+    "numpy": "2.4.4",
+    "scipy": "1.17.1",
+    "tensorflow": "2.21.0"
+  },
+  "hardware": "Linux-6.18.5-x86_64-with-glibc2.39 | x86_64 | GPU: none | RAM: 4 GiB",
+  "reference_extinction_times": {
+    "0.0": null,
+    "0.4": 0.1845,
+    "0.6": 0.1645,
+    "0.8": 0.1505
+  },
+  "baseline": {
+    "val_loss": 30.075531005859375,
+    "norm_disc": 0.5585417537853896,
+    "max_pt_err": 0.03162050247192383,
+    "post_ext_plateau": 0.08859029412269592,
+    "plateau_level": 31.05782127380371,
+    "escape_epoch": null,
+    "z_front_max": 12.190122604370117
+  },
+  "eps_sensitivity": {
+    "values": {
+      "0.0": 30.075531005859375,
+      "1e-08": 30.075531005859375,
+      "1e-06": 30.075531005859375,
+      "0.0001": 30.072227478027344
+    },
+    "max_rel_dev": 0.000109841047574111
+  },
+  "sweep": {
+    "0.4": {
+      "t_ref": 0.1845,
+      "t_net": 0.295,
+      "val_loss": 28.839929580688477
+    },
+    "0.6": {
+      "t_ref": 0.1645,
+      "t_net": null,
+      "val_loss": 30.075531005859375
+    },
+    "0.8": {
+      "t_ref": 0.1505,
+      "t_net": null,
+      "val_loss": 31.950191497802734
+    }
+  }
+}

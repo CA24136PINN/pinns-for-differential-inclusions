@@ -1,0 +1,19 @@
+== system_info 2026-07-24T15:12:31Z ==
+-- OS --
+Linux vm 6.18.5 #1 SMP PREEMPT_DYNAMIC @0 x86_64 x86_64 x86_64 GNU/Linux
+PRETTY_NAME="Ubuntu 24.04.4 LTS"
+-- CPU --
+model name	: Intel(R) Xeon(R) Processor @ 2.10GHz
+cores: 1
+-- RAM --
+MemTotal:        4093928 kB
+-- GPU --
+no NVIDIA GPU / nvidia-smi not found
+-- Python --
+Python 3.12.3
+numpy==2.4.4
+scipy==1.17.1
+tensorflow==2.21.0
+matplotlib==3.10.8
+-- conda env --
+CONDA_DEFAULT_ENV=<none>

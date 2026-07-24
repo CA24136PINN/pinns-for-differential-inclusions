@@ -1,0 +1,27 @@
+{
+  "description": "Example 6.1: linear control system, polytopic input set, Quickhull preprocessing.",
+  "full": {
+    "T": 1.5,
+    "d": 2,
+    "seed": 42,
+    "n_col": 300,
+    "width": 64,
+    "depth": 3,
+    "lr": 0.001,
+    "epochs": 1000,
+    "n_ensemble": 5,
+    "n_ref_random": 300,
+    "n_ref_t": 200,
+    "n_dense": 5000,
+    "timing_epochs": 50,
+    "timing_reps": 5
+  },
+  "smoke": {
+    "epochs": 20,
+    "n_ensemble": 2,
+    "n_ref_random": 20,
+    "n_dense": 200,
+    "timing_epochs": 3,
+    "timing_reps": 2
+  }
+}
