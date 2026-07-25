@@ -35,28 +35,28 @@ Because there is no unique value to subtract from $D(u)$, the classical
 pointwise residual is replaced by the squared distance to the admissible set:
 
 $$
-R(u_\theta)(z) = \operatorname{dist}^2\left(D(u_\theta)(z),F(u_\theta)(z)\right).
+R(u_\theta)(z) = \text{dist}^2\left(D(u_\theta)(z),F(u_\theta)(z)\right).
 $$
 
 The corresponding DR-PINN loss is
 
 $$
 \mathcal{L}(\theta) = \frac{1}{N}\sum_{i=1}^{N}
-\operatorname{dist}^2\left(D(u_\theta)(z_i),F(u_\theta)(z_i)\right).
+\text{dist}^2\left(D(u_\theta)(z_i),F(u_\theta)(z_i)\right).
 $$
 
 The residual vanishes exactly when the differential inclusion is satisfied.
 For closed convex admissible sets, the metric projection is unique and
 
 $$
-\nabla_v\operatorname{dist}^2(v,C) = 2\bigl(v-\Pi_C(v)\bigr),
+\nabla_v\text{dist}^2(v,C) = 2\bigl(v-\Pi_C(v)\bigr),
 $$
 
 which makes the loss suitable for gradient-based optimization. If the
 admissible set depends on the network state, that dependence must remain in
 the computational graph (see Remark 4.2 of the manuscript); the
 implementations evaluate translated residuals such as
-$\operatorname{dist}^2(\dot x_\theta - A x_\theta, B\widetilde U)$ and detach
+$\text{dist}^2(\dot x_\theta - A x_\theta, B\widetilde U)$ and detach
 the entire numerically computed projection point in the backward pass.
 
 ## Repository layout
@@ -102,7 +102,7 @@ Everything the manuscript reports — every number, table, and figure — is
 produced by `code_and_data/`. The archive in `old_stuff/` is kept for
 provenance (early notebooks, hand-crafted geometry illustrations, and the
 nonconvex two-disk notes on relaxation/convexification of weak limits,
-$\dot x\in\operatorname{co}F(t,x)$); it is not part of the replication
+$\dot x\in\text{co}F(t,x)$); it is not part of the replication
 pipeline.
 
 ## Reproducing the paper
