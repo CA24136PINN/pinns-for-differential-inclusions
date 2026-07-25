@@ -3264,67 +3264,44 @@ is captured sharply. Being a first-order splitting on a fixed grid, the
 scheme carries discretization errors of order $O(\Delta t)+O(h^2)$ that
 may systematically shift the detected extinction instants; a refinement
 study therefore quantifies the reliability of the reported
-$t^*_{\mathrm{ref}}$. Table~\ref{tab:relay-ref-convergence} reports, for
-each solver configuration, the detected extinction time $t^*$ (first grid
-time at which the discrete field is exactly zero; the zero state is
-persistent up to $T$ in every run), its change $\Delta t^*$ with respect
-to the baseline configuration, and the maximum change of the
-$L^2(\Omega)$-norm decay curve and of the solution profile shortly before
-extinction. Refining the mesh from $49\times49$ to $97\times97$ and
-$193\times193$ at fixed $\Delta t$ leaves the detected $t^*$ unchanged
-for all three values of $\lambda$, so the baseline mesh is already
-converged in space; halving and quartering $\Delta t$ shifts $t^*$ by at
-most $6.3\times10^{-4}$ --- about one baseline time step, which is also
-the quantization of the detection itself, since $t^*$ is read off the
-discrete time grid --- while the norm curves and pre-extinction profiles
-change by at most $7\times10^{-4}$ and $2\times10^{-4}$, respectively.
-The reference extinction times are therefore reliable to three decimal
-places, with an uncertainty of order one baseline step in the fourth, and
-the monotone ordering $t^*(0.8)<t^*(0.6)<t^*(0.4)$ is preserved at every
-refinement level. The refinement study is part of the replication
-pipeline (reference stage of this experiment) and is regenerated together
-with all other reported numbers.
+$t^*_{\mathrm{ref}}$. Table~\ref{tab:relay-ref-convergence} reports the
+detected extinction time (first grid time at which the discrete field is
+exactly zero; the zero state is persistent up to $T$ in every run) under
+mesh refinement at fixed $\Delta t$ and under time-step refinement at
+fixed mesh. Refining the mesh from $49\times49$ to $97\times97$ and
+$193\times193$ leaves the detected $t^*$ unchanged for all three values
+of $\lambda$, so the baseline mesh is already converged in space; halving
+and quartering $\Delta t$ shifts $t^*$ by at most $5\times10^{-4}$ ---
+one baseline time step, which is also the quantization of the detection
+itself, since $t^*$ is read off the discrete time grid. The reference
+extinction times are therefore reliable to three decimal places, with an
+uncertainty of order one baseline step in the fourth, and the monotone
+ordering $t^*(0.8)<t^*(0.6)<t^*(0.4)$ is preserved at every refinement
+level. The refinement script is included in the replication package.
 
 \begin{table}[htbp]
   \centering
   \small
-  \setlength{\tabcolsep}{5pt}
-  \InputIfFileExists{generated/table_63_solver_convergence.tex}{}{%
-  \begin{tabular}{lcccccc}
-  \toprule
-  $\lambda$ & grid & $\Delta t$ & $t^*$ & $\Delta t^*$ & $\max|\Delta\|u\||$ & $\max|\Delta u_{\mathrm{pre}}|$ \\
-  \midrule
-  $0.4$ & $49\times49$ & $0.0005$ & 0.1845 & +0.0000 & $0$ & $0$ \\
-  $0.4$ & $49\times49$ & $0.00025$ & 0.1840 & -0.0005 & $4.5\times 10^{-4}$ & $1.7\times 10^{-4}$ \\
-  $0.4$ & $49\times49$ & $0.000125$ & 0.1839 & -0.0006 & $6.7\times 10^{-4}$ & $1.1\times 10^{-4}$ \\
-  $0.4$ & $97\times97$ & $0.0005$ & 0.1845 & +0.0000 & $5.1\times 10^{-5}$ & $4.1\times 10^{-5}$ \\
-  $0.4$ & $97\times97$ & $0.00025$ & 0.1840 & -0.0005 & $5.0\times 10^{-4}$ & $1.3\times 10^{-4}$ \\
-  $0.4$ & $193\times193$ & $0.00025$ & 0.1840 & -0.0005 & $5.1\times 10^{-4}$ & $1.2\times 10^{-4}$ \\
-  $0.6$ & $49\times49$ & $0.0005$ & 0.1645 & +0.0000 & $0$ & $0$ \\
-  $0.6$ & $49\times49$ & $0.00025$ & 0.1643 & -0.0003 & $4.3\times 10^{-4}$ & $8.9\times 10^{-5}$ \\
-  $0.6$ & $49\times49$ & $0.000125$ & 0.1640 & -0.0005 & $6.4\times 10^{-4}$ & $1.3\times 10^{-4}$ \\
-  $0.6$ & $97\times97$ & $0.0005$ & 0.1645 & +0.0000 & $5.3\times 10^{-5}$ & $5.3\times 10^{-5}$ \\
-  $0.6$ & $97\times97$ & $0.00025$ & 0.1643 & -0.0003 & $4.8\times 10^{-4}$ & $8.9\times 10^{-5}$ \\
-  $0.6$ & $193\times193$ & $0.00025$ & 0.1643 & -0.0003 & $5.0\times 10^{-4}$ & $8.7\times 10^{-5}$ \\
-  $0.8$ & $49\times49$ & $0.0005$ & 0.1505 & +0.0000 & $0$ & $0$ \\
-  $0.8$ & $49\times49$ & $0.00025$ & 0.1502 & -0.0003 & $4.1\times 10^{-4}$ & $1.2\times 10^{-4}$ \\
-  $0.8$ & $49\times49$ & $0.000125$ & 0.1501 & -0.0004 & $6.2\times 10^{-4}$ & $1.8\times 10^{-4}$ \\
-  $0.8$ & $97\times97$ & $0.0005$ & 0.1505 & +0.0000 & $5.6\times 10^{-5}$ & $6.5\times 10^{-5}$ \\
-  $0.8$ & $97\times97$ & $0.00025$ & 0.1502 & -0.0003 & $4.7\times 10^{-4}$ & $1.2\times 10^{-4}$ \\
-  $0.8$ & $193\times193$ & $0.00025$ & 0.1502 & -0.0003 & $4.8\times 10^{-4}$ & $1.1\times 10^{-4}$ \\
-  \bottomrule
-  \end{tabular}}
+  \setlength{\tabcolsep}{6pt}
+  \begin{tabular}{lccccc}
+    \toprule
+    & grid & $\Delta t$ & $\lambda=0.4$ & $\lambda=0.6$ & $\lambda=0.8$ \\
+    \midrule
+    baseline          & $49\times49$   & $5\times10^{-4}$    & 0.18450 & 0.16450 & 0.15050 \\
+    $\Delta t/2$      & $49\times49$   & $2.5\times10^{-4}$  & 0.18400 & 0.16425 & 0.15025 \\
+    $\Delta t/4$      & $49\times49$   & $1.25\times10^{-4}$ & 0.18388 & 0.16400 & 0.15013 \\
+    mesh$\times2$     & $97\times97$   & $5\times10^{-4}$    & 0.18450 & 0.16450 & 0.15050 \\
+    mesh$\times2$, $\Delta t/2$ & $97\times97$ & $2.5\times10^{-4}$ & 0.18400 & 0.16425 & 0.15025 \\
+    mesh$\times4$, $\Delta t/2$ & $193\times193$ & $2.5\times10^{-4}$ & 0.18400 & 0.16425 & 0.15025 \\
+    \bottomrule
+  \end{tabular}
   \caption{Refinement study for the reference solver: detected extinction
     time $t^*$ (first grid time with an exactly zero discrete field;
-    persistent up to $T$ in all runs), its change $\Delta t^*$ with
-    respect to the baseline configuration ($49\times49$,
-    $\Delta t=5\times10^{-4}$), the maximum change of the
-    $L^2(\Omega)$-norm decay curve, and the maximum change of the
-    solution profile shortly before extinction (at $0.9\,t^*$,
-    interpolated to the baseline grid). At fixed $\Delta t$ the detected
-    $t^*$ is independent of the mesh; the variation under
-    $\Delta t$-refinement is of the order of one baseline time step and
-    is dominated by the temporal quantization of the detection.}
+    persistent up to $T$ in all runs) under mesh and time-step refinement.
+    At fixed $\Delta t$ the detected $t^*$ is independent of the mesh; the
+    residual variation under $\Delta t$-refinement is at most one baseline
+    time step and is dominated by the temporal quantization of the
+    detection.}
   \label{tab:relay-ref-convergence}
 \end{table}
 

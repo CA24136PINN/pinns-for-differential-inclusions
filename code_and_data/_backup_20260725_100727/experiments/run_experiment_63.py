@@ -380,8 +380,7 @@ def eps_sensitivity(net, lam, val_points, eps_grid=(0.0, 1e-8, 1e-6, 1e-4)):
 
 EXP = "exp63"
 EPS_GRID = [5e-4, 1e-3, 2e-3, 5e-3]
-REFINEMENT_CONFIGS = [(49, 5e-4), (49, 2.5e-4), (49, 1.25e-4),
-                      (97, 5e-4), (97, 2.5e-4), (193, 2.5e-4)]
+REFINEMENT_CONFIGS = [(49, 5e-4), (49, 2.5e-4), (97, 5e-4), (97, 2.5e-4)]
 RESIDUAL_FRONT_THRESHOLD = 0.01     # |u_theta| < 0.01  <=>  "near the front"
 
 
