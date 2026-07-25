@@ -1,9 +1,6 @@
 \documentclass[11pt]{elsarticle}
 
 
-%% --------------------------------------------------------
-%%  Packages
-%% --------------------------------------------------------
 \usepackage{xcolor}
 \usepackage[colorlinks=true,linkcolor=blue,citecolor=red]{hyperref}
 \usepackage{amsmath,amssymb,amsthm}
@@ -15,16 +12,6 @@
 \usepackage{booktabs}
 \usepackage{graphicx}
 
-%% --------------------------------------------------------
-%%  Auto-generated numerical results (single-run synchronization)
-%% --------------------------------------------------------
-%% The replication scripts code/src/run_experiment_6{1,2,3}.py write
-%% generated/results_6{1,2,3}.tex in a single documented run each, together
-%% with all figures and a JSON manifest. Every experiment-dependent number
-%% quoted in Section 6 is a macro defined in those files, so the text, the
-%% tables and the figures provably originate from the same run. If a
-%% generated file is missing, the \providecommand fallbacks below render a
-%% visible red TBD marker instead of silently keeping a stale value.
 \InputIfFileExists{generated/results_61.tex}{}{}
 \InputIfFileExists{generated/results_62.tex}{}{}
 \InputIfFileExists{generated/results_63.tex}{}{}
@@ -66,10 +53,8 @@
 %\providecommand{\EllipCompMeanL}{\TBD{run 6.2}}
 %\providecommand{\EllipCompMaxL}{\TBD{run 6.2}}
 %\providecommand{\EllipCompGradCheck}{\TBD{run 6.2}}
+
 %%% ---- fallbacks, Section 6.3 (filled by run_experiment_63.py) ----
-%%% Reference-solver extinction times are deterministic and have been
-%%% independently verified (operator splitting, N=49, dt=5e-4); the trained
-%%% network quantities are TBD until the replication script has been run.
 %\providecommand{\RelayTRefA}{0.1845}
 %\providecommand{\RelayTRefB}{0.1645}
 %\providecommand{\RelayTRefC}{0.1505}
@@ -202,9 +187,10 @@
 			normal convex integrands.  For admissible sets given as convex hulls of
 			finitely many vertices, projection onto the set reduces to a small convex
 			quadratic program, making the loss efficiently computable inside the
-			training loop.  Numerical experiments on benchmark differential
-			inclusions and parabolic inclusions demonstrate the accuracy and
-			flexibility of DR-PINNs.
+			training loop.  Numerical experiments demonstrate high accuracy on
+			the differential-inclusion benchmarks and qualitatively reproduce the
+			extinction dynamics in the parabolic relay benchmark, where the residual
+			remains concentrated near the discontinuous extinction front.
 		\end{abstract}
 		
 		\begin{keyword}
@@ -3326,10 +3312,11 @@ Figure~\ref{fig:relay-extinction-ref} displays the $L^2(\Omega)$-norm decay curv
 for the reference solver with $\lambda\in\{0,0.4,0.6,0.8\}$ over $[0,T]$.
 The contrast is sharp: the classical heat equation ($\lambda=0$) decays
 exponentially and remains well above zero at $t=T=0.3$, while all three
-relay cases reach exact numerical extinction within $[0,0.19]$, with the
-extinction time decreasing monotonically as $\lambda$ increases.
-Table~\ref{tab:relay-extinction} records the reference extinction times and
-those detected by the trained DR-PINNs.
+relay reference solutions reach exact numerical extinction within
+$[0,0.19]$, with the extinction time decreasing monotonically as
+$\lambda$ increases.  Table~\ref{tab:relay-extinction} reports these
+reference times together with threshold-crossing statistics from three
+independently trained DR-PINNs for each value of $\lambda$.
 
 \begin{figure}[htbp]
   \centering
@@ -3345,23 +3332,30 @@ those detected by the trained DR-PINNs.
 
 \begin{table}[htbp]
   \centering
-  \begin{tabular}{cccc}
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{ccccc}
     \toprule
-    $\lambda$ & $t^*_{\rm ref}$ & $t^*_{\rm DR\text{-}PINN}$ & relative error \\
+    $\lambda$ & $t^*_{\rm ref}$ &
+    \shortstack{$t_{\rm first}(10^{-3})$\\median [range]} &
+    \shortstack{$t_{\rm persistent}(10^{-3})$\\among successful runs} &
+    \shortstack{no persistent\\crossing} \\
     \midrule
-    0.4 & \RelayTRefA & \RelayTNetA & \RelayRelErrA \\
-    0.6 & \RelayTRefB & \RelayTNetB & \RelayRelErrB \\
-    0.8 & \RelayTRefC & \RelayTNetC & \RelayRelErrC \\
+    0.4 & \RelayTRefA & \RelayTFirstA & \RelayTPersistA & \RelayNoPersistA/\RelayNSeedsA \\
+    0.6 & \RelayTRefB & \RelayTFirstB & -- & \RelayNoPersistB/\RelayNSeedsB \\
+    0.8 & \RelayTRefC & \RelayTFirstC & \RelayTPersistC & \RelayNoPersistC/\RelayNSeedsC \\
     \bottomrule
   \end{tabular}
-  \caption{Reference and DR-PINN extinction times $t^*$ for the primary sweep
-    $\lambda\in\{0.4,0.6,0.8\}$. The DR-PINN extinction time is defined as
-    the first evaluation instant at which $\|u_\theta(t)\|_{L^2(\Omega)}<10^{-3}$;
-    since the network is evaluated on a time grid of step
-    $2.5\times10^{-3}$, the detected DR-PINN times carry a resolution
-    uncertainty of about half the evaluation step
-    ($\approx1.3\times10^{-3}$), so the trailing digits should not be
-    over-interpreted.}
+  \caption{Reference extinction times and DR-PINN threshold-crossing
+    statistics over seeds \RelaySeedList.  Here $t_{\rm first}(10^{-3})$
+    is the first evaluation time at which
+    $\|u_\theta(t)\|_{L^2(\Omega)}<10^{-3}$, whereas
+    $t_{\rm persistent}(10^{-3})$ is the first time after which the norm
+    remains below that threshold until $T$.  The latter is not observed
+    before $T$ in most runs.  The evaluation-grid step is
+    $2.5\times10^{-3}$, corresponding to a resolution uncertainty of about
+    $1.3\times10^{-3}$.  Threshold crossings are therefore not identified
+    with exact finite-time extinction of the smooth network output.}
   \label{tab:relay-extinction}
 \end{table}
 
@@ -3386,12 +3380,14 @@ distance, it corresponds to an RMS distance of
 $\approx\RelayRMS$, comparable to $\lambda=0.6$ itself, and (as
 Figure~\ref{fig:relay-branch} shows) it is dominated by a thin
 neighborhood of the extinction front where the operator values reach
-$\approx\RelayZFrontMax$. This experiment therefore demonstrates an accurate
-\emph{qualitative} reproduction of the finite-time extinction dynamics
-and of the extinction times, but it does not exhibit a uniformly small
-distance residual over the whole domain, and should not be read as a
-direct numerical realization of the hypothesis
-$\mathcal{J}(u_n)\to0$ of Theorem~\ref{thm:consistency-parabolic}.
+$\approx\RelayZFrontMax$. This experiment therefore demonstrates a useful
+\emph{qualitative} reproduction of the decay toward finite-time
+extinction and of the pre-extinction reference dynamics.  It does not
+establish exact or persistent extinction of the smooth network output,
+nor does it exhibit a uniformly small distance residual over the whole
+domain; consequently, it should not be read as a direct numerical
+realization of the hypothesis $\mathcal{J}(u_n)\to0$ of
+Theorem~\ref{thm:consistency-parabolic}.
 
 \begin{figure}[htbp]
   \centering
@@ -3415,7 +3411,8 @@ $t^*_{\rm ref}=\RelayTRefBase$ (dropping
 to machine zero), the DR-PINN norm stabilizes at $\RelayPostExtPlateau$: a
 single analytic tanh-network trajectory generally cannot be nonzero before
 the extinction time and exactly zero on an open post-extinction interval,
-so a small residual plateau after extinction is expected. The right panel shows the pointwise absolute error
+so a small nonzero post-extinction norm is expected and should not be
+interpreted as exact extinction. The right panel shows the pointwise absolute error
 $|u_\theta-u_{\rm ref}|$ at $t=T=0.3$: the error is at most
 $\RelayMaxPtErr$, smooth, and concentrated at the domain centre, a pattern
 consistent with the residual of a smooth approximation of the trivial
@@ -3468,29 +3465,27 @@ where the residual is hardest to reduce.
 \end{figure}
 
 Figure~\ref{fig:relay-sweep} and Table~\ref{tab:relay-extinction} summarize
-the extinction-time comparison across the primary sweep
+the comparison across the primary sweep
 $\lambda\in\{0.4,0.6,0.8\}$. The DR-PINN norm curves reproduce the
-qualitative shape of the reference curves for all three values of $\lambda$,
-and the detected extinction times follow the correct ordering
-$t^*(0.4)>t^*(0.6)>t^*(0.8)$. The absolute errors range from
-$\RelayAbsErrMin$ to
-$\RelayAbsErrMax$ time units. Note that the effective loss scale grows as
-$\lambda^2$ (the
-distance-residual target $z\to\pm\lambda$ grows with $\lambda$), so a
-fixed training budget is expected to resolve the extinction front with
-somewhat lower absolute accuracy at larger $\lambda$.
+qualitative decay of the reference curves, but the first crossings of the
+$10^{-3}$ threshold vary substantially across seeds and do not preserve
+the monotone ordering of the exact reference extinction times.  Moreover,
+in seven of the nine adaptive runs the norm does not remain below
+$10^{-3}$ before $T$.  These observations motivate reporting first and
+persistent threshold crossings separately rather than calling the former
+an extinction time.
 
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=0.80\textwidth]{figures/extinction_time_sweep.png}
-  \caption{Extinction-time comparison across the primary sweep
-    $\lambda\in\{0.4,0.6,0.8\}$. Solid lines: reference solver. Dashed lines:
-    DR-PINN. Colors identify the three $\lambda$ values (blue: $0.4$, orange:
-    $0.6$, green: $0.8$). Curves are clipped below $10^{-6}$ for readability:
-    after extinction the reference drops to exactly zero (below the axis)
-    while the DR-PINN norm stabilizes at $\approx10^{-4}$; the correct
-    monotone ordering of extinction times is reproduced by the DR-PINN for all
-    three values.}
+  \caption{Reference extinction and DR-PINN threshold-crossing behaviour
+    across $\lambda\in\{0.4,0.6,0.8\}$. Solid lines show the reference
+    solutions and dashed lines the three DR-PINN seeds for each $\lambda$
+    (blue: $0.4$, orange: $0.6$, green: $0.8$); the dash-dotted horizontal
+    line marks the threshold $10^{-3}$. Curves are clipped below $10^{-6}$
+    for readability.  The reference solutions extinguish exactly, whereas
+    most DR-PINN curves cross the threshold only transiently and retain a
+    small nonzero post-extinction norm.}
   \label{fig:relay-sweep}
 \end{figure}
 
@@ -3531,18 +3526,20 @@ linear control system with a polytopic input set, the distance residual
 is driven to machine-precision levels and the trained ensemble stays
 close to an empirically sampled reachable tube. For a planar inclusion
 with a rotating ellipsoidal constraint, a genuine DR-PINN run reaches
-collocation losses of order $10^{-14}$ with endpoint constraints enforced
+a collocation loss of $\EllipCompLoss$ with endpoint constraints enforced
 exactly, while a complementary hard-admissible parametrization
 illustrates how the residual can instead be eliminated at the time-grid
 nodes by construction (with feasibility between nodes confirmed a
 posteriori on a dense validation grid), freeing the remaining degrees of freedom to
 select a particular element of the solution set. For a reaction-diffusion
-inclusion with relay feedback, the DR-PINN reproduces the finite-time
-extinction phenomenon and the correct ordering of extinction times across
-$\lambda$, while the branch-selection diagnostic makes visible both the
-learned selection mechanism and the concentration of the residual along
-the extinction front, where a smooth surrogate must approximate a
-discontinuous right-hand side.
+inclusion with relay feedback, the DR-PINN qualitatively reproduces the
+decay toward finite-time extinction and the pre-extinction dynamics.
+However, the $10^{-3}$ threshold-crossing times are seed-sensitive, do not
+preserve the monotone ordering of the exact reference extinction times,
+and are usually not persistent before $T$.  The branch-selection diagnostic
+also makes visible the concentration of the residual along the extinction
+front, where a smooth surrogate must approximate a discontinuous
+right-hand side.
 
 Several directions remain open. First, quantitative error estimates
 would require additional structure (e.g., one-sided Lipschitz or
