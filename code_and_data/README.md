@@ -36,6 +36,9 @@ code_and_data/
 ├── environment.yml
 ├── src/                    shared library code (paper_style, repro_utils)
 ├── experiments/            run_experiment_61/62/63.py (staged pipelines)
+│                           + convergence_study_63.py (standalone
+│                           cross-check of the reference-solver
+│                           refinement study; run with --check)
 ├── configs/                exp61/62/63.json — all hyperparameters
 │                           (full + smoke overrides)
 ├── scripts/                bash entry points (see Quick start)
@@ -48,8 +51,6 @@ code_and_data/
 ├── paper/                  dr-pinns.tex + references.bib; figures/ and
 │                           generated/ are synced from results/ by
 │                           scripts/build_paper.sh
-├── docs/                   review-response notes (mapping fixes → referee
-│                           points, in Polish)
 └── reproduce_all.sh
 ```
 
@@ -111,8 +112,11 @@ without any GPU the jobs fall back to sequential CPU execution.
 * item 1.4 (residual distribution): mean/RMS/median/p90/p95/p99/max on an
   independent 100k-point set, split `|u_theta| < 0.01` (front) vs away:
   `table_63_residuals.tex` + `residual_distribution.png`;
-* item 1.5 (solver convergence): 49²/97² x {5e-4, 2.5e-4}:
+* item 1.5 (solver convergence): mesh 49²/97²/193² x time step
+  {5e-4, 2.5e-4, 1.25e-4} (six configurations per lambda):
   `table_63_solver_convergence.tex` + `solver_convergence.png`;
+  independently cross-checked by
+  `experiments/convergence_study_63.py --check`;
 * item 1.6 (plateau consistency): per-run median/min/max after t*_ref:
   `table_63_plateau.tex`;
 * item 2 (multi-seed 6.3): 3 pre-registered seeds per lambda, median +
@@ -163,4 +167,5 @@ shipped numbers were produced on.
 The `results/` content in this package comes from a **smoke run** and serves
 only to verify the pipeline end-to-end; for submission, overwrite it with a
 full run (`bash reproduce_all.sh`). The mapping of code changes to the
-referee's points is documented in `docs/README_review_response_pl.md`.
+referee's points is documented in the "Mapping to the referee's points"
+section above.
