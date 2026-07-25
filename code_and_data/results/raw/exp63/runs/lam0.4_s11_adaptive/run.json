@@ -5,15 +5,15 @@
   "net_seed": 11,
   "sample_seed": 1011,
   "sampling": "adaptive",
-  "n_epochs": 200,
-  "val_loss": 29.254365921020508,
-  "train_seconds": 19.692933797836304,
-  "generated_utc": "2026-07-24T19:36:32.082564+00:00",
-  "hardware": "Linux-6.18.5-x86_64-with-glibc2.39 | x86_64 | GPU: none | RAM: 4 GiB",
-  "cuda_visible_devices": "<unset>",
+  "n_epochs": 40000,
+  "val_loss": 0.27224355936050415,
+  "train_seconds": 953.7969880104065,
+  "generated_utc": "2026-07-24T21:36:50.938164+00:00",
+  "hardware": "Linux-6.1.0-32-amd64-x86_64-with-glibc2.36 | x86_64 | GPU: NVIDIA L40S, NVIDIA L40S, NVIDIA L40S, NVIDIA L40S, NVIDIA L40S | RAM: 1512 GiB",
+  "cuda_visible_devices": "1",
   "versions": {
-    "python": "3.12.3",
-    "numpy": "2.4.4",
+    "python": "3.11.2",
+    "numpy": "2.4.6",
     "tensorflow": "2.21.0"
   }
 }

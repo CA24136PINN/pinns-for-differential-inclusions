@@ -1,19 +1,25 @@
-== system_info 2026-07-24T15:12:31Z ==
+== system_info 2026-07-24T21:19:43Z ==
 -- OS --
-Linux vm 6.18.5 #1 SMP PREEMPT_DYNAMIC @0 x86_64 x86_64 x86_64 GNU/Linux
-PRETTY_NAME="Ubuntu 24.04.4 LTS"
+Linux damsi-gpu 6.1.0-32-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.1.129-1 (2025-03-06) x86_64 GNU/Linux
+PRETTY_NAME="Debian GNU/Linux 12 (bookworm)"
 -- CPU --
-model name	: Intel(R) Xeon(R) Processor @ 2.10GHz
-cores: 1
+model name	: INTEL(R) XEON(R) SILVER 4516Y+
+cores: 96
 -- RAM --
-MemTotal:        4093928 kB
+MemTotal:       1584999340 kB
 -- GPU --
-no NVIDIA GPU / nvidia-smi not found
+name, memory.total [MiB], driver_version
+NVIDIA L40S, 46068 MiB, 535.216.01
+NVIDIA L40S, 46068 MiB, 535.216.01
+NVIDIA L40S, 46068 MiB, 535.216.01
+NVIDIA L40S, 46068 MiB, 535.216.01
+NVIDIA L40S, 46068 MiB, 535.216.01
+| NVIDIA-SMI 535.216.01             Driver Version: 535.216.01   CUDA Version: 12.2     |
 -- Python --
-Python 3.12.3
-numpy==2.4.4
+Python 3.11.2
+numpy==2.4.6
 scipy==1.17.1
 tensorflow==2.21.0
-matplotlib==3.10.8
+matplotlib==3.11.1
 -- conda env --
 CONDA_DEFAULT_ENV=<none>

@@ -1,0 +1,19 @@
+{
+  "status": "done",
+  "tag": "lam0.8_s47_adaptive",
+  "lam": 0.8,
+  "net_seed": 47,
+  "sample_seed": 1047,
+  "sampling": "adaptive",
+  "n_epochs": 40000,
+  "val_loss": 0.6507079005241394,
+  "train_seconds": 1168.8526301383972,
+  "generated_utc": "2026-07-24T20:31:40.653043+00:00",
+  "hardware": "Linux-6.1.0-32-amd64-x86_64-with-glibc2.36 | x86_64 | GPU: NVIDIA L40S, NVIDIA L40S, NVIDIA L40S, NVIDIA L40S, NVIDIA L40S | RAM: 1512 GiB",
+  "cuda_visible_devices": "2",
+  "versions": {
+    "python": "3.11.2",
+    "numpy": "2.4.6",
+    "tensorflow": "2.21.0"
+  }
+}

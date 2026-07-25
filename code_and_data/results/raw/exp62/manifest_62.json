@@ -1,16 +1,16 @@
 {
   "script": "run_experiment_62.py",
-  "generated_utc": "2026-07-24T19:41:07.189900+00:00",
-  "runtime_seconds": 13.093942403793335,
-  "smoke": true,
+  "generated_utc": "2026-07-24T23:35:48.181232+00:00",
+  "runtime_seconds": 2011.171736240387,
+  "smoke": false,
   "seed": 0,
   "versions": {
-    "python": "3.12.3",
-    "numpy": "2.4.4",
+    "python": "3.11.2",
+    "numpy": "2.4.6",
     "scipy": "1.17.1",
     "tensorflow": "2.21.0"
   },
-  "hardware": "Linux-6.18.5-x86_64-with-glibc2.39 | x86_64 | GPU: none | RAM: 4 GiB",
+  "hardware": "Linux-6.1.0-32-amd64-x86_64-with-glibc2.36 | x86_64 | GPU: NVIDIA L40S, NVIDIA L40S, NVIDIA L40S, NVIDIA L40S, NVIDIA L40S | RAM: 1512 GiB",
   "config": {
     "T": 3.0,
     "x0": [
@@ -36,63 +36,63 @@
       ]
     },
     "newton_iterations": 30,
-    "maxiter": 80,
-    "epochs": 200,
-    "n_dense": 2001
+    "maxiter": 3000,
+    "epochs": 7000,
+    "n_dense": 20001
   },
   "part_a": {
     "stages": [
       {
         "lam_xi": 0.001,
-        "mismatch": 0.0001364593397783414,
-        "mean_level": 0.9660561894139705,
-        "max_level": 0.9816385445128574,
-        "nit": 80
+        "mismatch": 1.9820015281764752e-05,
+        "mean_level": 0.9717812940618723,
+        "max_level": 0.9824344429423237,
+        "nit": 3000
       },
       {
         "lam_xi": 0.01,
-        "mismatch": 5.809150217943724e-05,
-        "mean_level": 0.9664883049486487,
-        "max_level": 0.9809959267543249,
-        "nit": 80
+        "mismatch": 4.785137888583017e-06,
+        "mean_level": 0.9711436122915021,
+        "max_level": 0.9824220207036876,
+        "nit": 3000
       },
       {
         "lam_xi": 0.1,
-        "mismatch": 0.00014086721647388383,
-        "mean_level": 0.966178985347707,
-        "max_level": 0.9804529635311038,
-        "nit": 80
+        "mismatch": 9.682579337562318e-06,
+        "mean_level": 0.9680429585277965,
+        "max_level": 0.9824152591469151,
+        "nit": 3000
       }
     ],
-    "dense_max_level": 0.980415947679836,
+    "dense_max_level": 0.9874607640607325,
     "dense_violations": 0,
-    "n_dense": 2001,
+    "n_dense": 20001,
     "extremal_down_x2T": -0.04693285947080184
   },
   "part_b": {
-    "final_collocation_loss": 0.001633711127048089,
+    "final_collocation_loss": 6.897998085162294e-19,
     "newton_iterations": 30,
-    "newton_final_secular_residual_max": 5.551115123125783e-16,
-    "newton_points_outside": 1470,
-    "distance_mean_dense": 0.029753901109981277,
-    "distance_median_dense": 0.0356720357977004,
-    "distance_p95_dense": 0.06404358642393151,
-    "distance_p99_dense": 0.13324733190815974,
-    "distance_max_dense": 0.18078501568846223,
-    "distance_rms_dense": 0.04005856454883337,
-    "level_mean_dense": 1.15931571066264,
-    "level_max_dense": 2.48853195985346,
-    "inside_fraction_dense": 0.265,
+    "newton_final_secular_residual_max": 4.440892098500626e-16,
+    "newton_points_outside": 7,
+    "distance_mean_dense": 2.0882307052257906e-09,
+    "distance_median_dense": 0.0,
+    "distance_p95_dense": 0.0,
+    "distance_p99_dense": 0.0,
+    "distance_max_dense": 1.4083549910692505e-06,
+    "distance_rms_dense": 4.7725266850080933e-08,
+    "level_mean_dense": 0.9227644412263615,
+    "level_max_dense": 1.0000061557019697,
+    "inside_fraction_dense": 0.9965,
     "initial_endpoint_error": 0.0,
     "terminal_endpoint_error": 0.0,
-    "gradient_check_relative_error": 9.061411138250066e-11,
+    "gradient_check_relative_error": 7.220533930235078e-11,
     "gradient_check_autograd": [
       2.7624335184804263,
-      -2.2964386339356855
+      -2.296438633935685
     ],
     "gradient_check_fd": [
-      2.762433518155305,
-      -2.2964386339197063
+      2.7624335183773496,
+      -2.2964386336976617
     ]
   }
 }
