@@ -181,7 +181,12 @@
 			sequence of candidates satisfying the initial (and, in the parabolic
 			case, boundary) conditions whose continuous distance-residual
 			functional tends to zero admits a subsequence converging to an exact
-			solution of the target inclusion.  The proofs combine a priori estimates (Gr\"onwall
+			solution of the target inclusion.  We emphasize that these are
+			\emph{conditional} consistency statements about the continuous
+			distance-residual functional: they concern neither the
+			finite-collocation training loss minimized in practice, nor the
+			behaviour of the optimizer, and they provide no convergence rates.
+			The proofs combine a priori estimates (Gr\"onwall
 			inequality and parabolic energy estimates), weak compactness arguments
 			(Arzel\`a--Ascoli and an Aubin--Lions-type compact embedding), and the lower semicontinuity of
 			normal convex integrands.  For admissible sets given as convex hulls of
@@ -314,11 +319,42 @@
 	loss is therefore recomputed along the current trajectory at every
 	training step.
 	
+%	\paragraph{Regularization-based PINNs for multivalued reaction terms}
+	Closer still to our setting, Kasyanov, Kapustyan, Levenchuk, and
+	Novykov \cite{kasyanov2024} proposed a machine-learning method
+	(including PINNs and the deep Galerkin method) for reaction-diffusion
+	equations with \emph{multivalued} interaction functions. Their strategy
+	is, however, structurally different from ours: the multifunction is
+	first replaced by a single-valued Lipschitz approximation (a
+	Pasch--Hausdorff-type regularization), and a classical pointwise
+	residual is then trained for the regularized, single-valued equation;
+	the set-valued character of the law is thus removed \emph{before}
+	training, and the quality of the approximation is governed by an
+	additional regularization parameter. A follow-up study
+	\cite{paliichuk2026} analyzes the Monte Carlo estimation of the
+	corresponding loss functionals and shows that the variance of the
+	standard estimator degenerates as the regularization parameter grows,
+	which further underlines the cost of the prior single-valued
+	regularization. In contrast, DR-PINNs keep the inclusion genuinely
+	multivalued and use the distance to the (possibly state-dependent)
+	admissible set itself as the training residual, with no regularization
+	parameter to drive to a limit; the price we pay is the evaluation of a
+	metric projection inside the training loop. A systematic experimental
+	comparison between the regularization-based approach of
+	\cite{kasyanov2024} and the distance-residual approach on common
+	benchmarks would be valuable and is left for future work.
+	
 %	\paragraph{Analytical theory of inclusions}
-Finally, it is worth-mentioning that although the theory of differential inclusions is well developed \cite{aubin_cellina_1984,aubin_frankowska_2009,deimling_1992}, to the best of our knowledge no
-	PINN-type method has previously been proposed for the numerical
-	approximation of solutions of differential inclusions or partial
-	differential inclusions with set-valued reaction terms.
+Finally, it is worth-mentioning that although the theory of differential inclusions is well developed \cite{aubin_cellina_1984,aubin_frankowska_2009,deimling_1992}, PINN-type
+	methods for set-valued problems have so far, to the best of our
+	knowledge, proceeded through a prior single-valued regularization of
+	the multifunction \cite{kasyanov2024,paliichuk2026}. What we believe
+	to be new here is a PINN framework that uses the distance from the
+	differential operator to the set of admissible values \emph{directly}
+	as the training residual --- without any prior single-valued
+	regularization --- together with consistency theorems for both
+	ordinary differential inclusions and parabolic partial differential
+	inclusions.
 	
 %	\subsection*{Contributions}
 	\vspace{0.3cm}
@@ -327,12 +363,23 @@ Finally, it is worth-mentioning that although the theory of differential inclusi
 	The main contributions of this paper are:
 	\begin{enumerate}
 		\item A general \emph{distance-residual principle} (Section~\ref{sec:principle})
-		that provides a unified method for constructing PINN losses for any
-		set-valued differential law.
-		\item \emph{Consistency theorems} for both ordinary differential
+		that provides a unified method for constructing PINN losses for
+		set-valued differential laws with nonempty closed values. We
+		stress that while the definition of the distance residual is this
+		general, the further properties exploited in the paper are not
+		automatic: differentiability of the loss and computability of the
+		projection require closed \emph{convex} values, and the
+		consistency theorems below additionally require measurability,
+		growth, and compactness assumptions, made precise in
+		Sections~\ref{subsec:consistency} and~\ref{sec:pde}.
+		\item \emph{Conditional consistency theorems} for both ordinary differential
 		inclusions (Section~\ref{subsec:consistency}) and  partial
 		differential inclusions (Section~\ref{sec:pde}), showing that
-		vanishing distance residuals certify admissible solutions.
+		vanishing \emph{continuous} distance-residual functionals certify
+		admissible solutions; the relation to the finite-collocation
+		training loss is discussed separately in
+		Remark~\ref{rem:collocation-gap}, and no statement is made about
+		the optimizer or about convergence rates.
 		\item A \emph{practical projection algorithm} (Section~\ref{sec:projection-extreme-points})
 		for admissible sets given as convex hulls, based on a small quadratic
 		program combined with the Quickhull algorithm.
@@ -1544,19 +1591,51 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 	\end{lemma}
 	
 	\begin{proof}
-		Since $|Z|<\infty$, strong convergence in $L^2(Z;\mathbb{R}^m)$
-		implies convergence in (Lebesgue) measure, and weak convergence in
+		We verify one by one the hypotheses of the lower semicontinuity
+		theorem of Berkovitz \cite[Theorem~1]{berkovitz_1974}, which we now
+		recall in the form we use. Let $Z\subset\mathbb{R}^N$ be a bounded
+		measurable set and let
+		$g:Z\times\mathbb{R}^m\times\mathbb{R}^k\to(-\infty,+\infty]$
+		satisfy:
+		\begin{enumerate}
+			\item[\rm(B1)] $g$ is
+			$\mathcal{L}(Z)\otimes\mathcal{B}(\mathbb{R}^m\times\mathbb{R}^k)$-measurable;
+			\item[\rm(B2)] $g(z,\cdot,\cdot)$ is lower semicontinuous on
+			$\mathbb{R}^m\times\mathbb{R}^k$ for a.e.\ $z\in Z$;
+			\item[\rm(B3)] $g(z,x,\cdot)$ is convex on $\mathbb{R}^k$ for
+			a.e.\ $z\in Z$ and every $x\in\mathbb{R}^m$;
+			\item[\rm(B4)] there exists $\psi\in L^1(Z)$ with
+			$g(z,x,v)\ge-\psi(z)$ for a.e.\ $z$ and all $(x,v)$.
+		\end{enumerate}
+		Under (B1)--(B4), if $x_n\to x$ \emph{in measure} on $Z$ and
+		$v_n\rightharpoonup v$ \emph{weakly in $L^1(Z;\mathbb{R}^k)$}, then
+		\[
+		\int_Z g\bigl(z,x(z),v(z)\bigr)\,dz
+		\le
+		\liminf_{n\to\infty}\int_Z g\bigl(z,x_n(z),v_n(z)\bigr)\,dz;
+		\]
+		see also Ioffe \cite{ioffe_1977} and
+		\cite[Chapter~VIII]{ekeland_temam_1999} for closely related
+		statements.
+		
+		It remains to match our hypotheses and topologies with
+		(B1)--(B4) and with the two convergences. Hypotheses (B1)--(B3)
+		are verbatim the normal-integrand, lower semicontinuity, and
+		convexity assumptions of the present lemma, and (B4) holds with
+		$\psi\equiv0$ because $g\ge0$. As for the convergences: since
+		$|Z|<\infty$, strong convergence $x_n\to x$ in
+		$L^2(Z;\mathbb{R}^m)$ implies, by Chebyshev's inequality,
+		convergence in Lebesgue measure on $Z$, which is the mode of
+		convergence required for the first argument. For the second
+		argument, weak convergence $v_n\rightharpoonup v$ in
 		$L^2(Z;\mathbb{R}^k)$ implies weak convergence in
-		$L^1(Z;\mathbb{R}^k)$, because every $L^\infty$ test function
-		belongs to $L^2(Z)$. Moreover, $g\ge0$, so the lower-bound
-		(negative-part) condition required in
-		\cite[Theorem~1]{berkovitz_1974} is trivially satisfied. The claim
-		is then exactly the lower semicontinuity theorem for integral
-		functionals whose integrand is measurable in $z$, lower
-		semicontinuous in $(x,v)$, and convex in $v$, with the first
-		argument converging in measure and the second weakly in $L^1$; see
-		\cite[Theorem~1]{berkovitz_1974}, and also \cite{ioffe_1977} and
-		\cite[Chapter~VIII]{ekeland_temam_1999}.
+		$L^1(Z;\mathbb{R}^k)$: for every $\varphi\in
+		L^\infty(Z;\mathbb{R}^k)$ we have $\varphi\in L^2(Z;\mathbb{R}^k)$
+		(again because $|Z|<\infty$), hence
+		$\int_Z v_n\cdot\varphi\,dz\to\int_Z v\cdot\varphi\,dz$, and
+		$L^\infty$ is the dual space characterizing weak convergence in
+		$L^1$. All hypotheses of \cite[Theorem~1]{berkovitz_1974} being
+		satisfied, the asserted inequality follows.
 	\end{proof}
 	
 	\begin{theorem}[Consistency of the distance residual] \label{thm:consistency}
@@ -2471,8 +2550,20 @@ value indicates that the ensemble trajectories lie close to empirically
 generated admissible trajectories, regardless of the random initialization.
 Its numerical value also depends on the density of the reference cloud
 (a sparser sample inflates $d_H^+$ even for exactly admissible
-trajectories), which is why the dense-grid residual validation reported
-next, and not this discrepancy alone, is the primary admissibility check.
+trajectories). For this reason we assign the sampled cloud, and the
+discrepancy $\overline{d_H^+}$ computed from it, a \emph{purely
+illustrative} role in this section: they visualize the reachable tube and
+provide a qualitative sanity check, but they enter no quantitative claim
+of the paper. A certified comparison would instead require computing the
+reachable sets $\mathcal{R}(t)$ themselves --- for the present linear
+system, e.g., via support functions of $\mathcal{R}(t)$ (whose values
+along fixed directions are available from the maximum principle) or via a
+guaranteed reachability solver --- and measuring the distance of the
+trained trajectories to those certified sets; we regard this as a
+worthwhile but separate exercise, outside the scope of this benchmark.
+The primary admissibility check of this section is therefore the
+dense-grid residual validation reported next, and not the cloud
+discrepancy.
 
 \paragraph{Independent dense-grid residual validation}
 As announced above, and analogously to the dense-grid check of
@@ -2921,7 +3012,28 @@ and maximum level $\EllipCompMaxL$; any excess of the latter over $1$ is
 consistent with the reported maximum inclusion distance and the numerical
 projection tolerance. Thus
 the corrected distance-residual implementation does solve this benchmark as
-a genuine DR-PINN. The hard-admissible parametrization guarantees
+a genuine DR-PINN.
+
+Two caveats about the scope of this companion run are in order. First,
+the figures above refer to a \emph{single} training run with one random
+seed; they demonstrate that the distance-residual method can solve this
+benchmark to the reported accuracy, but they do not by themselves
+characterize the robustness of training. A systematic robustness study
+--- medians and ranges over an ensemble of $5$--$10$ seeds, the observed
+frequency of unsuccessful runs, and a comparison against a direct
+parametrization of the control $\xi$ (as in the hard-admissible selector
+above, but trained on the same steering objective) --- is the natural
+complement to the single run reported here.
+% [TODO] Multi-seed campaign for the DR-PINN companion run
+% (5–10 seeds: median/range of collocation loss, dense-grid mean/max
+% distances, failure rate; plus direct-control baseline) to be added to
+% the replication pipeline before submission.
+Second, the hard-admissible selector study, while methodologically
+instructive as the complementary strategy, is not a DR-PINN experiment,
+and the conclusions of the paper concerning the distance residual rest
+on the companion run and on the experiments of
+Sections~\ref{subsec:linear-control}
+and~\ref{subsec:parabolic-PDI} only. The hard-admissible parametrization guarantees
 feasibility at the time-grid nodes independently of training; for the
 reported optimized selector, feasibility between nodes was additionally
 confirmed on a dense validation grid of $\EllipNDense$ points (cf.\ the level
@@ -3055,6 +3167,40 @@ applies to this example.
 	$u\in\mathcal{W}(0,T)$ is a strong solution of
 	\eqref{eq:relay-pde}, so $\mathcal{S}(u_0)\neq\varnothing$ also for
 	this example.
+	
+	For completeness, the passage from the subgradient-flow theory to the
+	stated regularity is quantitative, with the following explicit
+	$L^2$ estimates. First, for gradient flows
+	$-\partial_tu(t)\in\partial E(u(t))$ with $u_0\in D(E)$, the chain
+	rule for convex subdifferentials \cite[Lemme~3.3]{Brezis1973} gives
+	$\frac{d}{dt}E(u(t))=-\|\partial_tu(t)\|_{L^2(\Omega)}^2$ for a.e.\
+	$t$, whence, integrating on $(0,T)$ and using $E\ge0$,
+	\[
+	\int_0^T\|\partial_tu(t)\|_{L^2(\Omega)}^2\,dt
+	= E(u_0)-E(u(T))
+	\le E(u_0)
+	= \tfrac12\|\nabla u_0\|_{L^2(\Omega)}^2
+	+\lambda\|u_0\|_{L^1(\Omega)}.
+	\]
+	Second, the pointwise bound $|\xi|\le1$ a.e.\ in $Q$ yields the
+	explicit selection estimate
+	\[
+	\|\xi\|_{L^2(Q)}\le|Q|^{1/2}=(T\,|\Omega|)^{1/2}.
+	\]
+	Third, combining the two by the triangle inequality in $L^2(Q)$,
+	\[
+	\|\Delta u\|_{L^2(Q)}
+	\le\|\partial_tu\|_{L^2(Q)}+\lambda\,\|\xi\|_{L^2(Q)}
+	\le E(u_0)^{1/2}+\lambda\,(T\,|\Omega|)^{1/2},
+	\]
+	and the constant in the elliptic estimate
+	$\|u(t)\|_{H^2(\Omega)}\le C(\Omega)\,\|\Delta u(t)\|_{L^2(\Omega)}$
+	of \cite[Theorem~3.2.1.2]{Grisvard1985} depends only on the (convex)
+	domain. All three memberships
+	$\partial_tu\in L^2(0,T;L^2(\Omega))$, $\xi\in L^2(Q)$, and
+	$u\in L^2(0,T;H^2(\Omega)\cap H_0^1(\Omega))$ therefore come with
+	explicit bounds in terms of $E(u_0)$, $\lambda$, $T$, and $|\Omega|$
+	alone.
 	
 	Uniqueness of strong solutions also holds. Let
 	$u_1,u_2\in\mathcal{W}(0,T)$ be strong solutions with the same initial
@@ -3599,7 +3745,15 @@ candidates whose \emph{continuous} distance-residual functional tends to
 zero converges, along a subsequence, to an exact solution of the target
 inclusion; relating the finite-collocation training loss to the continuous
 functional requires the additional sampling and regularity assumptions
-discussed in Remark~\ref{rem:collocation-gap}. The proofs
+discussed in Remark~\ref{rem:collocation-gap}. To delimit the theory
+precisely, we repeat what it does \emph{not} establish: it does not prove
+that a sequence of neural networks with vanishing continuous
+distance-residual functional exists, nor that a gradient-based optimizer
+finds one, nor that random or adaptive collocation schemes satisfy the
+bridging assumptions of Remark~\ref{rem:collocation-gap}, and it provides
+no convergence rates. The results are conditional consistency statements
+for the continuous functional, and we regard closing each of these gaps
+as a separate research problem. The proofs
 combine a priori estimates, compactness, weak convergence of the
 differential operators, and the lower semicontinuity of normal convex
 integrands; in view of the intrinsic non-uniqueness of solutions of
@@ -3646,6 +3800,30 @@ sweeping processes, and differential variational inequalities appear
 within reach of the general principle of Section~\ref{sec:principle}.
 
 
+
+%% ============================================================
+\section*{Code and data availability}
+%% ============================================================
+
+All numbers, tables, and figures of Section~\ref{sec:numerics} are
+produced by a single execution of the replication pipeline referenced
+throughout the text. The replication package is publicly available at
+% [TODO] Insert the final public GitHub URL (and, ideally, a Zenodo
+% DOI of the archived release) together with the exact commit hash once
+% the repository is frozen for submission. The repository exists; the
+% link is deliberately withheld until the package is finalized.
+\texttt{[GitHub repository URL and commit hash to be inserted upon
+finalization of the package]}. The package contains: the scripts
+\texttt{run\_experiment\_61.py}, \texttt{run\_experiment\_62.py}, and
+\texttt{run\_experiment\_63.py} generating every table and figure of
+Sections~\ref{subsec:linear-control}--\ref{subsec:parabolic-PDI}
+(including the automatically generated numerical macros
+\texttt{generated/results\_6x.tex} compiled into this manuscript); all
+random seeds; the saved network checkpoints, in particular those
+underlying Figures~9--12; the exact definitions and weights of all
+regularizers entering the cost \eqref{eq:ellipse-cost}; and a manifest
+recording the hardware, operating system, and full library versions of
+the runs whose outputs are reported here.
 
 %% ============================================================
 %%  References
