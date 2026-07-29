@@ -1,0 +1,11 @@
+{
+  "lam": 0.6,
+  "eps": 0.05,
+  "seed": 47,
+  "sampler": "rar",
+  "id": "lam0.6_eps0.05_s47_rar",
+  "wall_seconds": 619.5870764255524,
+  "epochs": 40000,
+  "final_val_mean": 0.016690455377101898,
+  "final_val_max": 23.921672821044922
+}

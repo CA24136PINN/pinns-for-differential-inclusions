@@ -1,0 +1,11 @@
+{
+  "lam": 0.6,
+  "eps": 0.02,
+  "seed": 23,
+  "sampler": "front",
+  "id": "lam0.6_eps0.02_s23_front",
+  "wall_seconds": 629.286465883255,
+  "epochs": 40000,
+  "final_val_mean": 0.05165398120880127,
+  "final_val_max": 37.80743408203125
+}

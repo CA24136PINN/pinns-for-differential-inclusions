@@ -1,0 +1,45 @@
+# Revised Section 6.3: dead-zone relay benchmark.
+# All outputs go under results/relay_eps/ (safe for sync_update.sh whitelist).
+
+# --- problem -----------------------------------------------------------
+T: 0.3
+lam_baseline: 0.6
+lam_sweep: [0.4, 0.8]          # at eps = eps_baseline, band-time monotonicity
+eps_sweep: [0.1, 0.05, 0.02, 0.01, 0.0]   # at lam = lam_baseline
+eps_baseline: 0.05
+seeds: [11, 23, 47, 59, 71]
+ablation_samplers: [uniform, rar]   # baseline (lam, eps) only; main runs: front
+
+# --- network / optimiser (identical to the paper's 6.3 baseline) -------
+dtype: float32
+width: 128
+depth: 5
+epochs: 40000
+lr: 2.0e-3
+lr_hold: 5000
+lr_decay_rate: 0.85
+lr_decay_every: 3000
+batch_size: 2000
+val_size: 4000
+val_every: 250
+
+# --- adaptive sampling (confounder-fixed) ------------------------------
+adaptive_frac: 0.3
+pool_size: 4000
+candidate_size: 20000
+refresh_every: 500
+pool_margin: 0.05        # exclude dist(x, boundary) < margin from hard pool
+
+# --- reference solver --------------------------------------------------
+ref_n: 49
+ref_dt: 5.0e-4
+ref_lams: [0.0, 0.4, 0.6, 0.8]
+ref_refine_grids: [1, 2, 4]      # 49 -> 97 -> 193
+ref_refine_dts: [1.0, 0.5, 0.25]
+
+# --- evaluation --------------------------------------------------------
+eval_dense_points: 200000
+eval_nt: 121
+eval_ng: 101
+eval_cloud_points: 4000
+eval_violation_tol: 1.0e-4   # dist^2 tolerance for the binary graph check

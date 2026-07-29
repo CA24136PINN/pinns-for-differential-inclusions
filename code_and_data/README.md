@@ -35,16 +35,21 @@ code_and_data/
 ├── requirements.txt
 ├── environment.yml
 ├── src/                    shared library code (paper_style, repro_utils)
+│                           + dr_pinns/relay_eps/ (revised 6.3 library)
 ├── experiments/            run_experiment_61/62/63.py (staged pipelines)
 │                           + convergence_study_63.py (standalone
 │                           cross-check of the reference-solver
 │                           refinement study; run with --check)
 ├── configs/                exp61/62/63.json — all hyperparameters
 │                           (full + smoke overrides)
+│                           + relay_eps.yaml (revised 6.3 campaign)
 ├── scripts/                bash entry points (see Quick start)
 ├── results/
 │   ├── raw/                training outputs: raw_data.npz, manifest_6X.json,
 │   │                       checkpoints/  (one subdir per experiment)
+│   ├── relay_eps/          revised 6.3: reference/, runs/ (eval.json,
+│   │                       run_config.json), logs/, figures/ (PDF),
+│   │                       eval_summary.json
 │   ├── figures/            all paper figures (PNG)
 │   └── aggregated/         results_6X.tex (LaTeX macros), manifests,
 │                           system_info.txt
@@ -77,6 +82,43 @@ python3 experiments/run_experiment_63.py --stage analyze     # minutes, from
 python3 experiments/run_experiment_63.py --stage tables      # seconds
 python3 experiments/run_experiment_63.py --stage figures     # seconds
 ```
+
+## Example 6.3, revised (referee revision 2): the eps-banded relay
+
+The revised parabolic benchmark trains against the dead-zone relay
+`Phi_eps` and validates band-entry times against the reference solver.
+It lives in its own staged pipeline (see
+`experiments/relay_eps/README.md` for the full claim -> artefact map):
+
+```bash
+bash scripts/run_all_relay_eps.sh "0 1 2 3"      # full campaign: 45 runs
+bash scripts/run_all_relay_eps.sh --smoke        # end-to-end pipeline check
+RELAY_EPS_GPUS="0 1" bash reproduce_all.sh       # relay_eps is also step 3b
+                                                 # of the full reproduction
+```
+
+Stages (only stage 2 is expensive; the launcher is restart-safe and
+skips any run whose `weights.npz` already exists under
+`results/relay_eps/runs/`):
+
+```bash
+python3 experiments/relay_eps/stage_reference.py   # CPU, minutes: reference
+                # solver, torsion witness, refinement study
+bash scripts/launch_relay_eps.sh "0 1 2 3"         # GPU queue: 45 x ~10 min
+python3 experiments/relay_eps/stage_eval.py        # per-run eval.json +
+                # eval_summary.json (needs weights.npz per run)
+python3 experiments/relay_eps/stage_figures.py     # seconds -> results/relay_eps/figures/
+python3 experiments/relay_eps/stage_macros.py      # seconds -> results/aggregated/results_63eps.tex
+```
+
+**Shipped precomputed artifacts** (`results/relay_eps/`): per-run
+`eval.json` + `run_config.json` + training logs for all 45 runs, the
+aggregated `eval_summary.json`, all paper figures (PDF), and the
+reference refinement study. The per-run training weights are not
+shipped (size); `stage_figures`/`stage_macros` regenerate everything
+reported in the paper from the shipped evaluation artifacts alone
+(after a one-off `stage_reference` run, minutes on CPU), while
+re-running `stage_eval` requires retraining or the local weights.
 
 `bash scripts/run_experiment_63.sh` chains reference → grid → analyze.
 Seeds (11, 23, 47) are fixed in `configs/exp63.json` **before** looking at

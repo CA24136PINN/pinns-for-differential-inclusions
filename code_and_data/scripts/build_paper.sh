@@ -21,7 +21,7 @@ for f in "${PAPER_FIGS[@]}"; do
         missing=1
     fi
 done
-for t in 61 62 63; do
+for t in 61 62 63 63eps; do
     if [[ -f "results/aggregated/results_${t}.tex" ]]; then
         cp "results/aggregated/results_${t}.tex" paper/generated/
     else
@@ -31,6 +31,20 @@ done
 for f in results/aggregated/table_*.tex; do
     if [[ -f "$f" ]]; then cp "$f" paper/generated/; fi
 done
+# Revised Section 6.3 (eps-banded relay): vector figures from the
+# relay_eps pipeline, synced as-is (PDF).
+RELAY_FIGS=(fig_training fig_band_times fig_eps_sweep fig_ablation
+            fig_hardpool fig_branch_cloud
+            fig_norms_lam0.4 fig_norms_lam0.6 fig_norms_lam0.8)
+for f in "${RELAY_FIGS[@]}"; do
+    if [[ -f "results/relay_eps/figures/${f}.pdf" ]]; then
+        cp "results/relay_eps/figures/${f}.pdf" paper/figures/
+    else
+        echo "!! missing figure: results/relay_eps/figures/${f}.pdf" >&2
+        missing=1
+    fi
+done
+
 if [[ $missing -eq 1 ]]; then
     echo ">>> (paper will compile with fallbacks/TBD)"
 fi

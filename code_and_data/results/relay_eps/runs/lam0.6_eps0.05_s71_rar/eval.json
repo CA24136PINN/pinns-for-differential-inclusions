@@ -1,0 +1,29 @@
+{
+  "run": "lam0.6_eps0.05_s71_rar",
+  "lam": 0.6,
+  "eps": 0.05,
+  "seed": 71,
+  "sampler": "rar",
+  "final_val_mean": 0.02078898996114731,
+  "final_val_max": 24.63966941833496,
+  "residual": {
+    "mean": 0.027088088914752007,
+    "max": 49.30611038208008,
+    "mean_pre": 0.054974962025880814,
+    "max_pre": 49.30611038208008,
+    "mean_front": 0.0,
+    "max_front": 0.0,
+    "mean_post": 0.0,
+    "max_post": 0.0
+  },
+  "t_band": 0.1275,
+  "t_band_persistent": 0.1275,
+  "norm_discrepancy_pre": 0.016149283434991047,
+  "violations": 920,
+  "cloud_size": 4000,
+  "violation_tol": 0.0001,
+  "tail_dist_to_zero": 0.0023880619920936285,
+  "tail_dist_to_witness": 0.023453353818313906,
+  "witness_admissible": true,
+  "lam_v1_inf": 0.04418888735616055
+}

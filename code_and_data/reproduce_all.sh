@@ -10,6 +10,13 @@
 #   1. scripts/run_experiment_61.sh    Example 6.1  (training stage only)
 #   2. scripts/run_experiment_62.sh    Example 6.2  (training stage only)
 #   3. scripts/run_experiment_63.sh    Example 6.3  (reference + GPU grid + analyze)
+#   3b. scripts/run_all_relay_eps.sh   Example 6.3, revised (eps-banded relay):
+#                                      reference -> 45-run GPU queue -> eval
+#                                      -> figures -> macros; GPU ids via
+#                                      RELAY_EPS_GPUS (default "0"); restart-
+#                                      safe: runs with existing weights.npz
+#                                      under results/relay_eps/runs/ are
+#                                      skipped, so shipped results are reused.
 #   4. scripts/make_tables.sh          LaTeX macros from the raw manifests
 #   5. scripts/make_figures.sh         all figures from the raw data
 #   6. scripts/build_paper.sh          sync into paper/ + pdflatex + TBD check
@@ -38,6 +45,12 @@ for exp in 61 62 63; do
     echo "=============================================================="
     bash "scripts/run_experiment_${exp}.sh" $SMOKE
 done
+echo
+echo "=============================================================="
+echo ">>> Experiment 6.3 (revised, eps-banded relay) --" \
+     "scripts/run_all_relay_eps.sh"
+echo "=============================================================="
+bash scripts/run_all_relay_eps.sh "${RELAY_EPS_GPUS:-0}" $SMOKE
 echo
 bash scripts/make_tables.sh
 bash scripts/make_figures.sh

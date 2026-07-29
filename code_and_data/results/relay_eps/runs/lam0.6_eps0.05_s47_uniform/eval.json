@@ -1,0 +1,29 @@
+{
+  "run": "lam0.6_eps0.05_s47_uniform",
+  "lam": 0.6,
+  "eps": 0.05,
+  "seed": 47,
+  "sampler": "uniform",
+  "final_val_mean": 0.016233941540122032,
+  "final_val_max": 23.57441520690918,
+  "residual": {
+    "mean": 0.024963727220892906,
+    "max": 48.66956329345703,
+    "mean_pre": 0.05066300928592682,
+    "max_pre": 48.66956329345703,
+    "mean_front": 9.422628295396862e-07,
+    "max_front": 0.0057547795586287975,
+    "mean_post": 4.690019181907701e-07,
+    "max_post": 0.004809241276234388
+  },
+  "t_band": 0.1275,
+  "t_band_persistent": 0.1275,
+  "norm_discrepancy_pre": 0.020754191111184633,
+  "violations": 895,
+  "cloud_size": 4000,
+  "violation_tol": 0.0001,
+  "tail_dist_to_zero": 0.0014218907145892871,
+  "tail_dist_to_witness": 0.025534333837551826,
+  "witness_admissible": true,
+  "lam_v1_inf": 0.04418888735616055
+}
