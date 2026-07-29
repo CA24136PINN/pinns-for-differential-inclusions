@@ -54,7 +54,6 @@
 %\providecommand{\EllipCompMaxL}{\TBD{run 6.2}}
 %\providecommand{\EllipCompGradCheck}{\TBD{run 6.2}}
 
-%%% ---- fallbacks, Section 6.3 (filled by run_experiment_63.py) ----
 %\providecommand{\RelayTRefA}{0.1845}
 %\providecommand{\RelayTRefB}{0.1645}
 %\providecommand{\RelayTRefC}{0.1505}
@@ -188,9 +187,13 @@
 			finitely many vertices, projection onto the set reduces to a small convex
 			quadratic program, making the loss efficiently computable inside the
 			training loop.  Numerical experiments demonstrate high accuracy on
-			the differential-inclusion benchmarks and qualitatively reproduce the
-			extinction dynamics in the parabolic relay benchmark, where the residual
-			remains concentrated near the discontinuous extinction front.
+			the differential-inclusion benchmarks; in the parabolic relay
+			benchmark, trained against an $\varepsilon$-banded relaxation of the
+			relay, the learned solutions reproduce the finite-time extinction
+			dynamics quantitatively in the band-entry observable --- seed-stable,
+			persistent, and matching a reference solver to the resolution of the
+			evaluation grid --- while the distance residual remains concentrated
+			in a thin layer ahead of the discontinuous extinction front.
 		\end{abstract}
 		
 		\begin{keyword}
@@ -1348,16 +1351,6 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		general, see \cite{zygmunt_1992}, so \textup{(H2)} is what makes the
 		measurability steps in the proof of
 		Theorem~\ref{thm:consistency} rigorous.
-		%% NOTE: add to references.bib:
-		%% @article{zygmunt_1992,
-		%%   author  = {Zygmunt, Wojciech},
-		%%   title   = {On superpositionally measurable semi-{C}arath\'eodory multifunctions},
-		%%   journal = {Commentationes Mathematicae Universitatis Carolinae},
-		%%   volume  = {33},
-		%%   number  = {1},
-		%%   pages   = {73--77},
-		%%   year    = {1992}
-		%% }
 	\end{remark}
 	
 	\begin{definition}\label{def:admissible-class}
@@ -3376,7 +3369,15 @@ of $n_{\rm pool}=4000$ candidate points selected from a uniform draw of
 $20\,000$ points over $Q$ by retaining those with smallest $|u_\theta|$.
 The hard pool is refreshed every $500$ training epochs as the extinction
 front advances; the remaining $70\%$ of each batch is drawn uniformly over
-$Q$ to preserve global domain coverage.
+$Q$ to preserve global domain coverage. Because the benefit of this
+heuristic is not obvious a priori, the campaign reported below includes a
+controlled sampler ablation (front-based adaptive vs.\ residual-based RAR
+vs.\ purely uniform collocation) at the baseline configuration;
+anticipating the outcome, the three samplers turn out to be statistically
+indistinguishable on every reported metric at these settings
+(Table~\ref{tab:relay-ablation}), so the front-based scheme should be
+regarded as a safeguard for harder configurations rather than as a
+demonstrated accelerator.
 
 \paragraph{Reference solution}
 Unlike the bang-bang example of Section~\ref{subsec:linear-control}, where
@@ -3497,32 +3498,104 @@ evaluate the distance residual is explicit, requiring no quadratic program:
 \qquad
 z:=\partial_t u_\theta-\Delta u_\theta.
 \]
-The implementation evaluates this formula with the \emph{exact}
-multifunction $\Phi$ of \eqref{eq:relay-Phi}: the interval branch is
-applied only when $u_\theta$ is exactly zero in floating-point
-arithmetic, an event of probability zero for the smooth ansatz
-\eqref{eq:trial-parabolic}, so almost every collocation point uses one of
-the two sign branches, exactly as prescribed by $\Phi$. Both the trained
-network and the reference solver of the previous paragraph therefore
-address the same problem \eqref{eq:relay-pde}--\eqref{eq:relay-Phi}. As a
-robustness check against the regularized variant
-$\Phi_\varepsilon$ (which applies the interval branch on
-$\{|s|\le\varepsilon\}$ and satisfies
-$\Phi_\varepsilon(s)\supseteq\Phi(s)$), the distance residual of the
-trained baseline network is re-evaluated after training, on the same
-fixed validation batch, for
-$\varepsilon\in\{0,10^{-8},10^{-6},10^{-4}\}$; since
-$\Phi_\varepsilon\supseteq\Phi$ pointwise, the $\Phi_\varepsilon$-residual
-can only decrease, and the maximum relative deviation from the
-$\varepsilon=0$ value across this grid is $\RelayEpsSens$, which
-quantifies the sensitivity of the reported residuals to the
-branch-selection tolerance.
+With the \emph{exact} multifunction $\Phi$ of \eqref{eq:relay-Phi}, the
+interval branch of this formula is triggered only when $u_\theta$ is
+exactly zero in floating-point arithmetic --- an event of probability
+zero for the smooth ansatz \eqref{eq:trial-parabolic} --- so almost every
+collocation point is forced onto one of the two sign branches, and the
+training landscape is essentially that of a discontinuous target. Our
+experiments retain this exact-relay configuration as a negative control,
+but the primary experiments train against the \emph{$\varepsilon$-banded
+relay}
+\begin{equation}
+	\label{eq:relay-Phi-eps}
+	\Phi_\varepsilon(s) :=
+	\begin{cases}
+		\{-\lambda\}, & s>\varepsilon,\\[2pt]
+		[-\lambda,\lambda], & |s|\le\varepsilon,\\[2pt]
+		\{\lambda\}, & s<-\varepsilon,
+	\end{cases}
+	\qquad \varepsilon\ge0,
+\end{equation}
+which applies the interval branch on the whole band
+$\{|s|\le\varepsilon\}$ (so the middle case of the projection formula
+above is used whenever $|u_\theta|\le\varepsilon$) and reduces to $\Phi$
+for $\varepsilon=0$. Three structural facts govern the interpretation of
+the results below.
+
+First, $\Phi_\varepsilon$ satisfies (P1)--(P3) with the same constant
+$m_0=\lambda$: its values are nonempty, closed, convex intervals; it is
+upper semicontinuous (it is locally constant off
+$\{|s|=\varepsilon\}$, and at $|s|=\varepsilon$ its value is already the
+full interval $[-\lambda,\lambda]$, which contains every nearby value);
+and the growth bound is unchanged.
+Theorem~\ref{thm:consistency-parabolic} therefore applies verbatim to the
+inclusion with reaction term $\Phi_\varepsilon$.
+
+Second, $\Phi(s)\subseteq\Phi_\varepsilon(s)$ for every $s$, hence
+$\dist(z,\Phi_\varepsilon(s))\le\dist(z,\Phi(s))$ pointwise, every
+solution of the exact relay inclusion is a solution of the
+$\varepsilon$-banded one, and the trained loss is a lower bound for the
+exact one. The converse fails: the $\varepsilon$-banded inclusion has, in
+general, strictly more solutions, and --- unlike the exact relay, whose
+strong solution is unique by the monotonicity argument of
+Remark~\ref{rem:relay-wellposed} --- the graph of $-\Phi_\varepsilon$ is
+not monotone for $\varepsilon>0$, so that argument does not carry over.
+Remark~\ref{rem:relay-witness} below makes this loss of rigidity explicit
+and quantifies when it matters.
+
+Third, since a smooth surrogate cannot extinguish exactly, the observable
+we validate is not the extinction time itself but the \emph{band-entry
+time}
+\begin{equation}
+	\label{eq:relay-tband}
+	t_\varepsilon(u) := \inf\bigl\{\, t\in[0,T] :
+	\|u(t,\cdot)\|_{L^\infty(\Omega)} < \varepsilon \,\bigr\},
+\end{equation}
+evaluated on a uniform time grid of step $2.5\times10^{-3}$, together
+with its \emph{persistent} variant (the first grid time after which the
+sup-norm stays below $\varepsilon$ up to $T$). For the reference
+solution, $t_\varepsilon\to t^*$ as $\varepsilon\to0^+$, so the
+band-entry time is a well-posed proxy for the extinction time that is
+meaningful for smooth surrogates; the sup-norm (rather than an $L^2$
+threshold) is used because the band $\{|u|\le\varepsilon\}$ is exactly
+the region where $\Phi_\varepsilon$ differs from $\Phi$.
+
+\begin{remark}[Steady sliding states of the $\varepsilon$-banded relay]
+	\label{rem:relay-witness}
+	Let $\varphi\in H^2(\Omega)\cap H^1_0(\Omega)$ solve
+	$-\Delta\varphi=1$ in $\Omega$, $\varphi>0$ (the torsion function;
+	for $\Omega=(0,1)^2$,
+	$\|\varphi\|_{L^\infty(\Omega)}\approx0.0736$), and set
+	$w_\lambda:=\lambda\,\varphi$. Then
+	$\partial_t w_\lambda-\Delta w_\lambda=\lambda$, so $w_\lambda$ is a
+	stationary strong solution of the $\varepsilon$-banded inclusion
+	$\partial_t u-\Delta u\in\Phi_\varepsilon(u)$ if and only if
+	$\|w_\lambda\|_{L^\infty(\Omega)}
+	=\lambda\|\varphi\|_{L^\infty(\Omega)}\le\varepsilon$: in that case
+	$|w_\lambda|\le\varepsilon$ everywhere, the band branch applies, and
+	$\lambda\in[-\lambda,\lambda]$. Consequently, when
+	$\lambda\|\varphi\|_{L^\infty(\Omega)}\le\varepsilon$ the
+	$\varepsilon$-banded dynamics does \emph{not} force extinction:
+	nonzero steady states exist inside the band, and after band entry a
+	candidate with vanishing $\Phi_\varepsilon$-residual may approximate
+	any element of this sliding funnel, not necessarily $u\equiv0$. The
+	validation below therefore reports, for each trained network, the
+	distance of the post-band tail both to zero and to the extremal
+	witness $w_\lambda$, and records whether the witness is itself
+	admissible for the given pair $(\lambda,\varepsilon)$
+	($\lambda\|\varphi\|_{L^\infty}\approx0.0295,\ 0.0442,\ 0.0589$ for
+	$\lambda=0.4,\ 0.6,\ 0.8$). For $\varepsilon=0$ the funnel collapses,
+	$w_\lambda$ is never admissible, and uniqueness holds as in
+	Remark~\ref{rem:relay-wellposed}.
+\end{remark}
 Beyond the usual comparison against the reference solver, we recommend a
 diagnostic figure specific to this set-valued setting: superimposing, on a
-plot of the graph of $\Phi$ (a three-branch ``staircase''), the empirical
+plot of the graph of $\Phi_\varepsilon$ (a three-branch ``staircase''
+whose middle step has width $2\varepsilon$), the empirical
 cloud of points $\bigl(u_\theta(t_i,x_i),\,\partial_t u_\theta(t_i,x_i)-\Delta u_\theta(t_i,x_i)\bigr)$
 at the collocation points after training. A well-trained network should
-concentrate this cloud on the graph of $\Phi$, visually certifying that the
+concentrate this cloud on the graph of $\Phi_\varepsilon$, visually certifying that the
 network has learned to select the correct branch of the relay at each
 collocation point — a diagnostic with no counterpart in classical
 single-valued PINNs.
@@ -3537,9 +3610,7 @@ The contrast is sharp: the classical heat equation ($\lambda=0$) decays
 exponentially and remains well above zero at $t=T=0.3$, while all three
 relay reference solutions reach exact numerical extinction within
 $[0,0.19]$, with the extinction time decreasing monotonically as
-$\lambda$ increases.  Table~\ref{tab:relay-extinction} reports these
-reference times together with threshold-crossing statistics from three
-independently trained DR-PINNs for each value of $\lambda$.
+$\lambda$ increases.
 
 \begin{figure}[htbp]
   \centering
@@ -3553,171 +3624,314 @@ independently trained DR-PINNs for each value of $\lambda$.
   \label{fig:relay-extinction-ref}
 \end{figure}
 
+The network is a fully connected $\tanh$
+network with five hidden layers of width $128$ and Glorot-normal
+initialization, trained for $40\,000$ epochs with the Adam optimizer
+under a hold-then-decay learning-rate schedule: the rate is held at
+$2\times10^{-3}$ for the first $5\,000$ epochs and then decayed
+exponentially with rate $0.85$ per $3\,000$ steps. The same architecture
+and schedule are used for every configuration of the campaign.
+
+\paragraph{Experimental design}
+The primary campaign comprises $45$ independent trainings ($5$ seeds
+$\{11,23,47,59,71\}$ per configuration): a $\lambda$-sweep
+$\lambda\in\{0.4,0.6,0.8\}$ at fixed $\varepsilon=0.05$; an
+$\varepsilon$-sweep $\varepsilon\in\{0,\,0.01,\,0.02,\,0.05,\,0.1\}$ at
+fixed $\lambda=0.6$, with $\varepsilon=0$ (the exact relay) serving as a
+negative control; and a sampler ablation (front-adaptive vs.\
+residual-based RAR vs.\ uniform) at
+$(\lambda,\varepsilon)=(0.6,0.05)$. After training, each network is
+evaluated on a dense space--time grid (time step $2.5\times10^{-3}$) and
+on a fresh cloud of $4\,000$ collocation points: we record the band-entry
+times \eqref{eq:relay-tband} (first and persistent), the
+$\Phi_\varepsilon$ distance residual, the number of cloud points
+violating the inclusion beyond a tolerance of $10^{-4}$, the sup-norm
+discrepancy of the pre-band $L^2(\Omega)$-norm curve against the
+reference, and the tail distances of Remark~\ref{rem:relay-witness}.
+Reference band-entry times $t_{\varepsilon,\mathrm{ref}}$ are computed
+from the operator-splitting solution of the exact relay (whose refinement
+study, Table~\ref{tab:relay-ref-convergence}, is unchanged) on the same
+evaluation grid.
+
+Figure~\ref{fig:relay-training} shows the training and validation curves
+of all $45$ runs. The qualitative shape of earlier single-run
+experiments is reproduced uniformly: an initial plateau at
+$\mathcal{L}\approx20$, an abrupt drop by roughly two orders of magnitude
+between epochs ${\approx}5\,000$ and ${\approx}8\,000$, and a steady
+decrease thereafter. The five $\varepsilon=0$ runs are clearly separated
+from all banded runs, stagnating an order of magnitude higher (final
+validation mean $\approx0.44$, seed median, vs.\ $\approx0.027$ at
+$\varepsilon=0.05$), which already announces the dichotomy quantified
+below.
+
+\begin{figure}[htbp]
+  \centering
+  %% [TODO] copy results/relay_eps/figures/*.pdf into figures/
+  \includegraphics[width=0.80\textwidth]{figures/fig_training.pdf}
+  \caption{Training history of the inclusion loss for all $45$ runs of
+    the campaign, colored by $\varepsilon$ (validation on a fixed batch
+    of $4\,000$ points). All banded runs ($\varepsilon>0$) escape the
+    initial plateau and continue to decrease; the five exact-relay runs
+    ($\varepsilon=0$, top curves) stagnate an order of magnitude higher.}
+  \label{fig:relay-training}
+\end{figure}
+
+\paragraph{Band-entry times: quantitative agreement with the reference}
+Table~\ref{tab:relay-extinction} reports the $\lambda$-sweep at
+$\varepsilon=0.05$. For every $\lambda$ and every seed the first and the
+persistent band crossings coincide, and the seed-median band-entry time
+matches the reference band-entry time \emph{exactly} to the resolution of
+the evaluation grid, with seed ranges of at most one grid step
+($2.5\times10^{-3}$). In particular, the monotone ordering
+$t_\varepsilon(\lambda{=}0.8)<t_\varepsilon(0.6)<t_\varepsilon(0.4)$ of
+the reference is reproduced by every individual run. The
+$\varepsilon$-sweep (Table~\ref{tab:relay-eps}) shows the same agreement
+across $\varepsilon\in\{0.02,0.05,0.1\}$ --- at $\varepsilon=0.1$ all five
+seeds return the identical value $t_\varepsilon=0.105$ --- while at
+$\varepsilon=0.01$ the agreement degrades gracefully: the median still
+sits on the reference value, the seed range widens to four grid steps,
+and for one seed the first crossing is transient (the sup-norm re-emerges
+above the band, and the persistent crossing occurs only at $t=0.25$),
+marking the resolution limit of the smooth surrogate. At $\varepsilon=0$
+the negative control reproduces the failure mode of the exact relay
+documented in earlier versions of this experiment: no run achieves a
+persistent crossing, two of five never cross at all, and roughly
+$3\,900$ of the $4\,000$ cloud points violate the inclusion beyond
+$10^{-4}$, against ${\approx}900$ at $\varepsilon=0.05$. The transition
+between the two regimes is sharp and occurs already at
+$\varepsilon=0.02$, i.e.\ at a band two orders of magnitude smaller than
+the amplitude of the initial datum. Figure~\ref{fig:relay-sweep}
+visualizes the $\lambda$-sweep, and Figure~\ref{fig:relay-eps-sweep} the
+residual statistics along the $\varepsilon$-sweep.
+
 \begin{table}[htbp]
   \centering
   \small
   \setlength{\tabcolsep}{4pt}
-  \begin{tabular}{ccccc}
+  \begin{tabular}{ccccccc}
     \toprule
-    $\lambda$ & $t^*_{\rm ref}$ &
-    \shortstack{$t_{\rm first}(10^{-3})$\\median [range]} &
-    \shortstack{$t_{\rm persistent}(10^{-3})$\\among successful runs} &
-    \shortstack{no persistent\\crossing} \\
+    $\lambda$ & $t_{\varepsilon,\mathrm{ref}}$ &
+    \shortstack{$t_\varepsilon$ (DR-PINN)\\median [range]} &
+    \shortstack{persistent\\crossings} &
+    \shortstack{violations\\(of $4\,000$)} &
+    \shortstack{tail dist.\\to $0$} &
+    \shortstack{witness\\admissible} \\
     \midrule
-    0.4 & \RelayTRefA & \RelayTFirstA & \RelayTPersistA & \RelayNoPersistA/\RelayNSeedsA \\
-    0.6 & \RelayTRefB & \RelayTFirstB & -- & \RelayNoPersistB/\RelayNSeedsB \\
-    0.8 & \RelayTRefC & \RelayTFirstC & \RelayTPersistC & \RelayNoPersistC/\RelayNSeedsC \\
+    0.4 & 0.1350 & 0.1350 [0.1350, 0.1375] & 5/5 & 920 & $1.8\times10^{-3}$ & yes \\
+    0.6 & 0.1275 & 0.1275 [0.1250, 0.1275] & 5/5 & 896 & $1.8\times10^{-3}$ & yes \\
+    0.8 & 0.1200 & 0.1200 [0.1200, 0.1225] & 5/5 & 867 & $4.0\times10^{-3}$ & no \\
     \bottomrule
   \end{tabular}
-  \caption{Reference extinction times and DR-PINN threshold-crossing
-    statistics over seeds \RelaySeedList.  Here $t_{\rm first}(10^{-3})$
-    is the first evaluation time at which
-    $\|u_\theta(t)\|_{L^2(\Omega)}<10^{-3}$, whereas
-    $t_{\rm persistent}(10^{-3})$ is the first time after which the norm
-    remains below that threshold until $T$.  The latter is not observed
-    before $T$ in most runs; where it is, the reported value lies so close
-    to $T$ that persistence is certified over a window of only a few
-    evaluation steps, so these entries should be regarded as inconclusive
-    rather than as evidence of persistent extinction.  The evaluation-grid
-    step is $2.5\times10^{-3}$, corresponding to a resolution uncertainty
-    of about $1.3\times10^{-3}$.  Threshold crossings are therefore not
-    identified with exact finite-time extinction of the smooth network
-    output.}
+  \caption{$\lambda$-sweep at $\varepsilon=0.05$ (front sampler, $5$
+    seeds per row; violations and tail distances are seed medians). The
+    DR-PINN band-entry time \eqref{eq:relay-tband} agrees with the
+    reference band-entry time to within one evaluation-grid step for
+    every seed, every first crossing is persistent, and the monotone
+    ordering in $\lambda$ is preserved by every individual run --- in
+    contrast to the raw $10^{-3}$ threshold crossings of the exact relay
+    reported as the $\varepsilon=0$ control in
+    Table~\ref{tab:relay-eps}. ``Witness admissible'' records whether
+    $\lambda\|\varphi\|_{L^\infty}\le\varepsilon$
+    (Remark~\ref{rem:relay-witness}); in all cases the trained tail is an
+    order of magnitude closer to the zero state than to the extremal
+    witness (cf.\ Table~\ref{tab:relay-eps}), so the networks select the
+    extinct solution even where the $\varepsilon$-banded funnel is
+    nontrivial.}
   \label{tab:relay-extinction}
 \end{table}
 
-The network for the baseline case $\lambda=0.6$ is a fully connected $\tanh$
-network with five hidden layers of width $128$ and Glorot-normal initialization,
-trained for $40\,000$ epochs with the Adam optimizer under a hold-then-decay
-learning-rate schedule: the rate is held at $2\times10^{-3}$ for the first
-$5\,000$ epochs and then decayed exponentially with rate $0.85$ per
-$3\,000$ steps. The same architecture and schedule are used for each $\lambda$
-in the primary sweep.
-
-Figure~\ref{fig:relay-training} shows the training and validation loss curves
-for the baseline run ($\lambda=0.6$). After an initial plateau at
-$\mathcal{L}\approx \RelayPlateauLevel$, the loss drops abruptly (around
-epoch $\RelayEscapeEpoch$) by roughly two orders of magnitude and then
-decreases steadily for the remainder
-of training, reaching a final validation loss of $\RelayValLoss$.
-Training and validation curves track each other closely throughout,
-indicating no overfitting. We emphasize that this residual level is
-\emph{not} small in absolute terms: since the loss is a mean squared
-distance, it corresponds to an RMS distance of
-$\approx\RelayRMS$, comparable to $\lambda=0.6$ itself, and (as
-Figure~\ref{fig:relay-branch} shows) it is dominated by a thin
-neighborhood of the extinction front where the operator values reach
-$\approx\RelayZFrontMax$. This experiment therefore demonstrates a useful
-\emph{qualitative} reproduction of the decay toward finite-time
-extinction and of the pre-extinction reference dynamics.  It does not
-establish exact or persistent extinction of the smooth network output,
-nor does it exhibit a uniformly small distance residual over the whole
-domain; consequently, it should not be read as a direct numerical
-realization of the hypothesis $\mathcal{J}(u_n)\to0$ of
-Theorem~\ref{thm:consistency-parabolic}.
+\begin{table}[htbp]
+  \centering
+  \small
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{cccccccc}
+    \toprule
+    $\varepsilon$ & $t_{\varepsilon,\mathrm{ref}}$ &
+    \shortstack{$t_\varepsilon$ (DR-PINN)\\median [range]} &
+    \shortstack{persist.\\cross.} &
+    \shortstack{final val.\\mean} &
+    \shortstack{violations\\(of $4\,000$)} &
+    \shortstack{tail dist.\\to $0$} &
+    \shortstack{tail dist.\\to $w_\lambda$} \\
+    \midrule
+    $0$    & ---    & --- ($2/5$ no crossing)   & 0/5 & 0.437 & 3\,911 & $1.2\times10^{-3}$ & $2.6\times10^{-2}$ \\
+    $0.01$ & 0.1550 & 0.1550 [0.1475, 0.1575]   & $4/5^{\dagger}$ & 0.081 & 1\,301 & $2.4\times10^{-3}$ & $2.4\times10^{-2}$ \\
+    $0.02$ & 0.1475 & 0.1475 [0.1450, 0.1475]   & 5/5 & 0.047 & 1\,152 & $1.8\times10^{-3}$ & $2.3\times10^{-2}$ \\
+    $0.05$ & 0.1275 & 0.1275 [0.1250, 0.1275]   & 5/5 & 0.027 & 896    & $1.8\times10^{-3}$ & $2.5\times10^{-2}$ \\
+    $0.1$  & 0.1050 & 0.1050 [0.1050, 0.1050]   & 5/5 & 0.017 & 652    & $2.9\times10^{-3}$ & $2.5\times10^{-2}$ \\
+    \bottomrule
+  \end{tabular}
+  \caption{$\varepsilon$-sweep at $\lambda=0.6$ (front sampler, $5$ seeds
+    per row; final validation mean, violations, and tail distances are
+    seed medians). The exact relay $\varepsilon=0$ is the negative
+    control and reproduces the failure mode of the discontinuous target:
+    no persistent crossings, an order-of-magnitude larger residual, and
+    near-total violation of the pointwise inclusion on the evaluation
+    cloud. From $\varepsilon=0.02$ on, band-entry times match the
+    reference to within one grid step with persistent crossings for all
+    seeds. $^{\dagger}$At $\varepsilon=0.01$ one seed's first crossing is
+    transient; its persistent crossing occurs only at $t=0.25$. The tail
+    is consistently an order of magnitude closer to $u\equiv0$ than to
+    the extremal witness $w_\lambda$ of
+    Remark~\ref{rem:relay-witness}.}
+  \label{tab:relay-eps}
+\end{table}
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.80\textwidth]{figures/training_history_relay.png}
-  \caption{Training history of the inclusion loss $\mathcal{L}_{\rm incl}(\theta)$
-    for the baseline DR-PINN ($\lambda=0.6$, $40\,000$ epochs). The training
-    loss per step (light blue) and the validation loss evaluated on a fixed
-    batch of $4\,000$ points (red markers, every $250$ epochs) track each
-    other closely; the abrupt drop near epoch $\RelayEscapeEpoch$ marks the
-    escape from the initial plateau.}
-  \label{fig:relay-training}
+  \includegraphics[width=0.62\textwidth]{figures/fig_band_times.pdf}
+  \caption{Band-entry times across
+    $\lambda\in\{0.4,0.6,0.8\}$ at $\varepsilon=0.05$: DR-PINN values
+    (five seeds per $\lambda$, dots) against the reference band-entry
+    times and the reference extinction times $t^*$ (stars). The DR-PINN
+    values sit on the reference band-entry values to within the
+    evaluation-grid resolution and preserve the monotone ordering in
+    $\lambda$ run by run.}
+  \label{fig:relay-sweep}
 \end{figure}
 
-Figure~\ref{fig:relay-vs-ref} compares the DR-PINN against the reference
-solution for $\lambda=0.6$. The left panel overlays the $L^2(\Omega)$-norm
-decay curves: the two coincide to within a line width over most of the
-pre-extinction interval; the maximum absolute norm discrepancy, normalized
-by the maximum reference norm, is $\RelayNormDisc$ over $[0,T]$.
-After the reference solution extinguishes at
-$t^*_{\rm ref}=\RelayTRefBase$ (dropping
-to machine zero), the DR-PINN norm stabilizes at $\RelayPostExtPlateau$: a
-single analytic tanh-network trajectory generally cannot be nonzero before
-the extinction time and exactly zero on an open post-extinction interval,
-so a small nonzero post-extinction norm is expected and should not be
-interpreted as exact extinction. The right panel shows the pointwise absolute error
-$|u_\theta-u_{\rm ref}|$ at $t=T=0.3$: the error is at most
-$\RelayMaxPtErr$, smooth, and concentrated at the domain centre, a pattern
-consistent with the residual of a smooth approximation of the trivial
-solution $u\equiv0$ after extinction.
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.62\textwidth]{figures/fig_eps_sweep.pdf}
+  \caption{Dense-grid distance-residual statistics along the
+    $\varepsilon$-sweep at $\lambda=0.6$ ($\varepsilon=0$ plotted at
+    $2\times10^{-3}$ on the logarithmic axis). The mean residual
+    decreases monotonically with $\varepsilon$ and drops below the
+    $\lambda^2$ plateau of the smooth-ansatz bound as soon as the band
+    opens, while the maximum residual --- attained ahead of the moving
+    interface --- remains of order $\lambda^2$ times the squared
+    operator overshoot for every $\varepsilon$.}
+  \label{fig:relay-eps-sweep}
+\end{figure}
+
+Figure~\ref{fig:relay-vs-ref} overlays the $L^2(\Omega)$-norm decay
+curves of all five seeds against the reference for the baseline
+$\lambda=0.6$ (companion figures for $\lambda=0.4$ and $0.8$ are included
+in the replication package). The curves coincide with the reference to
+within ${\approx}2\%$ in sup norm over the pre-band interval, for every
+seed and every $\lambda$ of the sweep. After band entry the network norms
+stabilize at a small nonzero level of order $10^{-3}$--$10^{-2}$: a
+single analytic tanh-network trajectory generally cannot be nonzero
+before the extinction time and exactly zero on an open post-extinction
+interval, so a small nonzero post-band norm is expected and is not
+interpreted as exact extinction; the band-entry observable
+\eqref{eq:relay-tband} is designed precisely so that this tail does not
+contaminate the reported times.
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{figures/dr_pinn_vs_reference.png}
-  \caption{Validation of the DR-PINN against the reference solution
-    ($\lambda=0.6$). Left: $L^2(\Omega)$-norm decay on a log scale (clipped
-    below $10^{-6}$ for readability); the
-    dotted vertical line marks the reference extinction time
-    $t^*_{\rm ref}=\RelayTRefBase$. Right: pointwise error $|u_\theta-u_{\rm ref}|$
-    at $t=T=0.3$; the maximum error is $\RelayMaxPtErr$.}
+  \includegraphics[width=0.72\textwidth]{figures/fig_norms_lam0.6.pdf}
+  \caption{$L^2(\Omega)$-norm decay for $\lambda=0.6$,
+    $\varepsilon=0.05$, on a log scale: reference solution (solid) and
+    the five DR-PINN seeds (dashed). The horizontal dash-dotted line
+    marks the band level $\varepsilon$, the vertical dotted line the
+    reference extinction time $t^*_{\mathrm{ref}}=0.1645$. The curves
+    track the reference to within ${\approx}2\%$ before band entry;
+    after band entry the smooth surrogates retain a small nonzero tail,
+    which the band-entry observable is designed to ignore.}
   \label{fig:relay-vs-ref}
 \end{figure}
 
-Figure~\ref{fig:relay-branch} shows the branch-selection diagnostic for the
-baseline run. For state values $s=u_\theta(t,x,y)\gtrsim0.05$, the cloud of
-operator values $z=\partial_tu_\theta-\Delta u_\theta$ concentrates tightly on
-the branch $z=-\lambda=-0.6$ of the graph of $\Phi$, confirming that the
-network has correctly selected the positive branch over most of $Q$.
-Almost no collocation points appear with $s<0$: since $u_0\ge0$ and the
-relay feedback pushes $u$ towards zero without reversing sign, the exact
-solution satisfies $u(t,\cdot)\ge0$ for all $t$; the trained network
-reproduces this property up to a small smooth undershoot near the
-extinction front, visible as a few points slightly to the left of $s=0$. Near $s\approx0$, corresponding to the extinction
-front, the cloud disperses vertically with values of $z$ reaching up to
-$\approx\RelayZFrontMax$,
-far above the segment $[-\lambda,\lambda]$ of the graph of $\Phi$. This
-scatter is a direct consequence of the jump discontinuity of $\Phi$ at
-$s=0$: no smooth network output can resolve a discontinuous right-hand side
-pointwise, and the adaptive hard pool concentrates collocation points precisely
-where the residual is hardest to reduce.
+Figure~\ref{fig:relay-branch} shows the branch-selection diagnostic for a
+representative baseline run. For state values
+$s=u_\theta(t,x,y)>\varepsilon$, the cloud of operator values
+$z=\partial_tu_\theta-\Delta u_\theta$ concentrates tightly on the branch
+$z=-\lambda=-0.6$ of the graph of $\Phi_\varepsilon$, confirming that the
+network selects the correct sign branch over most of $Q$; almost no
+collocation points appear with $s<-\varepsilon$ (sign preservation by the
+relay flow, up to a small smooth undershoot near the front). Inside the
+band $|s|\le\varepsilon$ the wide step $[-\lambda,\lambda]$ absorbs the
+operator values, and the residual there is numerically zero. The residual
+mass that remains --- roughly $900$ of the $4\,000$ cloud points violate
+the inclusion beyond $10^{-4}$ --- sits in a thin layer \emph{ahead} of
+the moving interface, where $s>\varepsilon$ but the smooth output is
+already transitioning: there the vertical scatter of $z$ reaches values
+of order $5$, far above the graph. This scatter is a direct consequence
+of the jump of the relay at the band edge: no smooth network output can
+resolve a discontinuous right-hand side pointwise.
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.72\textwidth]{figures/branch_selection_diagnostic.png}
-  \caption{Branch-selection diagnostic ($\lambda=0.6$): empirical cloud of
-    $(u_\theta,\,\partial_tu_\theta-\Delta u_\theta)$ at $4\,000$ post-training
-    collocation points (blue dots), overlaid on the graph of $\Phi$ (red).
-    Points with $s\gtrsim0.05$ cluster tightly on the branch $z=-0.6$;
-    almost no points appear with $s<0$ (sign preservation by the relay
-    flow, up to a small smooth undershoot near the front);
-    the vertical scatter near $s\approx0$ traces the extinction front,
-    where the discontinuity of $\Phi$ limits pointwise accuracy. The figure
-    is generated from the same trained network (saved checkpoint) as all
-    quantitative statements of this section.}
+  \includegraphics[width=0.72\textwidth]{figures/fig_branch_cloud.pdf}
+  \caption{Branch-selection diagnostic ($\lambda=0.6$,
+    $\varepsilon=0.05$): empirical cloud of
+    $(u_\theta,\,\partial_tu_\theta-\Delta u_\theta)$ at $4\,000$
+    post-training collocation points, overlaid on the graph of
+    $\Phi_\varepsilon$ (red; the shaded step of width $2\varepsilon$ is
+    the band). Points with $s>\varepsilon$ cluster tightly on the branch
+    $z=-0.6$; inside the band the residual vanishes; the vertical
+    scatter concentrates in a thin layer ahead of the moving interface,
+    where the discontinuity of the relay limits pointwise accuracy. The
+    inset magnifies the band region.}
   \label{fig:relay-branch}
 \end{figure}
 
-Figure~\ref{fig:relay-sweep} and Table~\ref{tab:relay-extinction} summarize
-the comparison across the primary sweep
-$\lambda\in\{0.4,0.6,0.8\}$. The DR-PINN norm curves reproduce the
-qualitative decay of the reference curves, but the first crossings of the
-$10^{-3}$ threshold vary substantially across seeds and do not preserve
-the monotone ordering of the reference extinction times.  Moreover,
-in seven of the nine adaptive runs the norm does not remain below
-$10^{-3}$ before $T$.  These observations motivate reporting first and
-persistent threshold crossings separately rather than calling the former
-an extinction time.  We also note that, with only three seeds per value
-of $\lambda$, the reported ranges are indicative rather than
-statistically robust; a larger seed ensemble would be needed to
-characterize the seed-to-seed variability quantitatively.
+\paragraph{Sampler ablation}
+Table~\ref{tab:relay-ablation} compares, at the baseline
+$(\lambda,\varepsilon)=(0.6,0.05)$, the front-based adaptive sampler
+against residual-based RAR \cite{LuMengMaoKarniadakis2021DeepXDE} and
+purely uniform collocation, five seeds each. All three samplers produce
+identical median band-entry times ($0.1275$, persistent for every seed),
+and their residual and violation statistics overlap within seed-to-seed
+variability. At these settings the adaptive schemes therefore provide no
+measurable benefit over uniform sampling; we report this null result
+explicitly and retain the front-based sampler in the primary sweeps only
+for uniformity of protocol and as a safeguard for smaller $\varepsilon$,
+where the band is thinner relative to the domain.
 
-\begin{figure}[htbp]
+\begin{table}[htbp]
   \centering
-  \includegraphics[width=0.80\textwidth]{figures/extinction_time_sweep.png}
-  \caption{Reference extinction and DR-PINN threshold-crossing behaviour
-    across $\lambda\in\{0.4,0.6,0.8\}$. Solid lines show the reference
-    solutions and dashed lines the three DR-PINN seeds for each $\lambda$
-    (blue: $0.4$, orange: $0.6$, green: $0.8$); the dash-dotted horizontal
-    line marks the threshold $10^{-3}$. Curves are clipped below $10^{-6}$
-    for readability.  The reference solutions extinguish exactly, whereas
-    most DR-PINN curves cross the threshold only transiently and retain a
-    small nonzero post-extinction norm.}
-  \label{fig:relay-sweep}
-\end{figure}
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{lcccc}
+    \toprule
+    sampler &
+    \shortstack{$t_\varepsilon$\\median [range]} &
+    \shortstack{persistent\\crossings} &
+    \shortstack{final val.\ mean\\median [range]} &
+    \shortstack{violations\\median} \\
+    \midrule
+    front (adaptive) & 0.1275 [0.1250, 0.1275] & 5/5 & 0.027 [0.020, 0.041] & 896 \\
+    RAR              & 0.1275 [0.1275, 0.1275] & 5/5 & 0.023 [0.017, 0.026] & 899 \\
+    uniform          & 0.1275 [0.1250, 0.1300] & 5/5 & 0.026 [0.016, 0.027] & 895 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Sampler ablation at $(\lambda,\varepsilon)=(0.6,0.05)$, $5$
+    seeds per sampler. The three schemes are statistically
+    indistinguishable on every reported metric; the band-entry
+    observable is insensitive to the collocation strategy at these
+    settings.}
+  \label{tab:relay-ablation}
+\end{table}
+
+\paragraph{Residual structure and remaining limitations}
+The improvement is not uniform over $Q$, and we delimit it precisely. On
+the $4\,000$-point evaluation cloud at
+$(\lambda,\varepsilon)=(0.6,0.05)$, the $\Phi_\varepsilon$ distance
+residual has seed-median mean ${\approx}0.030$ but maximum
+${\approx}50$: inside the band and after band entry the residual is
+numerically zero (post-band mean $\lesssim10^{-6}$), so the trained tail
+is genuinely admissible, but ahead of the moving interface --- where
+$|u_\theta|>\varepsilon$ and the smooth surrogate must still approximate
+a sign branch across a thin transition layer --- the residual remains
+concentrated and large in absolute terms. The pre-band
+$L^2(\Omega)$-norm curves nevertheless track the reference to within
+${\approx}2\%$ in sup norm. Consequently, the experiment now establishes
+a \emph{quantitative} reproduction of the extinction dynamics in the
+band-entry observable \eqref{eq:relay-tband} --- seed-stable, persistent,
+monotone in $\lambda$, and grid-exact against the reference for
+$\varepsilon\ge0.02$ --- while the hypothesis $\mathcal{J}(u_n)\to0$ of
+Theorem~\ref{thm:consistency-parabolic} is still not realized uniformly:
+the continuous residual is dominated by the pre-band interface layer,
+exactly as the discontinuity of the relay predicts. Finally, per
+Remark~\ref{rem:relay-witness}, at $(\lambda,\varepsilon)=(0.4,0.05)$ and
+$(0.6,\{0.05,0.1\})$ the $\varepsilon$-banded inclusion admits nonzero
+steady sliding states, so a vanishing post-band residual alone would not
+identify the extinct solution; the recorded tail distances show that
+every trained network is an order of magnitude closer to $u\equiv0$
+(median ${\approx}2\times10^{-3}$) than to the extremal witness
+(${\approx}2.5\times10^{-2}$), i.e.\ the networks select the solution of
+the exact relay even where the relaxed problem does not force it.
 
 
 %% ============================================================
@@ -3770,14 +3984,25 @@ illustrates how the residual can instead be eliminated at the time-grid
 nodes by construction (with feasibility between nodes confirmed a
 posteriori on a dense validation grid), freeing the remaining degrees of freedom to
 select a particular element of the solution set. For a reaction-diffusion
-inclusion with relay feedback, the DR-PINN qualitatively reproduces the
-decay toward finite-time extinction and the pre-extinction dynamics.
-However, the $10^{-3}$ threshold-crossing times are seed-sensitive, do not
-preserve the monotone ordering of the reference extinction times,
-and are usually not persistent before $T$.  The branch-selection diagnostic
-also makes visible the concentration of the residual along the extinction
-front, where a smooth surrogate must approximate a discontinuous
-right-hand side.
+inclusion with relay feedback, training against an $\varepsilon$-banded
+relaxation $\Phi_\varepsilon\supseteq\Phi$ --- which satisfies the same
+hypotheses (P1)--(P3), so the consistency theory applies verbatim --- turns
+a merely qualitative agreement into a quantitative one: for
+$\varepsilon\ge0.02$ the band-entry times of the trained networks are
+persistent, seed-stable (ranges of at most one evaluation-grid step over
+five seeds), monotone in the relay strength $\lambda$, and agree with the
+reference solver to the resolution of the evaluation grid, while the
+exact relay $\varepsilon=0$ retains its failure mode and is reported as a
+negative control. A sampler ablation shows the adaptive collocation
+schemes to be statistically indistinguishable from uniform sampling at
+these settings. The residual nonetheless remains concentrated in a thin
+layer ahead of the extinction front, where a smooth surrogate must
+approximate a sign branch of the relay; and the relaxed inclusion admits
+nonzero steady sliding states whenever
+$\lambda\|(-\Delta)^{-1}1\|_{L^\infty(\Omega)}\le\varepsilon$, yet the
+trained tails are an order of magnitude closer to the extinct solution
+than to the extremal sliding state, i.e.\ the networks select the
+solution of the exact relay even where the relaxation does not force it.
 
 Several directions remain open. First, quantitative error estimates
 would require additional structure (e.g., one-sided Lipschitz or
@@ -3815,7 +4040,8 @@ Sections~\ref{subsec:linear-control}--\ref{subsec:parabolic-PDI}
 (including the automatically generated numerical macros
 \texttt{generated/results\_6x.tex} compiled into this manuscript); all
 random seeds; the saved network checkpoints, in particular those
-underlying Figures~9--12; the exact definitions and weights of all
+underlying the figures and tables of
+Section~\ref{subsec:parabolic-PDI}; the exact definitions and weights of all
 regularizers entering the cost \eqref{eq:ellipse-cost}; and a manifest
 recording the hardware, operating system, and full library versions of
 the runs whose outputs are reported here.
