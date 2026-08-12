@@ -641,15 +641,61 @@ H^1\bigl(0,T;L^2(\Omega)\bigr),
 \]
 equipped with the norm
 $\|u\|_{\mathcal{W}}^2:=\|u\|_{L^2(0,T;H^2(\Omega))}^2
-+\|\partial_t u\|_{L^2(Q)}^2$.  By the intermediate-derivatives and trace
-theory of \cite[Chapter~1, Theorem~3.1]{LionsMagenes} (applied with the
-interpolation identity
-$[H^2(\Omega)\cap H_0^1(\Omega),L^2(\Omega)]_{1/2}=H_0^1(\Omega)$), the
++\|\partial_t u\|_{L^2(Q)}^2$. Setting $V:=H^2(\Omega)\cap H_0^1(\Omega)$
+and $W:=L^2(\Omega)$, both Hilbert spaces, we have
+$\mathcal{W}(0,T)=\{v\in L^2(0,T;V):\frac{dv}{dt}\in L^2(0,T;W)\}$, so
+by \cite[Theorem~II.5.14]{BoyerFabrie2013} the embedding
+\[
+\mathcal{W}(0,T)\hookrightarrow
+C^0\bigl([0,T];[V,W]_{1/2}\bigr)
+\]
+is continuous, where $[V,W]_{1/2}$ denotes the interpolation space of
+order $\tfrac12$ between $V$ and $W$ (see also the
+intermediate-derivatives and trace theory of
+\cite[Chapter~1, Theorem~3.1]{LionsMagenes}). Under our standing
+regularity assumptions on $\Omega$, the interpolation space is
+identified by the following lemma, which yields the continuous
 embedding
 \begin{equation}\label{eq:W-cont-embedding}
-	\mathcal{W}(0,T)\hookrightarrow C\bigl([0,T];H_0^1(\Omega)\bigr)
+	\mathcal{W}(0,T)\hookrightarrow C\bigl([0,T];H_0^1(\Omega)\bigr).
 \end{equation}
-is continuous. The compactness statement used repeatedly below is stronger
+
+\begin{lemma}[Interpolation identity]\label{lem:interp-identity}
+	Let $\Omega\subset\mathbb{R}^d$ be a bounded domain with $C^{1,1}$
+	boundary, or a bounded convex domain. Then
+	\begin{equation}\label{eq:interp-identity}
+		\bigl[H^2(\Omega)\cap H_0^1(\Omega),\,L^2(\Omega)\bigr]_{1/2}
+		=
+		H_0^1(\Omega).
+	\end{equation}
+\end{lemma}
+
+\begin{proof}
+	Apply the abstract framework of
+	\cite[Chapter~1, \S2.1]{LionsMagenes} with $X=H_0^1(\Omega)$
+	(equipped with the gradient inner product) and $Y=L^2(\Omega)$. The
+	associated positive self-adjoint operator
+	(\cite[Chapter~1, \S2.1, eq.~(2.4)]{LionsMagenes}) is precisely the
+	Dirichlet Laplacian $-\Delta_D$, with domain
+	$D(-\Delta_D)=\{u\in H_0^1(\Omega):-\Delta u\in L^2(\Omega)
+	\text{ weakly}\}$. By
+	\cite[Chapter~1, \S2.4, Proposition~2.1, eq.~(2.42)]{LionsMagenes},
+	\[
+	\bigl[D(-\Delta_D),\,L^2(\Omega)\bigr]_{1/2}=H_0^1(\Omega).
+	\]
+	It therefore remains to identify
+	$D(-\Delta_D)=H^2(\Omega)\cap H_0^1(\Omega)$, which is exactly the
+	statement of elliptic $H^2$-regularity for the Dirichlet Laplacian.
+	This identification holds in both admissible regimes for $\Omega$:
+	if $\Omega$ is bounded and convex (with no smoothness assumed on the
+	boundary), by \cite[Theorem~3.2.1.2]{Grisvard1985}, and if $\Omega$
+	is bounded with $C^{1,1}$ boundary (not necessarily convex), by
+	\cite[Theorem~2.4.2.5]{Grisvard1985}, in both cases applied to
+	$-\Delta$ with homogeneous Dirichlet data. Combining the two
+	displays yields \eqref{eq:interp-identity}.
+\end{proof}
+
+The compactness statement used repeatedly below is stronger
 than the conclusion of the usual formulations of the Aubin--Lions lemma
 (which give compactness in $L^2(0,T;L^2(\Omega))$), so we record it as a
 lemma with a full proof.
@@ -737,6 +783,55 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 	\]
 \end{itemize}
 
+Hypothesis \textup{(H2$'$)} need not be postulated separately when
+$\Phi$ enjoys some lower regularity, as the following proposition shows.
+
+\begin{proposition}[Sufficient conditions for
+	\textup{(H2$'$)}--\textup{(H3$'$)}]\label{prop:selection-sufficient}
+	Assume \textup{(H1$'$)} and, in addition, that $\Phi$ is lower
+	semicontinuous as a set-valued map
+	$\mathbb{R}\rightrightarrows\mathbb{R}$. Then, for every
+	$(s_0,w_0)\in\operatorname{graph}(\Phi)$, there exists a continuous
+	selection $f:\mathbb{R}\to\mathbb{R}$ of $\Phi$ with $f(s_0)=w_0$; in
+	particular, \textup{(H2$'$)} holds. If, moreover, $\Phi$ satisfies
+	the linear growth condition
+	\begin{equation}\label{eq:Phi-growth}
+		\sup_{r\in\Phi(s)}|r|\le m_0(1+|s|)
+		\qquad\forall\, s\in\mathbb{R}
+	\end{equation}
+	for some $m_0\ge0$ \textup{(}i.e., condition \textup{(P3)} of
+	Section~\textup{\ref{sec:pde-consistency}}\textup{)}, then every
+	continuous selection of $\Phi$ satisfies \textup{(H3$'$)} with the
+	same constant $m_0$.
+\end{proposition}
+
+\begin{proof}
+	Apply the Michael-type selection lemma of
+	\cite[Lemma~2.1]{deimling_1992} with $D=X=\mathbb{R}$ and $F=\Phi$:
+	its hypotheses --- $D$ a nonempty subset of a Banach space, $X$ a
+	Banach space, and $F$ lower semicontinuous with nonempty closed
+	convex values --- are satisfied by \textup{(H1$'$)} together with the
+	assumed lower semicontinuity. This yields a continuous selection $f$
+	of $\Phi$ passing through any prescribed point of the graph. The
+	second claim is immediate, since $f(s)\in\Phi(s)$ gives
+	$|f(s)|\le\sup_{r\in\Phi(s)}|r|\le m_0(1+|s|)$ for every
+	$s\in\mathbb{R}$.
+\end{proof}
+
+\begin{remark}\label{rem:lsc-vs-usc}
+	Lower semicontinuity is deliberately \emph{not} adopted as a standing
+	assumption. The consistency analysis of
+	Section~\ref{sec:pde-consistency} assumes upper semicontinuity
+	\textup{(P2)}, and a set-valued map that is simultaneously lower and
+	upper semicontinuous is continuous; imposing both throughout would
+	in particular exclude the relay nonlinearity of
+	Section~\ref{subsec:parabolic-PDI}, which is upper semicontinuous
+	but not lower semicontinuous and admits no continuous selection
+	(see Remark~\ref{rem:relay-wellposed}). Proposition~\ref{prop:selection-sufficient}
+	is therefore stated as a sufficient criterion local to the present
+	existence theory.
+\end{remark}
+
 \begin{theorem}[Existence of strong solutions]
 	\label{thm:existence-pde}
 	Under assumptions \textup{(H1$'$)--(H3$'$)}, problem
@@ -782,9 +877,12 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		\le
 		C_{\mathrm{par}}\bigl(\|h\|_{L^2(Q)}+\|u_0\|_{H_0^1(\Omega)}\bigr);
 	\end{equation}
-	see \cite[Section~7.1.3, Theorem~5]{Evans} for smooth domains and
-	\cite[Theorem~3.2.1.2]{Grisvard1985} for the $H^2$ elliptic regularity
-	on convex or $C^{1,1}$ domains. Moreover, $S(h)-S(h')=S_0(h-h')$, where
+	see \cite[Section~7.1.3, Theorem~5]{Evans} for smooth domains; the
+	$H^2$ elliptic regularity required under our standing assumptions on
+	$\Omega$ is supplied by \cite[Theorem~3.2.1.2]{Grisvard1985} in the
+	convex case and by \cite[Theorem~2.4.2.5]{Grisvard1985} in the
+	$C^{1,1}$-boundary case (cf.\ the proof of
+	Lemma~\ref{lem:interp-identity}). Moreover, $S(h)-S(h')=S_0(h-h')$, where
 	$S_0$ denotes the solution operator with zero initial datum, so $S$ is
 	(affine and) continuous from $L^2(Q)$ into $\mathcal{W}(0,T)$.
 	
@@ -2176,9 +2274,10 @@ $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
 		
 		We now apply the standard $L^2$ maximal-regularity estimate for the
 		Dirichlet heat equation to \eqref{eq:pde-decomposition}; see
-		\cite[Section~7.1.3, Theorem~5]{Evans} for smooth domains and
-		\cite[Theorem~3.2.1.2]{Grisvard1985} for the underlying $H^2$ elliptic
-		estimate on $C^{1,1}$ or convex domains. Since
+		\cite[Section~7.1.3, Theorem~5]{Evans} for smooth domains, with the
+		underlying $H^2$ elliptic estimate supplied by
+		\cite[Theorem~3.2.1.2]{Grisvard1985} on convex domains and by
+		\cite[Theorem~2.4.2.5]{Grisvard1985} on $C^{1,1}$ domains. Since
 		$u_0\in H_0^1(\Omega)$ and $\partial\Omega$ is $C^{1,1}$ or $\Omega$ is convex (which covers the square domain used in Section~\ref{subsec:parabolic-PDI}), there exists a constant
 		$C_{\mathrm{par}}>0$, independent of $n$, such that
 		\[
