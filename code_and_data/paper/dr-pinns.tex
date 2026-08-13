@@ -164,17 +164,14 @@
 			(DR-PINNs), a physics-informed learning framework for approximating solutions
 			of differential and partial differential inclusions --- governing laws in
 			which a differential operator is constrained to lie in a set-valued map
-			rather than equaling a prescribed function.  The central idea is a single
-			unifying principle: replace the classical pointwise PDE/ODE residual by
+			rather than equaling a prescribed function.  The method replaces the classical pointwise PDE/ODE residual by
 			the squared distance from the differential operator to the admissible set.
-			This substitution is natural (the distance vanishes precisely when the
-			inclusion is satisfied), geometrically interpretable (it measures the
-			infimal correction needed for the operator to enter the admissible set),
-			and amenable to gradient-based training: for a fixed closed convex
-			admissible set, the squared distance is differentiable with respect to
-			the operator value, with gradient given by the metric projection. When
-			the admissible set also depends on the network state, that dependence
-			must additionally be included by the chain rule.
+			This distance vanishes exactly when the inclusion is satisfied and measures
+			the infimal correction needed for the operator to enter the admissible set.
+			For a fixed closed convex admissible set, the squared distance is
+			differentiable with respect to the operator value, with gradient given by
+			the metric projection. When the admissible set also depends on the network
+			state, that dependence is included through the chain rule.
 			The framework encompasses ordinary differential inclusions and 
 			partial differential inclusions with set-valued reaction terms.
 			For both settings we prove \emph{consistency}: under the stated
@@ -182,11 +179,10 @@
 			sequence of candidates satisfying the initial (and, in the parabolic
 			case, boundary) conditions whose continuous distance-residual
 			functional tends to zero admits a subsequence converging to an exact
-			solution of the target inclusion.  We emphasize that these are
-			\emph{conditional} consistency statements about the continuous
-			distance-residual functional: they concern neither the
-			finite-collocation training loss minimized in practice, nor the
-			behaviour of the optimizer, and they provide no convergence rates.
+			solution of the target inclusion. These are conditional statements for
+			the continuous distance-residual functional; they do not cover the
+			finite-collocation training loss, the behaviour of the optimizer, or
+			convergence rates.
 			The proofs combine a priori estimates (Gr\"onwall
 			inequality and parabolic energy estimates), weak compactness arguments
 			(Arzel\`a--Ascoli and an Aubin--Lions-type compact embedding), and the lower semicontinuity of
@@ -222,24 +218,20 @@
 	\label{sec:intro}
 	%% ============================================================
 	
-	Physics-Informed Neural Networks (PINNs) have emerged as a powerful
-	paradigm for approximating solutions of differential equations by
-	embedding the governing physical laws directly into the training loss
-	\cite{raissi2019}.  Since the foundational work of Raissi, Perdikaris,
-	and Karniadakis, the PINN framework has been applied to a broad spectrum
-	of problems: nonlinear partial differential equations (PDEs) in fluid
-	mechanics, heat transfer, and wave propagation; inverse problems and
-	parameter identification; operator learning; and high-dimensional
-	stochastic differential equations.  The approach shares a common
-	structural feature across all of these applications: the governing law
-	takes the form of an equality, either an ordinary differential equation
-	(ODE) of the form $\dot{x}(t) = f(t,x(t))$ or a PDE of the form
-	$\mathcal{D}(u) = f$, and the PINN loss is built from the \emph{pointwise
-		residual} obtained by substituting a neural-network surrogate into that
-	equality.
+	Physics-Informed Neural Networks (PINNs) approximate solutions of
+	differential equations by incorporating the governing law directly into
+	the training loss \cite{raissi2019}. Since the work of Raissi,
+	Perdikaris, and Karniadakis, they have been used for nonlinear PDEs in
+	fluid mechanics, heat transfer, and wave propagation, as well as inverse
+	problems, parameter identification, operator learning, and
+	high-dimensional stochastic differential equations. In these settings the
+	governing law is single-valued, for example an ODE
+	$\dot{x}(t)=f(t,x(t))$ or a PDE $\mathcal{D}(u)=f$, and the PINN loss is
+	built from the pointwise residual obtained after substituting a neural
+	network surrogate into that equality.
 	
-	A class of mathematical models which does not fit within this
-	framework is the one whose governing law takes the \emph{set-valued} form
+	The same residual construction is not available when the governing law is
+	set-valued:
 %	In many applications --- control theory and optimal control
 %	\cite{aubin_cellina_1984}, mechanics of systems with unilateral
 %	constraints \cite{deimling_1992}, nonsmooth dynamics, phase-field models
@@ -258,16 +250,14 @@
 		$\partial_t u - \Delta u \in \Phi(u)$, where $\Phi(u)$ is a
 		set-valued reaction term.
 	\end{itemize}
-	In all of these cases the classical notion of residual breaks down,
-	because there is no single-valued right-hand side against which the
-	differential operator can be compared. 	
-	A simple geometric observation to overcome this difficulty is the following.  Given any
-	set-valued law $\mathcal{D}(u)\in\mathcal{F}(u)$, the quantity
+	In these cases there is no single-valued right-hand side against which to
+	form the usual residual. For a set-valued law
+	$\mathcal{D}(u)\in\mathcal{F}(u)$, consider instead the quantity
 	\[
 	\dist\bigl(\mathcal{D}(u),\,\mathcal{F}(u)\bigr)
 	:= \inf_{v\in \mathcal{F}(u)} \|\mathcal{D}(u) - v \|
 	\]
-	is always well defined whenever $\mathcal{F}(u)$ is nonempty and
+	which is well defined whenever $\mathcal{F}(u)$ is nonempty and
 	closed, and it vanishes if and only if the inclusion is satisfied.  This
 	suggests replacing the classical PINN residual by a \emph{distance
 		residual} and training a neural network to minimize the loss
@@ -291,8 +281,8 @@
 %	share the structural assumption that the governing law is single-valued.
 	\noindent\textbf{Related work.} 
 %	\paragraph{Distance and projection in PINNs}
-	Distance and projection operators have entered the PINN toolbox for
-	purposes different from ours.  Deguchi and Asai \cite{deguchi2025} use
+	Distance and projection operators have also been used in PINNs, but for
+	different purposes.  Deguchi and Asai \cite{deguchi2025} use
 	$R$-function-based approximate distance fields to impose Dirichlet
 	boundary conditions exactly on non-convex domains, so the distance
 	encodes the geometry of the boundary rather than an admissible set for
@@ -306,31 +296,24 @@
 	residual, and none of them addresses a genuinely set-valued evolution law.
 	
 %	\paragraph{Variational inequalities and projected dynamical systems}
-	The work closest in spirit to ours is the series of papers by Wu,
-	Lisser, and Chamoin
-	\cite{wu2023,wu2024neuropinn,wu2024cmame,wu2025errorbound} on solving
-	variational inequalities and complementarity problems via a combination
-	of neurodynamic optimization and PINNs.  Their strategy is to first
-	rewrite the variational inequality as an ODE whose right-hand side
-	already contains a metric projection onto the (fixed) feasible set, and
-	then to train a PINN using the ordinary pointwise residual of that
-	auxiliary equation.  This differs from our approach in an essential way:
-	in \cite{wu2023,wu2024neuropinn,wu2024cmame,wu2025errorbound} the
-	set-valued aspect is \emph{removed before training}, through a one-time
-	reformulation that presupposes a feasible set fixed in advance; in our
-	approach the inclusion $\dot{x}(t)\in F(t,x(t))$ is left genuinely
-	multivalued and the residual itself is replaced by the distance to the
-	state-dependent set $F(t,x_\theta(t))$.  The projection implicit in our
-	loss is therefore recomputed along the current trajectory at every
-	training step.
+	Wu, Lisser, and Chamoin
+	\cite{wu2023,wu2024neuropinn,wu2024cmame,wu2025errorbound} study
+	variational inequalities and complementarity problems using neurodynamic
+	optimization and PINNs. They first rewrite the variational inequality as
+	an ODE whose right-hand side contains a metric projection onto the fixed
+	feasible set, and then train a PINN with the ordinary pointwise residual
+	of that auxiliary equation. In this formulation the set-valued aspect is
+	removed before training. DR-PINNs instead leave
+	$\dot{x}(t)\in F(t,x(t))$ multivalued and measure the distance to the
+	state-dependent set $F(t,x_\theta(t))$, so the projection is recomputed
+	along the current trajectory during training.
 	
 %	\paragraph{Regularization-based PINNs for multivalued reaction terms}
-	Closer still to our setting, Kasyanov, Kapustyan, Levenchuk, and
-	Novykov \cite{kasyanov2024} proposed a machine-learning method
-	(including PINNs and the deep Galerkin method) for reaction-diffusion
-	equations with \emph{multivalued} interaction functions. Their strategy
-	is, however, structurally different from ours: the multifunction is
-	first replaced by a single-valued Lipschitz approximation (a
+	Kasyanov, Kapustyan, Levenchuk, and Novykov \cite{kasyanov2024}
+	proposed a machine-learning method (including PINNs and the deep Galerkin
+	method) for reaction-diffusion equations with \emph{multivalued}
+	interaction functions. Their method first replaces the multifunction by a
+	single-valued Lipschitz approximation (a
 	Pasch--Hausdorff-type regularization), and a classical pointwise
 	residual is then trained for the regularized, single-valued equation;
 	the set-valued character of the law is thus removed \emph{before}
@@ -340,51 +323,45 @@
 	corresponding loss functionals and shows that the variance of the
 	standard estimator degenerates as the regularization parameter grows,
 	which further underlines the cost of the prior single-valued
-	regularization. In contrast, DR-PINNs keep the inclusion genuinely
+	regularization. DR-PINNs instead keep the inclusion genuinely
 	multivalued and use the distance to the (possibly state-dependent)
 	admissible set itself as the training residual, with no regularization
-	parameter to drive to a limit; the price we pay is the evaluation of a
-	metric projection inside the training loop. A systematic experimental
-	comparison between the regularization-based approach of
-	\cite{kasyanov2024} and the distance-residual approach on common
-	benchmarks would be valuable and is left for future work.
+	parameter to drive to a limit; this requires the evaluation of a
+	metric projection inside the training loop. A direct experimental comparison with the regularization-based approach of
+	\cite{kasyanov2024} on common benchmarks remains to be carried out.
 	
 %	\paragraph{Analytical theory of inclusions}
-Finally, it is worth mentioning that although the theory of differential inclusions is well developed \cite{aubin_cellina_1984,aubin_frankowska_2009,deimling_1992}, PINN-type
-	methods for set-valued problems have so far, to the best of our
-	knowledge, proceeded through a prior single-valued regularization of
-	the multifunction \cite{kasyanov2024,paliichuk2026}. What we believe
-	to be new here is a PINN framework that uses the distance from the
-	differential operator to the set of admissible values \emph{directly}
-	as the training residual --- without any prior single-valued
-	regularization --- together with consistency theorems for both
-	ordinary differential inclusions and parabolic partial differential
+	The theory of differential inclusions is well developed
+	\cite{aubin_cellina_1984,aubin_frankowska_2009,deimling_1992}, whereas
+	PINN-type methods for set-valued problems have so far, to the best of our
+	knowledge, used a prior single-valued regularization of the multifunction
+	\cite{kasyanov2024,paliichuk2026}. The contribution here is to use the
+	distance from the differential operator to the admissible set directly as
+	the training residual, without prior single-valued regularization, and to
+	prove consistency results for both ordinary and parabolic differential
 	inclusions.
 	
 %	\subsection*{Contributions}
 	\vspace{0.3cm}
 	
 	\noindent\textbf{Contributions. }
-	The main contributions of this paper are:
+	The paper makes the following contributions:
 	\begin{enumerate}
 		\item A general \emph{distance-residual principle} (Section~\ref{sec:principle})
 		that provides a unified method for constructing PINN losses for
-		set-valued differential laws with nonempty closed values. We
-		stress that while the definition of the distance residual is this
-		general, the further properties exploited in the paper are not
-		automatic: differentiability of the loss and computability of the
-		projection require closed \emph{convex} values, and the
-		consistency theorems below additionally require measurability,
-		growth, and compactness assumptions, made precise in
+		set-valued differential laws with nonempty closed values. The later
+		properties use stronger hypotheses: differentiability of the loss and
+		computability of the projection require closed \emph{convex} values,
+		while the consistency results additionally use the measurability, growth,
+		and compactness assumptions stated in
 		Sections~\ref{subsec:consistency} and~\ref{sec:pde}.
 		\item \emph{Conditional consistency theorems} for both ordinary differential
-		inclusions (Section~\ref{subsec:consistency}) and  partial
+		inclusions (Section~\ref{subsec:consistency}) and partial
 		differential inclusions (Section~\ref{sec:pde}), showing that
 		vanishing \emph{continuous} distance-residual functionals certify
-		admissible solutions; the relation to the finite-collocation
-		training loss is discussed separately in
-		Remark~\ref{rem:collocation-gap}, and no statement is made about
-		the optimizer or about convergence rates.
+		admissible solutions. Their relation to finite-collocation training is
+		discussed in Remark~\ref{rem:collocation-gap}; the theorems do not
+		address optimizer convergence or convergence rates.
 		\item A \emph{practical projection algorithm} (Section~\ref{sec:projection-extreme-points})
 		for admissible sets given as convex hulls, based on a small quadratic
 		program combined with the Quickhull algorithm.
@@ -411,7 +388,8 @@ Finally, it is worth mentioning that although the theory of differential inclusi
 	
 	\subsection{Set-valued functions}
 	
-	This section collects some basic concepts and notation concerning set-valued functions that will be used throughout the paper. For completeness, we recall the notions of graph and semicontinuity, which play a central role in the subsequent analysis.
+	We collect the notation for set-valued functions used below, including the
+	notions of graph and semicontinuity.
 	
 	\begin{definition}
 		Let $X$ and $Y$ be nonempty sets. A \emph{set-valued function} (or \emph{multifunction}) from $X$ to $Y$ is a mapping
@@ -453,7 +431,7 @@ Finally, it is worth mentioning that although the theory of differential inclusi
 	\end{definition}
 	
 	
-	Following \cite{aubin_frankowska_2009}, our approach emphasizes the representation of a set-valued map through its graph, rather than as a mapping between sets, hence we shall say that a set-valued map satisfies property $P$ if and only if its graph does.
+	Following \cite{aubin_frankowska_2009}, we formulate properties of a set-valued map in terms of its graph: the map is said to satisfy property $P$ when its graph has that property.
 	%
 	For instance, a set-valued map is said to be closed (respectively convex, measurable) if and only if its graph is closed (respectively convex, measurable).
 	
@@ -582,13 +560,11 @@ For a nonempty closed set that is \emph{not} convex, a nearest point still exist
 	\end{theorem}
 	
 	\begin{remark}
-		The assumptions that $F$ is strict, compact-valued and convex-valued are natural:
-		they enable measurable selections, compactness arguments, and fixed-point
-		methods to produce absolutely continuous solutions; see
-		\cite{aubin_cellina_1984,aubin_frankowska_2009,deimling_1992}.  As we
-		shall see, these are also precisely the assumptions under which the
-		distance function to $F(t,x)$ is well-behaved: it is finite, attained,
-		and (under convexity) differentiable.
+		Strictness, compactness, and convexity of $F$ support the measurable-selection,
+		compactness, and fixed-point arguments used in the existence theory; see
+		\cite{aubin_cellina_1984,aubin_frankowska_2009,deimling_1992}. They also
+		ensure the properties of the distance to $F(t,x)$ used later: finiteness,
+		attainment, and, under convexity, differentiability.
 	\end{remark}
 	
 	Unlike ordinary differential equations, uniqueness of solutions of
@@ -695,10 +671,9 @@ embedding
 	displays yields \eqref{eq:interp-identity}.
 \end{proof}
 
-The compactness statement used repeatedly below is stronger
-than the conclusion of the usual formulations of the Aubin--Lions lemma
-(which give compactness in $L^2(0,T;L^2(\Omega))$), so we record it as a
-lemma with a full proof.
+The compactness statement needed below is stronger than the usual
+Aubin--Lions conclusion, which gives compactness in
+$L^2(0,T;L^2(\Omega))$. We state the required version separately.
 
 \begin{lemma}[{Compact embedding into $C([0,T];L^2(\Omega))$}]
 	\label{lem:compact-embedding}
@@ -819,17 +794,14 @@ $\Phi$ enjoys some lower regularity, as the following proposition shows.
 \end{proof}
 
 \begin{remark}\label{rem:lsc-vs-usc}
-	Lower semicontinuity is deliberately \emph{not} adopted as a standing
-	assumption. The consistency analysis of
+	Lower semicontinuity is used here only as a sufficient condition for the
+	existence result. The consistency analysis in
 	Section~\ref{sec:pde-consistency} assumes upper semicontinuity
-	\textup{(P2)}, and a set-valued map that is simultaneously lower and
-	upper semicontinuous is continuous; imposing both throughout would
-	in particular exclude the relay nonlinearity of
-	Section~\ref{subsec:parabolic-PDI}, which is upper semicontinuous
-	but not lower semicontinuous and admits no continuous selection
-	(see Remark~\ref{rem:relay-wellposed}). Proposition~\ref{prop:selection-sufficient}
-	is therefore stated as a sufficient criterion local to the present
-	existence theory.
+	\textup{(P2)}. Requiring both throughout would make the multifunction
+	continuous and would exclude the relay nonlinearity of
+	Section~\ref{subsec:parabolic-PDI}, which is upper semicontinuous but not
+	lower semicontinuous and has no continuous selection (see
+	Remark~\ref{rem:relay-wellposed}).
 \end{remark}
 
 \begin{theorem}[Existence of strong solutions]
@@ -965,10 +937,9 @@ $\Phi$ enjoys some lower regularity, as the following proposition shows.
 \end{proof}
 
 \begin{remark}
-	The assumptions \textup{(H1$'$)--(H3$'$)} are not intended to be optimal.
-	They provide a simple and transparent set of conditions ensuring that the
-	solution set $\mathcal{S}(u_0)$ is nonempty, which is sufficient for the
-	consistency analysis developed later.
+	The assumptions \textup{(H1$'$)--(H3$'$)} are convenient sufficient
+	conditions for nonemptiness of $\mathcal{S}(u_0)$; optimal existence
+	hypotheses are not needed for the consistency analysis below.
 \end{remark}
 
 	%% ============================================================
@@ -1031,19 +1002,15 @@ $\Phi$ enjoys some lower regularity, as the following proposition shows.
 	\begin{remark}[Collocation loss versus continuous functional]
 		\label{rem:collocation-gap}
 		The consistency results of
-		Sections~\ref{subsec:consistency} and~\ref{sec:pde-consistency}
-		concern the \emph{continuous} distance-residual functional (denoted
-		$\mathcal{J}$ there), not the finite-collocation loss $\mathcal{L}$
-		minimized in practice. We do not claim that
-		$\mathcal{L}(\theta_n)\to0$ implies
-		$\mathcal{J}(u_{\theta_n})\to0$: a quantitative control of this
-		generalization gap would require assumptions on the sampling scheme
-		and on the regularity of $r(u_\theta;\cdot)$, and remains beyond the
-		scope of this work. The theorems below should therefore be read as
-		consistency statements for the continuous distance residual rather
-		than as a full convergence analysis of the discrete training
-		algorithm. A simple sufficient condition bridging the two is
-		available: if $Z$ is compact with $|Z|<\infty$, the maps
+		Sections~\ref{subsec:consistency} and~\ref{sec:pde-consistency} are
+		formulated for the continuous distance-residual functional
+		$\mathcal{J}$, whereas training minimizes the finite-collocation loss
+		$\mathcal{L}$. An implication
+		passing from $\mathcal{L}(\theta_n)\to0$ to
+		$\mathcal{J}(u_{\theta_n})\to0$ requires additional control of the
+		sampling scheme and of the regularity of $r(u_\theta;\cdot)$; it is not
+		part of the consistency theorems. One sufficient bridge is the
+		following. If $Z$ is compact with $|Z|<\infty$, the maps
 		$z\mapsto r(u_{\theta_n};z)$ share a Lipschitz constant $M$ on $Z$,
 		the collocation sets $\{z_i^{(n)}\}$ have fill distance
 		$h_n:=\sup_{z\in Z}\min_i|z-z_i^{(n)}|\to0$, and the
@@ -1053,11 +1020,10 @@ $\Phi$ enjoys some lower regularity, as the following proposition shows.
 		\sup_{z\in Z}r(u_{\theta_n};z)
 		\le\max_i r(u_{\theta_n};z_i^{(n)})+Mh_n\longrightarrow0,
 		\]
-		and hence $\int_Z r(u_{\theta_n};z)\,dz\to0$. Note that this
-		requires control of the maximum residual at the collocation points
-		--- not merely of the mean loss $\mathcal{L}$ --- which is why the
-		dense-grid validations reported in Section~\ref{sec:numerics} track
-		maximal, and not only mean, residuals.
+		and hence $\int_Z r(u_{\theta_n};z)\,dz\to0$. This condition controls
+		the maximum collocation residual; the mean loss $\mathcal{L}$ alone does
+		not give the same bound. Accordingly, the dense-grid validations in
+		Section~\ref{sec:numerics} report both mean and maximal residuals.
 	\end{remark}
 	
 	
@@ -1090,25 +1056,22 @@ $\Phi$ enjoys some lower regularity, as the following proposition shows.
 		\[
 		\nabla_y\dist^2(y,C)=2\bigl(y-P_C(y)\bigr).
 		\]
-		This is the projection-gradient identity used in the numerical
-		implementations. It is a derivative with respect to the first
-		argument, with the set held fixed; it is not, by itself, a formula for
-		$\nabla R(u)$ when $\mathcal{F}(u)$ depends on $u$. In that case the
-		state dependence of the admissible set must also be differentiated (or
-		rewritten explicitly, as in the translated-set examples below).
+		This projection-gradient identity is used in the numerical
+		implementations. It differentiates with respect to the first argument
+		while holding the set fixed. When $\mathcal{F}(u)$ depends on $u$,
+		computing $\nabla R(u)$ also requires differentiating that state
+		dependence (or rewriting it explicitly, as in the translated-set
+		examples below).
 	\end{remark}
 	
-	This principle provides a unified framework in which classical PINNs
-	appear as a special case.  Indeed, when $\mathcal{F}(u)=\{f(u)\}$ is a
-	singleton, the distance residual reduces to
-	$R(u)=\|\mathcal{D}(u)-f(u)\|_Y^2$, the standard PINN residual.
+	When $\mathcal{F}(u)=\{f(u)\}$ is a singleton,
+	$R(u)=\|\mathcal{D}(u)-f(u)\|_Y^2$, which is the standard PINN residual.
 	
 	\subsection{A general consistency result}
 	
-	The following result justifies the distance-residual formulation in full
-	generality.  It shows that if a sequence of neural-network approximations
-	has vanishing distance residual and converges sufficiently strongly, the
-	limit satisfies the target inclusion.
+	The basic closed-graph argument is the following: sufficiently strong
+	convergence together with a vanishing distance residual forces the limit
+	to satisfy the target inclusion.
 	
 	\begin{lemma}\label{lem:closed-graph}
 		Let $X$ and $Y$ be Banach spaces and let $\mathcal{F}: X \rightrightarrows Y$ be a strict set-valued function with closed graph.
@@ -1154,16 +1117,13 @@ $\Phi$ enjoys some lower regularity, as the following proposition shows.
 		Since $\mathcal{D}$ is continuous, $\mathcal{D}(u_n)\to\mathcal{D}(u)$. The result then follows by applying Lemma~\ref{lem:closed-graph} with $x_n=u_n$ and $y_n=\mathcal{D}(u_n)$.
 	\end{proof}
 	
-	Theorem~\ref{thm:general-consistency} applies whenever the functional
-	setting provides strong convergence of both $u_n$ and
-	$\mathcal{D}(u_n)$.  The concrete ODE and PDE consistency results proved in
-	Sections~\ref{subsec:consistency} and~\ref{sec:pde} do \emph{not} follow
-	by a direct application of Theorem~\ref{thm:general-consistency}: there,
-	only \emph{weak} convergence of the differential operators is available.
-	They are instead refinements based on compactness of the states, weak
-	convergence of the differential operators, and lower semicontinuity of the
-	distance-residual functional, in the spirit of the direct method of the
-	calculus of variations.
+	Theorem~\ref{thm:general-consistency} requires strong convergence of both
+	$u_n$ and $\mathcal{D}(u_n)$. In the ODE and PDE settings of
+	Sections~\ref{subsec:consistency} and~\ref{sec:pde}, the differential
+	operators converge only weakly. The corresponding consistency results
+	therefore use compactness of the states together with weak convergence of
+	the operators and lower semicontinuity of the distance-residual functional,
+	in the spirit of the direct method of the calculus of variations.
 	
 	
 	%% ============================================================
@@ -1326,18 +1286,17 @@ $\Phi$ enjoys some lower regularity, as the following proposition shows.
 		transformed at each collocation point during training.
 	\end{enumerate}
 	
-	In summary, Quickhull acts as a preprocessing step that reduces a large
-	or redundant point cloud to its extreme points, keeping the downstream
-	quadratic program small.  Combined with \eqref{eq:projection-as-qp},
-	this gives a practical route to evaluate $\dist^2(v,F(t,x))$ --- and
-	hence the loss \eqref{eq:main-distance-loss} --- for convex sets well
-	beyond the simple examples treated numerically below.
+	Quickhull is used only as a preprocessing step: it removes redundant
+	points before the quadratic program is solved. Combined with
+	\eqref{eq:projection-as-qp}, this keeps the evaluation of
+	$\dist^2(v,F(t,x))$ practical for convex sets represented by finite point
+	clouds.
 	
 	\begin{remark}[Differentiating the residual when the set depends on the
 		state]\label{rem:moving-set-gradient}
-		When the admissible set depends on the learned state, the loss must
-		be differentiated through that dependence as well. We make precise
-		the two cases used in this paper.
+		When the admissible set depends on the learned state, that dependence
+		also enters the derivative. The two cases used in this paper are as
+		follows.
 		
 		\emph{(i) Translations of a fixed set.} Suppose that
 		\[
@@ -1392,28 +1351,22 @@ $\Phi$ enjoys some lower regularity, as the following proposition shows.
 		\]
 		If $\lambda^\ast$ is \emph{not} unique (the projected point is
 		always unique, but its barycentric representation need not be, cf.\
-		the discussion after \eqref{eq:projection-as-qp}), the value
-		function is in general only directionally differentiable in $x$,
-		and training must rely on directional derivatives or Clarke
-		subgradients; no claim of $C^1$ smoothness should then be made.
-		Accordingly, our statements about plain gradients are restricted to
-		fixed sets, sets depending on $t$ only, translations of fixed sets
-		as in (i), and moving polytopes whose inner quadratic program has a
-		unique, locally stable minimizer.
+		the discussion after \eqref{eq:projection-as-qp}), the value function
+		is in general only directionally differentiable in $x$, rather than
+		$C^1$, so directional derivatives or Clarke subgradients are needed. The plain-gradient statements used here are therefore restricted to fixed sets, sets
+		depending only on $t$, translations as in (i), and moving polytopes for
+		which the inner quadratic program has a unique, locally stable
+		minimizer.
 	\end{remark}
 	
 	\subsection{Consistency}
 	\label{subsec:consistency}
 	
-	We now prove that the distance-residual formulation is mathematically
-	consistent: any sequence of trajectories whose residual tends to zero
-	must, along a subsequence, converge to an exact solution of
-	\eqref{eq:inclusion}.  This is the analogue, for inclusions, of the
-	consistency statement underlying the classical PINN paradigm, with the
-	crucial difference that no uniqueness --- and hence no Gr\"onwall-type
-	error bound --- can be expected in general; the natural statement under
-	the present assumptions is a compactness/lower semicontinuity result in
-	the spirit of the direct method of the calculus of variations.
+	We next prove consistency of the distance residual. If the residual of a
+	sequence tends to zero, a subsequence converges to an exact solution of
+	\eqref{eq:inclusion}. Since solutions of an inclusion need not be unique,
+	the result is a compactness/lower-semicontinuity statement rather than a
+	Gr\"onwall-type error estimate for a distinguished solution.
 	
 	We work under the hypotheses of Theorem~\ref{thm:existence}, with two
 	mild strengthenings: $m\in L^2(0,T)$, and joint (product)
@@ -1450,12 +1403,11 @@ $\Phi$ enjoys some lower regularity, as the following proposition shows.
 		$F_\sigma$ set for every open $U$), and whenever $F$ is measurable in
 		$t$ and \emph{continuous} in $x$ (Carath\'eodory multifunctions);
 		both cases cover all the admissible sets used in
-		Section~\ref{sec:numerics}. The strengthening is not merely
-		cosmetic: multifunctions that are measurable in $t$ and only upper
-		semicontinuous in $x$ need not be superpositionally measurable in
-		general, see \cite{zygmunt_1992}, so \textup{(H2)} is what makes the
-		measurability steps in the proof of
-		Theorem~\ref{thm:consistency} rigorous.
+		Section~\ref{sec:numerics}. This strengthening is needed because
+		measurability in $t$ together with upper semicontinuity in $x$ does not,
+		in general, imply superpositional measurability; see
+		\cite{zygmunt_1992}. Product measurability in \textup{(H2)} supplies the
+		measurability used in the proof of Theorem~\ref{thm:consistency}.
 		%% NOTE: add to references.bib:
 		%% @article{zygmunt_1992,
 		%%   author  = {Zygmunt, Wojciech},
@@ -1483,12 +1435,10 @@ $\Phi$ enjoys some lower regularity, as the following proposition shows.
 		\end{equation}
 	\end{definition}
 	
-	Note that every trajectory produced by the hard-constraint ansatz
+	Every trajectory produced by the hard-constraint ansatz
 	$x_\theta(t)=x_0+tN_\theta(t)$, with $N_\theta$ Lipschitz on $[0,T]$
-	(as is the case for the tanh networks used below), belongs to
-	$\mathcal{A}$; a finite network realizes a strict subset of
-	$\mathcal{A}$, which is the relevant direction for the consistency
-	statement of Theorem~\ref{thm:consistency}.
+	(as for the tanh networks used below), belongs to $\mathcal{A}$. Finite
+	networks represent only a subset of $\mathcal{A}$.
 	
 	\begin{lemma}\label{lem:normal-integrand}
 		Let $F:[0,T]\times\mathbb{R}^d\rightrightarrows\mathbb{R}^d$ be a set-valued function satisfying hypothesis \textup{(H1)} and \textup{(H2)}.
@@ -1506,7 +1456,7 @@ $\Phi$ enjoys some lower regularity, as the following proposition shows.
 		\end{enumerate}
 	\end{lemma}
 	\begin{proof}
-		We start with the proof of $(a)$.
+		For $(a)$,
 		%
 		Fix $x \in \mathbb{R}^d$. For $v_1, v_2 \in \mathbb{R}^d$ and $\lambda \in [0,1]$, 
 		since $F(t,x)$ is compact and convex, the projections onto $F(t,x)$ exist and are unique:
@@ -1541,7 +1491,7 @@ $\Phi$ enjoys some lower regularity, as the following proposition shows.
 		%
 		We conclude that $g(t, x, \cdot)$ is convex in $v$.
 		
-		Next, we address the proof of $(b)$.
+		For $(b)$,
 		%
 		We start by proving lower semicontinuity in $x$, with $v\in \mathbb{R}^d$ fixed.
 		%
@@ -1591,7 +1541,7 @@ $\Phi$ enjoys some lower regularity, as the following proposition shows.
 		\end{equation}
 		The proof of $(b)$ is completed by squaring both sides.
 		
-		Finally, we prove $(c)$. Fix first $v_0\in\mathbb{R}^d$ and
+		For $(c)$, Fix first $v_0\in\mathbb{R}^d$ and
 		$c>0$. Then
 		\[
 		\bigl\{(t,x):\dist(v_0,F(t,x))<c\bigr\}
@@ -1663,11 +1613,9 @@ $\Phi$ enjoys some lower regularity, as the following proposition shows.
 		\cite[Theorem~8.2.11]{aubin_frankowska_2009}.
 	\end{proof}
 	
-	Finally, we isolate the lower semicontinuity principle used in the
-	limit passage of both Theorem~\ref{thm:consistency} and
-	Theorem~\ref{thm:consistency-parabolic}: strong convergence in the
-	state variable combined with weak convergence in the variable in which
-	the integrand is convex.
+	Both consistency proofs use the same lower-semicontinuity principle:
+	strong convergence in the state variable together with weak convergence
+	in the variable in which the integrand is convex.
 	
 	\begin{lemma}[Strong--weak lower semicontinuity]
 		\label{lem:strong-weak-lsc}
@@ -1694,9 +1642,9 @@ $\Phi$ enjoys some lower regularity, as the following proposition shows.
 	\end{lemma}
 	
 	\begin{proof}
-		We verify one by one the hypotheses of the lower semicontinuity
-		theorem of Berkovitz \cite[Theorem~1]{berkovitz_1974}, which we now
-		recall in the form we use. Let $Z\subset\mathbb{R}^N$ be a bounded
+		We apply the lower-semicontinuity theorem of Berkovitz
+		\cite[Theorem~1]{berkovitz_1974}, recalled here in the form needed below.
+		Let $Z\subset\mathbb{R}^N$ be a bounded
 		measurable set and let
 		$g:Z\times\mathbb{R}^m\times\mathbb{R}^k\to(-\infty,+\infty]$
 		satisfy:
@@ -1723,7 +1671,7 @@ $\Phi$ enjoys some lower regularity, as the following proposition shows.
 		
 		It remains to match our hypotheses and topologies with
 		(B1)--(B4) and with the two convergences. Hypotheses (B1)--(B3)
-		are verbatim the normal-integrand, lower semicontinuity, and
+		coincide with the normal-integrand, lower semicontinuity, and
 		convexity assumptions of the present lemma, and (B4) holds with
 		$\psi\equiv0$ because $g\ge0$. As for the convergences: since
 		$|Z|<\infty$, strong convergence $x_n\to x$ in
@@ -1867,16 +1815,12 @@ $\Phi$ enjoys some lower regularity, as the following proposition shows.
 	\end{proof}
 	
 	\begin{remark}
-		Theorem~\ref{thm:consistency} should be read together with the
-		non-uniqueness phenomenon discussed in Section~\ref{sec:basics}: the
-		theorem does \emph{not} guarantee that the learned trajectory
-		approximates any particular target in $\mathcal{S}(x_0)$, only that it
-		approximates \emph{some} admissible solution. In view of
-		Theorem~\ref{thm:existence}, this is the natural conclusion under the
-		present general assumptions; under additional structure (e.g.,
-		monotonicity, one-sided Lipschitz conditions, or uniqueness of
-		solutions), convergence of the full sequence, stronger modes of
-		convergence, or quantitative error estimates may be available.
+		Because solutions need not be unique, Theorem~\ref{thm:consistency}
+		identifies a subsequential limit in $\mathcal{S}(x_0)$ but does not
+		select a prescribed element of that set. Additional structure, such as
+		monotonicity, a one-sided Lipschitz condition, or uniqueness, may yield
+		full-sequence convergence, stronger convergence, or quantitative error
+		estimates.
 	\end{remark}
 	
 	
@@ -2013,9 +1957,9 @@ $\Phi$ enjoys some lower regularity, as the following proposition shows.
 \end{lemma}
 
 \begin{proof}
-	We prove (a), (b), and (c) in turn.
+	We treat the three assertions in order.
 	
-	\emph{Proof of (a).} Fix $s\in\mathbb{R}$. Since $\Phi(s)$ is closed and convex
+	\emph{Part (a).} Fix $s\in\mathbb{R}$. Since $\Phi(s)$ is closed and convex
 	by (P1), and the Euclidean norm on $\mathbb{R}$ is strictly convex, the
 	projection $\Pi_{\Phi(s)}$ is well defined and single-valued. For
 	$z_1,z_2\in\mathbb{R}$ and $\lambda\in[0,1]$, set
@@ -2036,7 +1980,7 @@ $\Phi$ enjoys some lower regularity, as the following proposition shows.
 	g(s,\lambda z_1+(1-\lambda)z_2)\le \lambda g(s,z_1)+(1-\lambda)g(s,z_2).
 	\]
 	
-	\emph{Proof of (b).} We first show that $s\mapsto\operatorname{dist}(z,\Phi(s))$
+	\emph{Part (b).} We first show that $s\mapsto\operatorname{dist}(z,\Phi(s))$
 	is lower semicontinuous for fixed $z\in\mathbb{R}$. Suppose, for contradiction,
 	that $s_n\to s$ and
 	\[
@@ -2072,7 +2016,7 @@ $\Phi$ enjoys some lower regularity, as the following proposition shows.
 	Squaring both (nonnegative) sides yields $\liminf_n g(s_n,z_n)\ge g(s,z)$,
 	which proves (b).
 	
-	\emph{Proof of (c).} A jointly lower semicontinuous function on a metric
+	\emph{Part (c).} A jointly lower semicontinuous function on a metric
 	space has closed sublevel sets $\{(s,z):g(s,z)\le c\}$ for every
 	$c\in\mathbb{R}$, hence $g$ is Borel measurable on $\mathbb{R}\times\mathbb{R}$.
 	If $u,v:Q\to\mathbb{R}$ are Lebesgue measurable, then
@@ -2407,8 +2351,8 @@ $\Phi$ enjoys some lower regularity, as the following proposition shows.
 \section{Numerical Simulations}
 \label{sec:numerics}
 %% ============================================================
-To assess the numerical performance of the DR-PINNs approach proposed in the preceding sections,
- next we consider three numerical examples: two for the case of differential inclusions and another for a parabolic partial differential inclusion. 
+We consider three numerical examples: two differential inclusions and one
+parabolic partial differential inclusion. 
 %% ------------------------------------------------------------
 \subsection{Linear control system with polytopic input set}
 \label{subsec:linear-control}
@@ -2526,10 +2470,9 @@ $\mathcal{L}(\theta) = \LCLossInit$ at initialization, the loss
 decreases to $\LCLossFinal$ after $1\,000$ epochs, confirming that the
 learned velocity $\dot x_\theta(t)$ becomes admissible, i.e.\
 $\dot x_\theta(t) \in F(x_\theta(t))$, at (numerically) every collocation
-point. A small terminal loss on the collocation grid does not by itself
-guarantee a small residual \emph{between} collocation points; an
-independent dense-grid validation of the inclusion residual is therefore
-reported below, after the ensemble study.
+point. Collocation-point accuracy does not control the residual between
+collocation points, so we also report an independent dense-grid validation
+below.
 
 \begin{figure}[htbp]
 	\centering
@@ -2596,7 +2539,7 @@ at each grid time $t$,
   \subset
   \mathcal{R}(t).
 \]
-We keep the notation deliberately distinct: $\mathcal{R}(t)$ denotes the
+We use separate notation: $\mathcal{R}(t)$ denotes the
 exact reachable set of \eqref{eq:reachable-tube}, while
 $\widehat{\mathcal{R}}_{\rm ref}(t)$ is its finite empirical sample.
 Figure~\ref{fig:phase-linear} overlays the trained trajectory $x_\theta(t)$
@@ -2647,27 +2590,16 @@ reported value
 \]
 which is small relative to the scale of the problem (the control set $U$ and
 the reachable tube $\mathcal{R}(t)$ both have diameter of order $1$).
-Since $\widehat{\mathcal{R}}_{\rm ref}(t)$ is a finite sample of
-trajectories, this quantity is a \emph{one-sided discrepancy from the
-sampled reference cloud} rather than a certificate of admissibility: a small
-value indicates that the ensemble trajectories lie close to empirically
-generated admissible trajectories, regardless of the random initialization.
-Its numerical value also depends on the density of the reference cloud
-(a sparser sample inflates $d_H^+$ even for exactly admissible
-trajectories). For this reason we assign the sampled cloud, and the
-discrepancy $\overline{d_H^+}$ computed from it, a \emph{purely
-illustrative} role in this section: they visualize the reachable tube and
-provide a qualitative sanity check, but they enter no quantitative claim
-of the paper. A certified comparison would instead require computing the
-reachable sets $\mathcal{R}(t)$ themselves --- for the present linear
-system, e.g., via support functions of $\mathcal{R}(t)$ (whose values
-along fixed directions are available from the maximum principle) or via a
-guaranteed reachability solver --- and measuring the distance of the
-trained trajectories to those certified sets; we regard this as a
-worthwhile but separate exercise, outside the scope of this benchmark.
-The primary admissibility check of this section is therefore the
-dense-grid residual validation reported next, and not the cloud
-discrepancy.
+Because $\widehat{\mathcal{R}}_{\rm ref}(t)$ is only a finite trajectory
+sample, $\overline{d_H^+}$ measures one-sided discrepancy from that sample,
+not admissibility with respect to the exact reachable set $\mathcal{R}(t)$.
+Its value $d_H^+$ also depends on the density of the cloud; a sparser cloud
+can increase the discrepancy even for admissible trajectories. We therefore use this
+quantity only to visualize the reachable tube. A certified comparison
+would require the sets $\mathcal{R}(t)$ themselves, for example through
+support functions or a guaranteed reachability solver. Admissibility in
+this experiment is assessed instead by the dense-grid residual validation
+reported next.
 
 \paragraph{Independent dense-grid residual validation}
 As announced above, and analogously to the dense-grid check of
@@ -2807,8 +2739,8 @@ parametrization itself, so that the distance residual vanishes
 at every time-grid node of every candidate trajectory and the remaining
 degrees of freedom can be used to select a specific element of the
 solution set $\mathcal{S}(x_0)$ --- here, the trajectory steering the
-state closest to a prescribed terminal point. This makes concrete the
-non-uniqueness discussion of Section~\ref{subsec:consistency}: the
+state closest to a prescribed terminal point. This also reflects the
+non-uniqueness discussed in Section~\ref{subsec:consistency}: the
 distance-residual loss guarantees convergence to \emph{some} admissible
 trajectory, whereas a hard-admissible parametrization allows one to
 optimize \emph{which} one.
@@ -2844,8 +2776,8 @@ $E(t)$ does not depend on the state, this example falls into
 regime~(a) of Section~\ref{sec:projection-extreme-points}; however,
 unlike the polytopic set of Section~\ref{subsec:linear-control}, the
 projection onto an ellipse admits no closed form (it requires the
-solution of a scalar secular equation), which makes the hard-admissible
-route particularly attractive here. We take $T=3$ and $x_0=(0,0)^{\top}$.
+solution of a scalar secular equation), so we also consider the
+hard-admissible route here. We take $T=3$ and $x_0=(0,0)^{\top}$.
 
 \paragraph{The rotating ellipsoidal control set}
 For $t\in[0,T]$, let
@@ -2920,21 +2852,17 @@ for every value of the nodal variables: no penalty for constraint
 violation is required, and the inclusion residual
 $\dist\bigl(\dot x(t_i)-g(t_i,x(t_i)),E(t_i)\bigr)$ of
 Section~\ref{sec:description-formulation} vanishes at every grid point
-$t_i$. We stress that the guarantee \eqref{eq:ellipse-admissibility}
-holds \emph{at the grid points}, where $\xi$ is recomputed through
-\eqref{eq:ellipse-selector}: between grid points the RK4 propagation
-below evaluates $\xi$ by linear interpolation of the already-computed
-values $\xi(t_i)$, and a convex combination of two admissible velocities
-taken at \emph{different} times need not belong to the intermediate
-(rotated and rescaled) ellipse. For the reported optimized selector we
+$t_i$. The guarantee \eqref{eq:ellipse-admissibility} is nodewise:
+$\xi$ is recomputed from \eqref{eq:ellipse-selector} at the grid points.
+Between nodes, the selector $\xi$ is linearly interpolated from the values
+$\xi(t_i)$, and a convex combination of velocities admissible at different
+times need not lie in the intermediate rotated and rescaled ellipse. For the reported optimized selector we
 verified admissibility a posteriori on a dense grid of $\EllipNDense$
 intermediate points: the maximum level is $\ell\approx\EllipDenseMaxL$,
-with no violations. This dense-grid maximum may slightly exceed the
-grid-node maximum reported in Table~\ref{tab:ellipse-continuation},
-since between nodes the interpolated selector is evaluated against the
-\emph{intermediate} (rotated and rescaled) ellipse, which is not covered
-by the construction \eqref{eq:ellipse-admissibility}; the two statistics
-are therefore complementary rather than contradictory.
+with no violations. The dense-grid maximum may therefore slightly exceed the grid-node maximum
+in Table~\ref{tab:ellipse-continuation}: the former also probes the
+intermediate ellipses, which are not covered by the nodewise construction
+\eqref{eq:ellipse-admissibility}.
 An implementation that re-evaluates $d(t)$, $s(t)$, and $\xi(t)$ from
 interpolated nodal values $p(t)$, $\rho(t)$ at every RK4 stage would make
 the guarantee hold at every evaluation time by construction. This is
@@ -3002,9 +2930,9 @@ function along the optimized selector. The terminal state matches the
 target closely at every stage, while increasing
 $\lambda_{\xi}$ pulls the selector towards the interior of
 the ellipse (mean level decreasing from $\EllipMeanLA$ to $\EllipMeanLC$) at
-essentially no cost in terminal accuracy --- the expected trade-off for
-a target close to the reachable-set boundary, where near-extremal
-velocities are necessary for most of the horizon.
+essentially no cost in terminal accuracy. For a target close to the
+reachable-set boundary, near-extremal velocities are needed over most of
+the horizon.
 
 \begin{table}[htbp]
 	\centering
@@ -3074,11 +3002,10 @@ below the boundary value $\ell=1$ on the dense validation grid.
 	\label{fig:ellipse-state}
 \end{figure}
 \paragraph{DR-PINN companion run}
-The hard-admissible selector optimization above is a direct constrained
-optimal-control discretization, not a DR-PINN: it propagates the state by RK4
-and makes the inclusion hold by construction at the time-grid nodes. To test the distance-residual
-method itself on the same benchmark, we therefore performed a separate
-DR-PINN run. Because the experiment is a steering problem with prescribed
+The hard-admissible selector above is a constrained optimal-control
+discretization: it propagates the state by RK4 and enforces the inclusion
+at the time-grid nodes by construction. We therefore use a separate
+DR-PINN run to test the distance-residual method on the same benchmark. Because the experiment is a steering problem with prescribed
 initial and terminal states, we used the endpoint-hard neural ansatz
 \begin{equation}
 \label{eq:ellipse-endpoint-hard}
@@ -3114,34 +3041,26 @@ $\EllipCompDenseMean$ and $\EllipCompDenseMax$, while both endpoint errors are z
 up to machine precision. The corresponding selector has mean level $\EllipCompMeanL$
 and maximum level $\EllipCompMaxL$; any excess of the latter over $1$ is
 consistent with the reported maximum inclusion distance and the numerical
-projection tolerance. Thus
-the corrected distance-residual implementation does solve this benchmark as
-a genuine DR-PINN.
+projection tolerance. With this implementation, the DR-PINN attains the reported accuracy on
+this benchmark.
 
-Two caveats about the scope of this companion run are in order. First,
-the figures above refer to a \emph{single} training run with one random
-seed; they demonstrate that the distance-residual method can solve this
-benchmark to the reported accuracy, but they do not by themselves
-characterize the robustness of training. A systematic robustness study
---- medians and ranges over an ensemble of $5$--$10$ seeds, the observed
-frequency of unsuccessful runs, and a comparison against a direct
-parametrization of the control $\xi$ (as in the hard-admissible selector
-above, but trained on the same steering objective) --- is the natural
-complement to the single run reported here.
+The companion result is based on a single random seed. It establishes the
+reported accuracy for this run but does not characterize training
+robustness. A fuller robustness study would report medians and ranges over
+$5$--$10$ seeds, unsuccessful-run frequency, and a comparison with a direct
+parametrization of the control $\xi$ trained on the same steering
+objective.
 % [TODO] Multi-seed campaign for the DR-PINN companion run
 % (5–10 seeds: median/range of collocation loss, dense-grid mean/max
 % distances, failure rate; plus direct-control baseline) to be added to
 % the replication pipeline before submission.
-Second, the hard-admissible selector study, while methodologically
-instructive as the complementary strategy, is not a DR-PINN experiment,
-and the conclusions of the paper concerning the distance residual rest
-on the companion run and on the experiments of
-Sections~\ref{subsec:linear-control}
-and~\ref{subsec:parabolic-PDI} only. The hard-admissible parametrization guarantees
-feasibility at the time-grid nodes independently of training; for the
-reported optimized selector, feasibility between nodes was additionally
-confirmed on a dense validation grid of $\EllipNDense$ points (cf.\ the level
-statistics above). It should not itself be labelled a DR-PINN experiment.
+The hard-admissible selector is a complementary constrained discretization,
+not a DR-PINN experiment. Conclusions about the distance residual rely on
+the companion run and on the experiments of
+Sections~\ref{subsec:linear-control} and~\ref{subsec:parabolic-PDI}.
+The hard-admissible parametrization guarantees feasibility at the time-grid
+nodes independently of training; feasibility between nodes for the reported
+selector was also checked on a dense grid of $\EllipNDense$ points.
 
 %% ------------------------------------------------------------
 \subsection{A Reaction-Diffusion Inclusion with Relay (Sliding-Mode) Feedback}
@@ -3215,9 +3134,9 @@ applies to this example.
 
 
 \begin{remark}\label{rem:relay-wellposed}
-	This example lies outside the scope of the existence theory of
-	Theorem~\ref{thm:existence-pde}, which requires a \emph{continuous}
-	selection $f(s)\in\Phi(s)$ (hypothesis~(H2$'$)). Indeed, any selection of
+	Theorem~\ref{thm:existence-pde} does not cover this example because
+	hypothesis~(H2$'$) requires a continuous selection
+	$f(s)\in\Phi(s)$. Indeed, any selection of
 	$\Phi$ in \eqref{eq:relay-Phi} is forced to equal $-\lambda$ for $s>0$
 	and $\lambda$ for $s<0$, hence is necessarily discontinuous at $s=0$.
 	Existence of a strong solution is instead obtained from the classical
@@ -3237,12 +3156,12 @@ applies to this example.
 	$\partial E=\partial\varphi_1+\partial\varphi_2
 	=-\Delta+\lambda\,\partial|\cdot|$. As the subdifferential of a proper,
 	convex, lower semicontinuous functional, $\partial E$ is maximal monotone
-	\cite{Brezis1973}. Note that maximal monotonicity does \emph{not} follow
-	from merely writing the operator as a sum of two maximal monotone
-	operators, since such a sum need not be maximal monotone in general.
+	\cite{Brezis1973}. Here maximal monotonicity follows from the
+	subdifferential representation; maximal monotonicity of the two summands
+	alone would not suffice in general.
 	
-	This abstract theory does more than provide existence in $L^2$: it
-	yields a strong solution in the sense of
+	The subgradient-flow theory provides existence in $L^2$ and also yields
+	the regularity required for a strong solution in the sense of
 	Definition~\ref{def:strong-solution-pde}, defined for every time
 	horizon. Indeed, since $u_0\in H_0^1(\Omega)$ and $\Omega$ is bounded,
 	$E(u_0)<\infty$, and the theory of subgradient flows with initial datum
@@ -3272,9 +3191,8 @@ applies to this example.
 	\eqref{eq:relay-pde}, so $\mathcal{S}(u_0)\neq\varnothing$ also for
 	this example.
 	
-	For completeness, the passage from the subgradient-flow theory to the
-	stated regularity is quantitative, with the following explicit
-	$L^2$ estimates. First, for gradient flows
+	The stated regularity can also be read off from explicit $L^2$ estimates.
+	For gradient flows
 	$-\partial_tu(t)\in\partial E(u(t))$ with $u_0\in D(E)$, the chain
 	rule for convex subdifferentials \cite[Lemme~3.3]{Brezis1973} gives
 	$\frac{d}{dt}E(u(t))=-\|\partial_tu(t)\|_{L^2(\Omega)}^2$ for a.e.\
@@ -3286,12 +3204,11 @@ applies to this example.
 	= \tfrac12\|\nabla u_0\|_{L^2(\Omega)}^2
 	+\lambda\|u_0\|_{L^1(\Omega)}.
 	\]
-	Second, the pointwise bound $|\xi|\le1$ a.e.\ in $Q$ yields the
-	explicit selection estimate
+	The pointwise bound $|\xi|\le1$ a.e.\ in $Q$ also gives
 	\[
 	\|\xi\|_{L^2(Q)}\le|Q|^{1/2}=(T\,|\Omega|)^{1/2}.
 	\]
-	Third, combining the two by the triangle inequality in $L^2(Q)$,
+	Combining these bounds with the triangle inequality in $L^2(Q)$,
 	\[
 	\|\Delta u\|_{L^2(Q)}
 	\le\|\partial_tu\|_{L^2(Q)}+\lambda\,\|\xi\|_{L^2(Q)}
@@ -3326,8 +3243,8 @@ applies to this example.
 	Section~\ref{subsec:linear-control}.
 \end{remark}
 
-Next, we address the finite-time extinction issue. Multiplying \eqref{eq:relay-pde} by $u(t,\cdot)$, integrating over $\Omega$,
-and using that $s\cdot v = -\lambda|s|$ for every $v\in\Phi(s)$ and every
+For the finite-time extinction analysis, multiply \eqref{eq:relay-pde} by $u(t,\cdot)$ and integrate over $\Omega$.
+Using that $s\cdot v = -\lambda|s|$ for every $v\in\Phi(s)$ and every
 $s\in\mathbb{R}$, a formal computation (rigorous for strong solutions) gives
 the energy identity
 \begin{equation}
@@ -3344,18 +3261,16 @@ different phenomenon: the solution reaches the equilibrium $u\equiv0$ in
 \emph{finite time} rather than merely decaying exponentially --- a behavior
 familiar from evolution problems governed by dissipation terms that are
 positively homogeneous of degree one, such as the total variation flow
-\cite{AndreuCaselleMazon2004}. We stress that the energy identity
-\eqref{eq:relay-energy} alone does \emph{not} prove finite-time extinction;
-for the nonnegative initial datum \eqref{eq:relay-u0} used here, extinction
---- together with an explicit upper bound on the extinction time and its
-monotonicity with respect to $\lambda$ --- follows from the elementary
-comparison arguments recorded in the next proposition. Once $u(t,\cdot)$
+\cite{AndreuCaselleMazon2004}. The energy identity
+\eqref{eq:relay-energy} alone does not yield finite-time extinction. For
+the nonnegative initial datum \eqref{eq:relay-u0}, extinction, an explicit
+upper bound for the extinction time, and monotonicity with respect to
+$\lambda$ follow from the comparison argument in the next proposition. Once $u(t,\cdot)$
 vanishes on part of $\Omega$, the relay may ``slide'' there
 ($\Delta u(t,x)\in[-\lambda,\lambda]$
 pointwise, consistently with $u\equiv0$), anchoring the solution at
-equilibrium. This behavior is invisible to a classical pointwise-residual
-PINN, which would require committing in advance to one branch of $\Phi$,
-and is precisely the phenomenon this benchmark is designed to showcase.
+equilibrium. A classical pointwise-residual PINN would have to choose one branch of
+$\Phi$ in advance and would not represent this sliding behavior directly.
 
 \begin{proposition}[Finite-time extinction and monotonicity in $\lambda$]
 	\label{prop:extinction}
@@ -3485,15 +3400,12 @@ of $n_{\rm pool}=4000$ candidate points selected from a uniform draw of
 $20\,000$ points over $Q$ by retaining those with smallest $|u_\theta|$.
 The hard pool is refreshed every $500$ training epochs as the extinction
 front advances; the remaining $70\%$ of each batch is drawn uniformly over
-$Q$ to preserve global domain coverage. Because the benefit of this
-heuristic is not obvious a priori, the campaign reported below includes a
-controlled sampler ablation (front-based adaptive vs.\ residual-based RAR
-vs.\ purely uniform collocation) at the baseline configuration;
-anticipating the outcome, the three samplers turn out to be statistically
-indistinguishable on every reported metric at these settings
-(Table~\ref{tab:relay-ablation}), so the front-based scheme should be
-regarded as a safeguard for harder configurations rather than as a
-demonstrated accelerator.
+$Q$ to preserve global domain coverage. The campaign therefore includes a controlled sampler ablation
+(front-based adaptive vs.\ residual-based RAR vs.\ uniform collocation) at
+the baseline configuration. At these settings the three samplers are
+statistically indistinguishable on every reported metric
+(Table~\ref{tab:relay-ablation}); the front-based scheme is retained as a
+safeguard for thinner bands rather than as a demonstrated speedup.
 
 \paragraph{Reference solution}
 Unlike the bang-bang example of Section~\ref{subsec:linear-control}, where
@@ -3636,19 +3548,18 @@ relay}
 which applies the interval branch on the whole band
 $\{|s|\le\varepsilon\}$ (so the middle case of the projection formula
 above is used whenever $|u_\theta|\le\varepsilon$) and reduces to $\Phi$
-for $\varepsilon=0$. Three structural facts govern the interpretation of
-the results below.
+for $\varepsilon=0$.
 
-First, $\Phi_\varepsilon$ satisfies (P1)--(P3) with the same constant
+For the banded experiments, the relaxed reaction term is $\Phi_\varepsilon$. The map $\Phi_\varepsilon$ satisfies (P1)--(P3) with the same constant
 $m_0=\lambda$: its values are nonempty, closed, convex intervals; it is
 upper semicontinuous (it is locally constant off
 $\{|s|=\varepsilon\}$, and at $|s|=\varepsilon$ its value is already the
 full interval $[-\lambda,\lambda]$, which contains every nearby value);
 and the growth bound is unchanged.
-Theorem~\ref{thm:consistency-parabolic} therefore applies verbatim to the
-inclusion with reaction term $\Phi_\varepsilon$.
+Theorem~\ref{thm:consistency-parabolic} therefore applies to the inclusion
+with reaction term $\Phi_\varepsilon$.
 
-Second, $\Phi(s)\subseteq\Phi_\varepsilon(s)$ for every $s$, hence
+Moreover, $\Phi(s)\subseteq\Phi_\varepsilon(s)$ for every $s$, hence
 $\dist(z,\Phi_\varepsilon(s))\le\dist(z,\Phi(s))$ pointwise, every
 solution of the exact relay inclusion is a solution of the
 $\varepsilon$-banded one, and the trained loss is a lower bound for the
@@ -3660,9 +3571,8 @@ not monotone for $\varepsilon>0$, so that argument does not carry over.
 Remark~\ref{rem:relay-witness} below makes this loss of rigidity explicit
 and quantifies when it matters.
 
-Third, since a smooth surrogate cannot extinguish exactly, the observable
-we validate is not the extinction time itself but the \emph{band-entry
-time}
+Since a smooth surrogate cannot extinguish exactly, we compare the
+solutions through the \emph{band-entry time}
 \begin{equation}
 	\label{eq:relay-tband}
 	t_\varepsilon(u) := \inf\bigl\{\, t\in[0,T] :
@@ -3705,16 +3615,12 @@ the region where $\Phi_\varepsilon$ differs from $\Phi$.
 	$w_\lambda$ is never admissible, and uniqueness holds as in
 	Remark~\ref{rem:relay-wellposed}.
 \end{remark}
-Beyond the usual comparison against the reference solver, we recommend a
-diagnostic figure specific to this set-valued setting: superimposing, on a
-plot of the graph of $\Phi_\varepsilon$ (a three-branch ``staircase''
-whose middle step has width $2\varepsilon$), the empirical
-cloud of points $\bigl(u_\theta(t_i,x_i),\,\partial_t u_\theta(t_i,x_i)-\Delta u_\theta(t_i,x_i)\bigr)$
-at the collocation points after training. A well-trained network should
-concentrate this cloud on the graph of $\Phi_\varepsilon$, visually certifying that the
-network has learned to select the correct branch of the relay at each
-collocation point — a diagnostic with no counterpart in classical
-single-valued PINNs.
+We also inspect branch selection by plotting the empirical cloud
+$\bigl(u_\theta(t_i,x_i),\,\partial_t u_\theta(t_i,x_i)-\Delta u_\theta(t_i,x_i)\bigr)$
+over the three-branch graph of $\Phi_\varepsilon$, whose middle step has
+width $2\varepsilon$. Concentration of this cloud on the graph shows which
+admissible value is selected at the collocation points and provides a
+diagnostic specific to the set-valued formulation.
 
 
 
@@ -3722,8 +3628,8 @@ single-valued PINNs.
 
 Figure~\ref{fig:relay-extinction-ref} displays the $L^2(\Omega)$-norm decay curves
 for the reference solver with $\lambda\in\{0,0.4,0.6,0.8\}$ over $[0,T]$.
-The contrast is sharp: the classical heat equation ($\lambda=0$) decays
-exponentially and remains well above zero at $t=T=0.3$, while all three
+The classical heat equation ($\lambda=0$) decays exponentially and
+remains well above zero at $t=T=0.3$, whereas all three
 relay reference solutions reach exact numerical extinction within
 $[0,0.19]$, with the extinction time decreasing monotonically as
 $\lambda$ increases.
@@ -3777,8 +3683,7 @@ between epochs ${\approx}5\,000$ and ${\approx}8\,000$, and a steady
 decrease thereafter. The five $\varepsilon=0$ runs are clearly separated
 from all banded runs, stagnating an order of magnitude higher (final
 validation mean $\approx0.44$, seed median, vs.\ $\approx0.027$ at
-$\varepsilon=0.05$), which already announces the dichotomy quantified
-below.
+$\varepsilon=0.05$). This separation is quantified below.
 
 \begin{figure}[htbp]
   \centering
@@ -4021,7 +3926,7 @@ where the band is thinner relative to the domain.
 \end{table}
 
 \paragraph{Residual structure and remaining limitations}
-The improvement is not uniform over $Q$, and we delimit it precisely. On
+The residual reduction is not uniform over $Q$. On
 the $4\,000$-point evaluation cloud at
 $(\lambda,\varepsilon)=(0.6,0.05)$, the $\Phi_\varepsilon$ distance
 residual has seed-median mean ${\approx}0.030$ but maximum
@@ -4032,15 +3937,14 @@ $|u_\theta|>\varepsilon$ and the smooth surrogate must still approximate
 a sign branch across a thin transition layer --- the residual remains
 concentrated and large in absolute terms. The pre-band
 $L^2(\Omega)$-norm curves nevertheless track the reference to within
-${\approx}2\%$ in sup norm. Consequently, the experiment now establishes
-a \emph{quantitative} reproduction of the extinction dynamics in the
-band-entry observable \eqref{eq:relay-tband} --- seed-stable, persistent,
-monotone in $\lambda$, and grid-exact against the reference for
-$\varepsilon\ge0.02$ --- while the hypothesis $\mathcal{J}(u_n)\to0$ of
-Theorem~\ref{thm:consistency-parabolic} is still not realized uniformly:
-the continuous residual is dominated by the pre-band interface layer,
-exactly as the discontinuity of the relay predicts. Finally, per
-Remark~\ref{rem:relay-witness}, at $(\lambda,\varepsilon)=(0.4,0.05)$ and
+${\approx}2\%$ in sup norm. Thus the band-entry observable
+\eqref{eq:relay-tband} reproduces the extinction dynamics quantitatively:
+it is seed-stable, persistent, monotone in $\lambda$, and grid-exact against
+the reference for $\varepsilon\ge0.02$. At the same time, the hypothesis
+$\mathcal{J}(u_n)\to0$ of Theorem~\ref{thm:consistency-parabolic} is not
+realized uniformly because the continuous residual remains dominated by
+the pre-band interface layer. In addition, Remark~\ref{rem:relay-witness}
+shows that at $(\lambda,\varepsilon)=(0.4,0.05)$ and
 $(0.6,\{0.05,0.1\})$ the $\varepsilon$-banded inclusion admits nonzero
 steady sliding states, so a vanishing post-band residual alone would not
 identify the extinct solution; the recorded tail distances show that
@@ -4055,13 +3959,11 @@ the exact relay even where the relaxed problem does not force it.
 \label{sec:conclusions}
 %% ============================================================
 
-We have introduced Distance-Residual Physics-Informed Neural Networks
-(DR-PINNs), a framework that extends the PINN paradigm from equations to
-genuinely set-valued differential laws by replacing the pointwise residual
-with the squared distance from the differential operator to the admissible
-set. The construction rests on a single geometric principle --- the
-distance vanishes exactly when the inclusion holds --- and reduces to the
-classical PINN loss when the admissible set is a singleton. On the
+We introduced Distance-Residual Physics-Informed Neural Networks
+(DR-PINNs) for set-valued differential laws. The usual pointwise residual
+is replaced by the squared distance from the differential operator to the
+admissible set; this distance vanishes exactly on admissible operator
+values and gives the classical PINN loss when the set is a singleton. On the
 theoretical side, we proved consistency results for both ordinary
 differential inclusions (Theorem~\ref{thm:consistency}) and parabolic
 partial differential inclusions
@@ -4070,16 +3972,13 @@ candidates whose \emph{continuous} distance-residual functional tends to
 zero converges, along a subsequence, to an exact solution of the target
 inclusion; relating the finite-collocation training loss to the continuous
 functional requires the additional sampling and regularity assumptions
-discussed in Remark~\ref{rem:collocation-gap}. To delimit the theory
-precisely, we repeat what it does \emph{not} establish: it does not prove
-that a sequence of neural networks with vanishing continuous
-distance-residual functional exists, nor that a gradient-based optimizer
-finds one, nor that random or adaptive collocation schemes satisfy the
-bridging assumptions of Remark~\ref{rem:collocation-gap}, and it provides
-no convergence rates. The results are conditional consistency statements
-for the continuous functional, and we regard closing each of these gaps
-as a separate research problem. The proofs
-combine a priori estimates, compactness, weak convergence of the
+discussed in Remark~\ref{rem:collocation-gap}. These are conditional
+consistency results for the continuous functional. They do not assert the
+existence of a neural-network sequence with vanishing continuous residual,
+convergence of a gradient-based optimizer, or validity of the bridging
+assumptions for random or adaptive collocation, and they do not provide
+convergence rates. Each of these issues requires additional analysis.
+The proofs combine a priori estimates, compactness, weak convergence of the
 differential operators, and the lower semicontinuity of normal convex
 integrands; in view of the intrinsic non-uniqueness of solutions of
 inclusions, this compactness-type statement is the natural analogue of
@@ -4089,11 +3988,11 @@ intervals, balls, and boxes; by a small quadratic program, combined with
 an offline Quickhull reduction, for polytopic sets; and by a scalar
 secular equation for ellipsoidal sets.
 
-The numerical experiments illustrate three complementary regimes. For a
+The numerical experiments cover three settings. For a
 linear control system with a polytopic input set, the distance residual
 is driven to machine-precision levels and the trained ensemble stays
 close to an empirically sampled reachable tube. For a planar inclusion
-with a rotating ellipsoidal constraint, a genuine DR-PINN run reaches
+with a rotating ellipsoidal constraint, the DR-PINN companion run reaches
 a collocation loss of $\EllipCompLoss$ with endpoint constraints enforced
 exactly, while a complementary hard-admissible parametrization
 illustrates how the residual can instead be eliminated at the time-grid
@@ -4102,7 +4001,7 @@ posteriori on a dense validation grid), freeing the remaining degrees of freedom
 select a particular element of the solution set. For a reaction-diffusion
 inclusion with relay feedback, training against an $\varepsilon$-banded
 relaxation $\Phi_\varepsilon\supseteq\Phi$ --- which satisfies the same
-hypotheses (P1)--(P3), so the consistency theory applies verbatim --- turns
+hypotheses (P1)--(P3), so the same consistency theorem applies --- turns
 a merely qualitative agreement into a quantitative one: for
 $\varepsilon\ge0.02$ the band-entry times of the trained networks are
 persistent, seed-stable (ranges of at most one evaluation-grid step over
@@ -4120,20 +4019,16 @@ trained tails are an order of magnitude closer to the extinct solution
 than to the extremal sliding state, i.e.\ the networks select the
 solution of the exact relay even where the relaxation does not force it.
 
-Several directions remain open. First, quantitative error estimates
-would require additional structure (e.g., one-sided Lipschitz or
-monotonicity conditions on $F$ or $\Phi$) beyond the compactness-based
-consistency proved here. Second, the treatment of state-dependent
-admissible sets in the backward pass --- differentiating through the
-projection when the set itself moves with the network state --- deserves
-a systematic analysis. Third, the relay experiment shows that near
-discontinuities of the multifunction the distance residual concentrates
-and remains large in absolute terms; hybrid strategies combining the
-distance residual with hard-admissible parametrizations, adaptive
-sampling, or nonsmooth network components are a natural next step.
-Finally, extensions to hyperbolic partial differential inclusions,
-sweeping processes, and differential variational inequalities appear
-within reach of the general principle of Section~\ref{sec:principle}.
+Several directions remain open. Quantitative error estimates would require
+additional structure, such as one-sided Lipschitz or monotonicity
+conditions on $F$ or $\Phi$, beyond the compactness-based consistency used
+here. State-dependent admissible sets also raise a separate backward-pass
+question because the projection moves with the network state. The relay
+experiment suggests combining the distance residual with hard-admissible
+parametrizations, adaptive sampling, or nonsmooth network components near
+discontinuities of the multifunction. Extensions to hyperbolic partial
+differential inclusions, sweeping processes, and differential variational
+inequalities are natural further directions.
 
 
 
@@ -4147,7 +4042,7 @@ throughout the text. The replication package is publicly available at
 % [TODO] Insert the final public GitHub URL (and, ideally, a Zenodo
 % DOI of the archived release) together with the exact commit hash once
 % the repository is frozen for submission. The repository exists; the
-% link is deliberately withheld until the package is finalized.
+% the link will be inserted once the package is finalized.
 \texttt{[GitHub repository URL and commit hash to be inserted upon
 finalization of the package]}. The package contains: the scripts
 \texttt{run\_experiment\_61.py}, \texttt{run\_experiment\_62.py}, and
