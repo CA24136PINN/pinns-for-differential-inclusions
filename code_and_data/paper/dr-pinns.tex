@@ -724,6 +724,10 @@ defined pointwise in time for every $u\in\mathcal{W}(0,T)$.
 	\end{enumerate}
 	Since $u\in\mathcal{W}(0,T)$ implies $\partial_t u,\,\Delta u\in L^2(Q)$,
 	the inclusion in~(c) is meaningful pointwise almost everywhere.
+	Moreover, by the continuous embedding \eqref{eq:W-cont-embedding},
+	every $u\in\mathcal{W}(0,T)$ satisfies $u(t,\cdot)\in H_0^1(\Omega)$
+	for \emph{every} $t\in[0,T]$, so condition~(b) holds automatically
+	(for every $t$, in fact) and is retained only for emphasis.
 \end{definition}
 
 The \emph{solution set} of \eqref{eq:parabolic-inclusion-background} is
@@ -737,209 +741,478 @@ As in the ODE setting, strong solutions need not be unique, i.e. $\mathcal{S}(u_
 may contain multiple elements.
 
 The following existence result guarantees that $\mathcal{S}(u_0)$ is
-nonempty under the following assumptions on the set-valued reaction term
-$\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$:
+nonempty under standing assumptions on the set-valued reaction term
+$\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$ that are \emph{exactly} the
+hypotheses of the consistency analysis of
+Section~\ref{sec:pde-consistency}:
 
 \begin{itemize}
-	\item[(H1$'$)] $\Phi(s)$ is nonempty, closed, and convex for every
+	\item[(P1)] $\Phi(s)$ is nonempty, closed, and convex for every
 	$s\in\mathbb{R}$.
 	
-	\item[(H2$'$)] There exists a continuous selection
-	$f:\mathbb{R}\to\mathbb{R}$ such that
-	\[
-	f(s)\in\Phi(s)
-	\qquad\forall\, s\in\mathbb{R}.
-	\]
+	\item[(P2)] $\Phi$ is upper semicontinuous.
 	
-	\item[(H3$'$)] There exists a constant $m_0\ge 0$ such that
+	\item[(P3)] There exists a constant $m_0\ge 0$ such that
 	\[
-	|f(s)|\le m_0(1+|s|)
+	\sup_{r\in\Phi(s)}|r|\le m_0(1+|s|)
 	\qquad\forall\, s\in\mathbb{R}.
 	\]
 \end{itemize}
 
-Hypothesis \textup{(H2$'$)} need not be postulated separately when
-$\Phi$ enjoys some lower regularity, as the following proposition shows.
+Since \textup{(P2)} requires only \emph{upper} semicontinuity, $\Phi$
+need not admit any continuous selection; the relay term of
+Section~\ref{subsec:parabolic-PDI} is a case in point. Selection
+theorems of Michael type (see, e.g., \cite[Lemma~2.1]{deimling_1992}),
+which require lower semicontinuity, therefore cannot be used to reduce
+\eqref{eq:parabolic-inclusion-background} to a single-valued semilinear
+equation. We instead work directly with the multivalued problem and
+obtain existence from the fixed-point theorem of Bohnenblust and Karlin
+\cite{bohnenblust_karlin_1950}, an extension of Kakutani's theorem
+\cite{kakutani_1941} from compact convex sets in finite-dimensional
+spaces to closed convex sets in Banach spaces.
 
-\begin{proposition}[Sufficient conditions for
-	\textup{(H2$'$)}--\textup{(H3$'$)}]\label{prop:selection-sufficient}
-	Assume \textup{(H1$'$)} and, in addition, that $\Phi$ is lower
-	semicontinuous as a set-valued map
-	$\mathbb{R}\rightrightarrows\mathbb{R}$. Then, for every
-	$(s_0,w_0)\in\operatorname{graph}(\Phi)$, there exists a continuous
-	selection $f:\mathbb{R}\to\mathbb{R}$ of $\Phi$ with $f(s_0)=w_0$; in
-	particular, \textup{(H2$'$)} holds. If, moreover, $\Phi$ satisfies
-	the linear growth condition
-	\begin{equation}\label{eq:Phi-growth}
-		\sup_{r\in\Phi(s)}|r|\le m_0(1+|s|)
-		\qquad\forall\, s\in\mathbb{R}
-	\end{equation}
-	for some $m_0\ge0$ \textup{(}i.e., condition \textup{(P3)} of
-	Section~\textup{\ref{sec:pde-consistency}}\textup{)}, then every
-	continuous selection of $\Phi$ satisfies \textup{(H3$'$)} with the
-	same constant $m_0$.
+\paragraph{Linear solvability.}
+For $h\in L^2(Q)$, let $S(h)\in\mathcal{W}(0,T)$ denote the unique
+solution of the linear Dirichlet problem
+\[
+\partial_t u-\Delta u=h \ \text{ in } Q,
+\qquad u(0)=u_0 \ \text{ in }\Omega,
+\qquad u=0 \ \text{ on }(0,T)\times\partial\Omega.
+\]
+By parabolic maximal $L^2$-regularity, $S$ is well defined and there
+exists a constant $C_{\mathrm{par}}>0$ such that
+\begin{equation}\label{eq:max-reg-linear}
+	\|S(h)\|_{\mathcal{W}(0,T)}
+	\le
+	C_{\mathrm{par}}\bigl(\|h\|_{L^2(Q)}+\|u_0\|_{H_0^1(\Omega)}\bigr);
+\end{equation}
+see \cite[Section~7.1.3, Theorem~5]{Evans} for smooth domains; the
+$H^2$ elliptic regularity required under our standing assumptions on
+$\Omega$ is supplied by \cite[Theorem~3.2.1.2]{Grisvard1985} in the
+convex case and by \cite[Theorem~2.4.2.5]{Grisvard1985} in the
+$C^{1,1}$-boundary case (cf.\ the proof of
+Lemma~\ref{lem:interp-identity}). Writing $S_0$ for the solution
+operator of the same problem with zero initial datum and
+$w_0:=S(0)\in\mathcal{W}(0,T)$ for the solution of the zero-source
+problem with initial datum $u_0$, we have $S(h)=S_0(h)+w_0$; by
+\eqref{eq:max-reg-linear} (applied with $u_0=0$), $S_0:L^2(Q)\to
+\mathcal{W}(0,T)$ is a bounded linear operator, and, after composition
+with the continuous embedding $\mathcal{W}(0,T)\hookrightarrow L^2(Q)$,
+it is in particular weak--weak sequentially continuous from $L^2(Q)$
+into $L^2(Q)$.
+
+We begin by showing that, for any fixed $w\in L^2(Q)$, the
+Nemytskii-type multimap $(t,x)\mapsto\Phi(w(t,x))$ admits at least one
+$L^2(Q)$-selection.
+
+\begin{proposition}[Nonemptiness of the selection set]
+	\label{prop:bk-selection}
+	Assume \textup{(P1)--(P3)} and let $w\in L^2(Q)$. Then
+	\[
+	S^2_{\Phi,w}
+	:=
+	\bigl\{v\in L^2(Q) : v(t,x)\in\Phi(w(t,x))\ \text{a.e.\ in } Q\bigr\}
+	\]
+	is nonempty, closed, and convex in $L^2(Q)$.
 \end{proposition}
 
 \begin{proof}
-	Apply the Michael-type selection lemma of
-	\cite[Lemma~2.1]{deimling_1992} with $D=X=\mathbb{R}$ and $F=\Phi$:
-	its hypotheses --- $D$ a nonempty subset of a Banach space, $X$ a
-	Banach space, and $F$ lower semicontinuous with nonempty closed
-	convex values --- are satisfied by \textup{(H1$'$)} together with the
-	assumed lower semicontinuity. This yields a continuous selection $f$
-	of $\Phi$ passing through any prescribed point of the graph. The
-	second claim is immediate, since $f(s)\in\Phi(s)$ gives
-	$|f(s)|\le\sup_{r\in\Phi(s)}|r|\le m_0(1+|s|)$ for every
-	$s\in\mathbb{R}$.
+	\emph{Step 1: $\Phi$ is a Borel measurable multifunction.} Let
+	$C\subset\mathbb{R}$ be closed. By \textup{(P2)}, the set
+	$\{s\in\mathbb{R}:\Phi(s)\subset\mathbb{R}\setminus C\}$ is open,
+	hence its complement
+	\[
+	\Phi^{-1}(C):=\{s\in\mathbb{R}:\Phi(s)\cap C\neq\varnothing\}
+	\]
+	is closed, and in particular Borel. Writing an open set
+	$U\subset\mathbb{R}$ as a countable union of closed sets shows that
+	$\Phi^{-1}(U)$ is Borel for every open $U$; thus $\Phi$ is a Borel
+	measurable multifunction with nonempty closed values, by
+	\textup{(P1)}.
+	
+	\emph{Step 2: the composed multimap is measurable.} For every closed
+	$C\subset\mathbb{R}$,
+	\[
+	\bigl\{(t,x)\in Q : \Phi(w(t,x))\cap C\neq\varnothing\bigr\}
+	= w^{-1}\bigl(\Phi^{-1}(C)\bigr),
+	\]
+	which is Lebesgue measurable, being the preimage of a closed (hence
+	Borel) set under the Lebesgue measurable function $w:Q\to\mathbb{R}$.
+	Hence $F(t,x):=\Phi(w(t,x))$ is a measurable multifunction from the
+	complete $\sigma$-finite measure space $(Q,\mathcal{L}(Q))$ into the
+	nonempty closed subsets of the Polish space $\mathbb{R}$.
+	
+	\emph{Step 3: measurable selection and integrability.} By the
+	measurable selection theorem
+	\cite[Theorem~8.1.3]{aubin_frankowska_2009}, there exists a
+	measurable $v:Q\to\mathbb{R}$ with $v(t,x)\in\Phi(w(t,x))$ a.e.\ in
+	$Q$. By \textup{(P3)},
+	$|v(t,x)|\le m_0\bigl(1+|w(t,x)|\bigr)$ a.e., hence
+	$|v|^2\le2m_0^2(1+|w|^2)$ a.e.\ and, since $|Q|<\infty$,
+	\begin{equation}\label{eq:bk-selection-bound}
+		\|v\|_{L^2(Q)}^2\le 2m_0^2\bigl(|Q|+\|w\|_{L^2(Q)}^2\bigr)<\infty.
+	\end{equation}
+	Therefore $v\in S^2_{\Phi,w}$, so $S^2_{\Phi,w}\neq\varnothing$.
+	
+	Convexity of $S^2_{\Phi,w}$ follows from the pointwise convexity of
+	$\Phi(w(t,x))$ in \textup{(P1)}. For closedness, if $v_n\in
+	S^2_{\Phi,w}$ and $v_n\to v$ in $L^2(Q)$, a subsequence converges
+	a.e., and the pointwise closedness of $\Phi(w(t,x))$ gives
+	$v\in S^2_{\Phi,w}$.
 \end{proof}
 
-\begin{remark}\label{rem:lsc-vs-usc}
-	Lower semicontinuity is used here only as a sufficient condition for the
-	existence result. The consistency analysis in
-	Section~\ref{sec:pde-consistency} assumes upper semicontinuity
-	\textup{(P2)}. Requiring both throughout would make the multifunction
-	continuous and would exclude the relay nonlinearity of
-	Section~\ref{subsec:parabolic-PDI}, which is upper semicontinuous but not
-	lower semicontinuous and has no continuous selection (see
-	Remark~\ref{rem:relay-wellposed}).
-\end{remark}
+The fixed-point theorem we use is the following.
 
-\begin{theorem}[Existence of strong solutions]
-	\label{thm:existence-pde}
-	Under assumptions \textup{(H1$'$)--(H3$'$)}, problem
-	\eqref{eq:parabolic-inclusion-background}
-	admits at least one strong solution, i.e.,
-	$\mathcal{S}(u_0)\neq\varnothing$.
+\begin{theorem}[Bohnenblust--Karlin]
+	\label{thm:bk-fixed-point}
+	Let $X$ be a Banach space and let $D\subset X$ be a nonempty closed
+	convex set. Let $\mathcal{G}:D\to2^X\setminus\{\varnothing\}$ be a
+	set-valued map with closed convex values such that
+	$\mathcal{G}(D)\subset D$. Suppose that
+	\begin{enumerate}
+		\item[\textup{(a)}] the graph of $\mathcal{G}$ is sequentially
+		closed in $D\times X$: if $x_n\to x$ in $D$, $y_n\to y$ in $X$,
+		and $y_n\in\mathcal{G}(x_n)$ for every $n$, then
+		$y\in\mathcal{G}(x)$;
+		\item[\textup{(b)}] $\mathcal{G}(D)$ is contained in a
+		sequentially compact subset of $X$.
+	\end{enumerate}
+	Then $\mathcal{G}$ has a fixed point: there exists $x_0\in D$ with
+	$x_0\in\mathcal{G}(x_0)$.
 \end{theorem}
 
 \begin{proof}
-	Let $f:\mathbb{R}\to\mathbb{R}$ be the continuous selection provided
-	by assumption \textup{(H2$'$)}. Consider the semilinear parabolic
-	problem
+	This is \cite[Theorem~4, p.~159]{bohnenblust_karlin_1950}, restated
+	in the notation of the present paper. Bohnenblust and Karlin's proof
+	uses the convexity of the values $\mathcal{G}(x)$ through the fact
+	that the closed $\varepsilon$-neighbourhood of a \emph{convex} set is
+	again convex, which is what allows the finite-dimensional Kakutani
+	theorem to be invoked on a finite $\varepsilon$-net, even though
+	convexity of the values is not restated as a separately numbered
+	hypothesis in their theorem statement; it is made explicit as a
+	standing hypothesis in the modern formulation of
+	%% [TODO] verify the corollary number in Zeidler, Vol. I, before submission
+	\cite[Corollary~11.3(e)]{zeidler_1986}, which we have followed above.
+\end{proof}
+
+The key analytic ingredient, beyond Proposition~\ref{prop:bk-selection},
+is the following weak--strong closedness property of the selection sets.
+When passing to the limit along $w_n\to w$ strongly in $L^2(Q)$ and
+$v_n\in S^2_{\Phi,w_n}$ with $v_n\rightharpoonup v$ only weakly in
+$L^2(Q)$, it guarantees that the weak limit $v$ remains an admissible
+selection of $\Phi(w(\cdot,\cdot))$; without it, one could not pass to
+the limit in the set-valued reaction term.
+
+\begin{lemma}[Weak closedness of the selection sets]
+	\label{lem:bk-weak-closedness}
+	Assume \textup{(P1)--(P3)}. Suppose that
+	$(w_n)_{n\in\mathbb{N}},(v_n)_{n\in\mathbb{N}}\subset L^2(Q)$
+	satisfy
+	\begin{enumerate}
+		\item[\textup{(i)}] $w_n\to w$ strongly in $L^2(Q)$,
+		\item[\textup{(ii)}] $v_n\in S^2_{\Phi,w_n}$ for every
+		$n\in\mathbb{N}$,
+		\item[\textup{(iii)}] $v_n\rightharpoonup v$ weakly in $L^2(Q)$.
+	\end{enumerate}
+	Then $v\in S^2_{\Phi,w}$.
+\end{lemma}
+
+\begin{proof}
+	Since $w_n\to w$ strongly in $L^2(Q)$, we may pass to a subsequence,
+	not relabeled, along which $w_n(t,x)\to w(t,x)$ for a.e.\
+	$(t,x)\in Q$. Dropping finitely many terms does not affect a weak
+	limit, so for every $n$ the tail sequence $\{v_k\}_{k\ge n}$ also
+	converges weakly to $v$. Applying Mazur's lemma (see, e.g.,
+	\cite[Corollary~3.8]{brezis_2011}) to this tail sequence yields, for
+	each $n$, a finite convex combination supported on indices $k\ge n$,
 	\[
-	\begin{cases}
-		\partial_t u-\Delta u=f(u)
-		& \text{in } Q,
-		\\
-		u(0,x)=u_0(x)
-		& \text{in } \Omega,
-		\\
-		u(t,x)=0
-		& \text{on } (0,T)\times\partial\Omega.
-	\end{cases}
-	\]
-	
-	We prove that this problem admits a solution $u\in\mathcal{W}(0,T)$ by
-	Schaefer's (Leray--Schauder-type) fixed-point theorem, see
-	\cite[Section~9.2.2, Theorem~4]{Evans}; note that a Banach fixed-point
-	argument is not available, since $f$ is not assumed to be Lipschitz.
-	
-	\emph{Step 1: the solution operator of the linear problem.}
-	For $h\in L^2(Q)$, let $S(h)\in\mathcal{W}(0,T)$ denote the unique
-	solution of the linear Dirichlet problem
-	\[
-	\partial_t u-\Delta u=h \ \text{ in } Q,
-	\qquad u(0)=u_0 \ \text{ in }\Omega,
-	\qquad u=0 \ \text{ on }(0,T)\times\partial\Omega.
-	\]
-	By parabolic maximal $L^2$-regularity, $S$ is well defined and there
-	exists a constant $C_{\mathrm{par}}>0$ such that
-	\begin{equation}\label{eq:max-reg-linear}
-		\|S(h)\|_{\mathcal{W}(0,T)}
-		\le
-		C_{\mathrm{par}}\bigl(\|h\|_{L^2(Q)}+\|u_0\|_{H_0^1(\Omega)}\bigr);
-	\end{equation}
-	see \cite[Section~7.1.3, Theorem~5]{Evans} for smooth domains; the
-	$H^2$ elliptic regularity required under our standing assumptions on
-	$\Omega$ is supplied by \cite[Theorem~3.2.1.2]{Grisvard1985} in the
-	convex case and by \cite[Theorem~2.4.2.5]{Grisvard1985} in the
-	$C^{1,1}$-boundary case (cf.\ the proof of
-	Lemma~\ref{lem:interp-identity}). Moreover, $S(h)-S(h')=S_0(h-h')$, where
-	$S_0$ denotes the solution operator with zero initial datum, so $S$ is
-	(affine and) continuous from $L^2(Q)$ into $\mathcal{W}(0,T)$.
-	
-	\emph{Step 2: continuity and boundedness of the Nemytskii operator.}
-	By \textup{(H2$'$)}--\textup{(H3$'$)}, the superposition operator
-	$N_f(v):=f(v)$ maps $L^2(Q)$ into $L^2(Q)$ and maps bounded sets to
-	bounded sets, since $|f(s)|\le m_0(1+|s|)$ gives
-	$\|f(v)\|_{L^2(Q)}\le m_0\bigl(|Q|^{1/2}+\|v\|_{L^2(Q)}\bigr)$. It is
-	also continuous: if $v_n\to v$ in $L^2(Q)$, then along any subsequence
-	there is a further subsequence $\{v_{n_k}\}$ converging almost
-	everywhere in $Q$ and dominated by a fixed function $w\in L^2(Q)$
-	(see \cite[Theorem~4.9]{brezis_2011}); by continuity of $f$,
-	$f(v_{n_k})\to f(v)$ a.e.\ in $Q$, and since
-	$|f(v_{n_k})|\le m_0(1+|v_{n_k}|)\le m_0(1+w)\in L^2(Q)$, dominated
-	convergence yields $f(v_{n_k})\to f(v)$ in $L^2(Q)$. As the limit does
-	not depend on the chosen subsequence, the whole sequence converges,
-	i.e., $N_f$ is continuous on $L^2(Q)$.
-	
-	\emph{Step 3: compactness of the fixed-point map.}
-	Define
-	\[
-	\mathcal{T}:L^2(Q)\longrightarrow L^2(Q),
+	\hat v_n := \sum_{k=n}^{N(n)} \lambda_k^{(n)} v_k,
 	\qquad
-	\mathcal{T}(v):=S\bigl(f(v)\bigr).
+	\lambda_k^{(n)}\ge0,
+	\quad
+	\sum_{k=n}^{N(n)}\lambda_k^{(n)}=1,
 	\]
-	By Steps~1 and~2, $\mathcal{T}$ is continuous and maps bounded subsets
-	of $L^2(Q)$ into bounded subsets of $\mathcal{W}(0,T)$. Since
-	$\mathcal{W}(0,T)$ embeds compactly into $C([0,T];L^2(\Omega))$ by
-	Lemma~\ref{lem:compact-embedding}, and hence compactly into $L^2(Q)$,
-	the operator $\mathcal{T}$ is compact.
+	with $\|\hat v_n-v\|_{L^2(Q)}\le 1/n$, so that $\hat v_n\to v$
+	strongly in $L^2(Q)$; passing to a further subsequence, not
+	relabeled, we may also assume $\hat v_n(t,x)\to v(t,x)$ for a.e.\
+	$(t,x)\in Q$.
 	
-	\emph{Step 4: a priori bound on the Schaefer set.}
-	Let $u\in L^2(Q)$ satisfy $u=\sigma\mathcal{T}(u)$ for some
-	$\sigma\in[0,1]$. By linearity of the underlying linear problem,
-	$u\in\mathcal{W}(0,T)$ and
+	For each $k$, hypothesis \textup{(ii)} gives
+	$v_k(t,x)\in\Phi(w_k(t,x))$ for all $(t,x)$ outside a null set
+	$N_k\subset Q$; set $N:=\bigcup_k N_k$, again a null set. Fix any
+	$(t,x)\in Q\setminus N$ at which, in addition, both of the above
+	a.e.\ convergences hold; such points form a set of full measure. Fix
+	$\varepsilon>0$. By \textup{(P1)}, $\Phi(w(t,x))$ is closed and
+	convex, so $\Phi(w(t,x))+\varepsilon B$, with $B$ the open unit ball
+	of $\mathbb{R}$, is open and convex. By \textup{(P2)}, $\Phi$ is
+	upper semicontinuous at $w(t,x)$, so there exists $\delta>0$ such
+	that $|s-w(t,x)|<\delta$ implies
+	$\Phi(s)\subset\Phi(w(t,x))+\varepsilon B$. Since
+	$w_k(t,x)\to w(t,x)$, there is $N_1=N_1(t,x,\varepsilon)$ with
 	\[
-	\partial_t u-\Delta u=\sigma f(u) \ \text{ in }Q,
-	\qquad u(0)=\sigma u_0,
-	\qquad u=0 \ \text{ on }(0,T)\times\partial\Omega.
+	v_k(t,x)\in\Phi(w_k(t,x))\subset\Phi(w(t,x))+\varepsilon B,
+	\qquad k\ge N_1.
 	\]
-	Testing with $u(t)$ and using \textup{(H3$'$)} together with Young's
-	inequality,
+	As $\Phi(w(t,x))+\varepsilon B$ is convex, it contains every convex
+	combination of the points $v_k(t,x)$ with $k\ge N_1$; since
+	$\hat v_n$ is supported on indices $k\ge n$, we get
+	$\hat v_n(t,x)\in\Phi(w(t,x))+\varepsilon B$ for all $n\ge N_1$.
+	Letting $n\to\infty$ and using $\hat v_n(t,x)\to v(t,x)$ together
+	with the closedness of $\Phi(w(t,x))+\varepsilon\overline{B}$, we
+	obtain $v(t,x)\in\Phi(w(t,x))+\varepsilon\overline{B}$. Since
+	$\varepsilon>0$ was arbitrary and $\Phi(w(t,x))$ is closed,
 	\[
-	\frac12\frac{d}{dt}\|u(t)\|_{L^2(\Omega)}^2
-	+\|\nabla u(t)\|_{L^2(\Omega)}^2
-	=\sigma\int_\Omega f(u)\,u\,dx
-	\le C\bigl(1+\|u(t)\|_{L^2(\Omega)}^2\bigr)
-	\quad\text{for a.e. } t,
+	v(t,x)\in\bigcap_{\varepsilon>0}
+	\bigl(\Phi(w(t,x))+\varepsilon\overline{B}\bigr)
+	=\Phi(w(t,x)).
 	\]
-	with $C>0$ depending only on $m_0$ and $|\Omega|$. Since
-	$\|u(0)\|_{L^2(\Omega)}=\sigma\|u_0\|_{L^2(\Omega)}
-	\le\|u_0\|_{L^2(\Omega)}$, Gr\"onwall's inequality yields a bound
-	$\sup_{t\in[0,T]}\|u(t)\|_{L^2(\Omega)}\le C_1$ with $C_1$ independent
-	of $\sigma$, whence $\|u\|_{L^2(Q)}\le T^{1/2}C_1$. Therefore the
-	Schaefer set
-	$\bigl\{u\in L^2(Q):u=\sigma\mathcal{T}(u)
-	\text{ for some }\sigma\in[0,1]\bigr\}$
-	is bounded in $L^2(Q)$. (Using \textup{(H3$'$)} once more,
-	$\|f(u)\|_{L^2(Q)}\le m_0(|Q|^{1/2}+\|u\|_{L^2(Q)})\le C_2$, so
-	\eqref{eq:max-reg-linear} gives in addition a $\sigma$-uniform bound
-	in $\mathcal{W}(0,T)$.)
+	This holds for a.e.\ $(t,x)\in Q$, the exceptional set being a
+	countable union of null sets, so $v\in S^2_{\Phi,w}$.
+\end{proof}
+
+\paragraph{The solution multimap and an invariant set.}
+We seek a strong solution as a fixed point of the set-valued map
+\begin{equation}\label{eq:bk-G-def}
+	\mathcal{G}:L^2(Q)\rightrightarrows L^2(Q),
+	\qquad
+	\mathcal{G}(w):=\bigl\{\,S_0(v)+w_0\ :\ v\in S^2_{\Phi,w}\,\bigr\}:
+\end{equation}
+indeed, if $w^\ast\in\mathcal{G}(w^\ast)$, then
+$w^\ast=S_0(v^\ast)+w_0$ for some $v^\ast\in S^2_{\Phi,w^\ast}$, and
+$u:=w^\ast\in\mathcal{W}(0,T)$ solves $\partial_t u-\Delta u=v^\ast\in
+\Phi(w^\ast)=\Phi(u)$ a.e.\ in $Q$ with $u(0)=u_0$, i.e.\
+$u\in\mathcal{S}(u_0)$.
+
+As is standard when the reaction term has linear (not small) growth, a
+self-mapping estimate for $\mathcal{G}$ in the ordinary $L^2(Q)$-norm
+need not close, since the growth constant of \textup{(P3)} enters the
+linear energy estimate with a factor that need not be smaller than $1$.
+We circumvent this with a Bielecki-type exponentially weighted norm.
+
+\begin{lemma}[Weighted a priori bound]
+	\label{lem:bk-bielecki}
+	For $\lambda>0$ and $g\in L^2(Q)$ set
+	$\|g\|_\lambda^2:=\int_0^T e^{-2\lambda t}
+	\|g(t,\cdot)\|_{L^2(\Omega)}^2\,dt$. Since
+	$e^{-2\lambda T}\le e^{-2\lambda t}\le1$ on $[0,T]$,
+	$\|\cdot\|_\lambda$ is a norm on $L^2(Q)$ equivalent to
+	$\|\cdot\|_{L^2(Q)}$, with
+	\begin{equation}\label{eq:bk-norm-equiv}
+		e^{-\lambda T}\|g\|_{L^2(Q)}\le\|g\|_\lambda\le\|g\|_{L^2(Q)}
+		\qquad\text{for all } g\in L^2(Q).
+	\end{equation}
+	Assume \textup{(P1)--(P3)}. If $w\in L^2(Q)$, $v\in S^2_{\Phi,w}$,
+	and $u:=S_0(v)+w_0$, then for every $\lambda>0$,
+	\[
+	\|u\|_\lambda
+	\le
+	\|w_0\|_\lambda
+	+\frac{\sqrt2\,m_0\sqrt{|Q|}}{\lambda}
+	+\frac{\sqrt2\,m_0}{\lambda}\,\|w\|_\lambda.
+	\]
+\end{lemma}
+
+\begin{proof}
+	By \textup{(P3)}, as in the proof of
+	Proposition~\ref{prop:bk-selection},
+	$|v(t,x)|^2\le2m_0^2(1+|w(t,x)|^2)$ a.e.\ in $Q$; multiplying by
+	$e^{-2\lambda t}\le1$ and integrating over $Q$ gives
+	\begin{equation}\label{eq:bk-v-weighted}
+		\|v\|_\lambda\le\sqrt2\,m_0\bigl(\sqrt{|Q|}+\|w\|_\lambda\bigr).
+	\end{equation}
+	Let $\tilde u:=S_0(v)$, so that $\tilde u(0)=0$ and
+	$\partial_t\tilde u-\Delta\tilde u=v$. Multiplying the energy
+	identity
+	\[
+	\tfrac12\tfrac{d}{dt}\|\tilde u(t)\|_{L^2(\Omega)}^2
+	+\|\nabla\tilde u(t)\|_{L^2(\Omega)}^2
+	=\int_\Omega v(t,x)\,\tilde u(t,x)\,dx
+	\]
+	by $e^{-2\lambda t}$ and using
+	$e^{-2\lambda t}\tfrac{d}{dt}\|\tilde u\|_{L^2(\Omega)}^2
+	=\tfrac{d}{dt}\bigl(e^{-2\lambda t}\|\tilde u\|_{L^2(\Omega)}^2\bigr)
+	+2\lambda e^{-2\lambda t}\|\tilde u\|_{L^2(\Omega)}^2$, then applying
+	Young's inequality
+	$\|v(t)\|_{L^2(\Omega)}\|\tilde u(t)\|_{L^2(\Omega)}
+	\le\tfrac{\lambda}{2}\|\tilde u(t)\|_{L^2(\Omega)}^2
+	+\tfrac{1}{2\lambda}\|v(t)\|_{L^2(\Omega)}^2$
+	to the source term, integrating over $(0,T)$, using $\tilde u(0)=0$,
+	and discarding the nonnegative terms
+	$e^{-2\lambda T}\|\tilde u(T)\|_{L^2(\Omega)}^2$ and the gradient
+	term, gives $\lambda\|\tilde u\|_\lambda^2\le
+	\lambda^{-1}\|v\|_\lambda^2$, i.e.
+	\begin{equation}\label{eq:bk-tildeu-weighted}
+		\|\tilde u\|_\lambda\le\frac{1}{\lambda}\|v\|_\lambda.
+	\end{equation}
+	Combining
+	\eqref{eq:bk-v-weighted}--\eqref{eq:bk-tildeu-weighted} with the
+	triangle inequality
+	$\|u\|_\lambda\le\|\tilde u\|_\lambda+\|w_0\|_\lambda$ yields the
+	claim.
+\end{proof}
+
+Fix $\lambda_0:=2\sqrt2\,m_0+1$, so that
+$\sqrt2\,m_0/\lambda_0\le\tfrac12$, and abbreviate
+$\|\cdot\|_\ast:=\|\cdot\|_{\lambda_0}$. Set
+\[
+R:=2\Bigl(\|w_0\|_\ast+\frac{\sqrt2\,m_0\sqrt{|Q|}}{\lambda_0}\Bigr),
+\qquad
+K:=\bigl\{w\in L^2(Q):\|w\|_\ast\le R\bigr\}.
+\]
+The set $K$ is nonempty (it contains $0$), closed, bounded, and convex
+in $L^2(Q)$; by \eqref{eq:bk-norm-equiv}, every $w\in K$ satisfies
+$\|w\|_{L^2(Q)}\le e^{\lambda_0 T}R=:R'$.
+
+\begin{lemma}[Invariance]
+	\label{lem:bk-self-map}
+	$\mathcal{G}(K)\subset K$.
+\end{lemma}
+
+\begin{proof}
+	Let $w\in K$, so $\|w\|_\ast\le R$, and let $u\in\mathcal{G}(w)$,
+	say $u=S_0(v)+w_0$ with $v\in S^2_{\Phi,w}$. By
+	Lemma~\ref{lem:bk-bielecki} with $\lambda=\lambda_0$ and the choice
+	of $\lambda_0$,
+	\[
+	\|u\|_\ast
+	\le\|w_0\|_\ast+\frac{\sqrt2\,m_0\sqrt{|Q|}}{\lambda_0}
+	+\tfrac12\|w\|_\ast
+	=\frac{R}{2}+\tfrac12\|w\|_\ast
+	\le\frac{R}{2}+\frac{R}{2}=R.
+	\]
+	Hence $u\in K$.
+\end{proof}
+
+\begin{lemma}[Values of $\mathcal{G}$]
+	\label{lem:bk-values}
+	For every $w\in K$, the set $\mathcal{G}(w)$ is nonempty, closed,
+	and convex in $L^2(Q)$.
+\end{lemma}
+
+\begin{proof}
+	\emph{Nonemptiness} follows from
+	Proposition~\ref{prop:bk-selection}: picking any
+	$v\in S^2_{\Phi,w}$ gives $S_0(v)+w_0\in\mathcal{G}(w)$.
 	
-	\emph{Step 5: conclusion.}
-	By Schaefer's fixed-point theorem, $\mathcal{T}$ admits a fixed point
-	$u=\mathcal{T}(u)$; by Step~1, $u=S(f(u))\in\mathcal{W}(0,T)$ solves
-	the semilinear problem above. By construction,
+	\emph{Convexity.} If $u_i=S_0(v_i)+w_0$ with $v_i\in S^2_{\Phi,w}$,
+	$i=1,2$, and $\mu\in[0,1]$, then, by convexity of $S^2_{\Phi,w}$
+	(Proposition~\ref{prop:bk-selection}) and linearity of $S_0$,
 	\[
-	\partial_t u(t,x)-\Delta u(t,x)
-	=
-	f(u(t,x))
-	\in
-	\Phi(u(t,x))
+	\mu u_1+(1-\mu)u_2
+	=S_0\bigl(\mu v_1+(1-\mu)v_2\bigr)+w_0\in\mathcal{G}(w).
 	\]
-	for almost every $(t,x)\in Q$.
-	Hence $u$ is a strong solution of
-	\eqref{eq:parabolic-inclusion-background}
-	in the sense of Definition~\ref{def:strong-solution-pde}.
-	Therefore,
-	$\mathcal{S}(u_0)\neq\varnothing$.
+	
+	\emph{Closedness.} Let $(u_n)\subset\mathcal{G}(w)$ with $u_n\to u$
+	strongly in $L^2(Q)$, and write $u_n=S_0(v_n)+w_0$ with
+	$v_n\in S^2_{\Phi,w}$. Since $w$ is fixed, \textup{(P3)} and
+	\eqref{eq:bk-selection-bound} give a uniform bound
+	$\|v_n\|_{L^2(Q)}\le C(w)$; by reflexivity of $L^2(Q)$, a
+	subsequence (not relabeled) satisfies $v_n\rightharpoonup v$ weakly
+	in $L^2(Q)$. By weak--weak continuity of $S_0$,
+	$S_0(v_n)\rightharpoonup S_0(v)$ weakly in $L^2(Q)$; since
+	$u_n\to u$ strongly, uniqueness of weak limits yields
+	$u=S_0(v)+w_0$. Applying Lemma~\ref{lem:bk-weak-closedness} with the
+	stationary sequence $w_n\equiv w$ gives $v\in S^2_{\Phi,w}$, whence
+	$u\in\mathcal{G}(w)$.
+\end{proof}
+
+\begin{lemma}[Relative compactness of the range]
+	\label{lem:bk-compact}
+	$\overline{\mathcal{G}(K)}$ is a compact subset of $L^2(Q)$.
+\end{lemma}
+
+\begin{proof}
+	Let $u\in\mathcal{G}(w)$ for some $w\in K$, say $u=S_0(v)+w_0$ with
+	$v\in S^2_{\Phi,w}$. By \eqref{eq:bk-selection-bound} and
+	$\|w\|_{L^2(Q)}\le R'$,
+	\[
+	\|v\|_{L^2(Q)}^2\le2m_0^2\bigl(|Q|+R'^2\bigr)=:M^2,
+	\]
+	a bound uniform over $w\in K$ and over the choice of selection $v$.
+	Since $S_0:L^2(Q)\to\mathcal{W}(0,T)$ is bounded,
+	\[
+	\|u\|_{\mathcal{W}(0,T)}
+	\le\|S_0\|\,M+\|w_0\|_{\mathcal{W}(0,T)},
+	\]
+	so $\mathcal{G}(K)$ is bounded in $\mathcal{W}(0,T)$. By the compact
+	embedding $\mathcal{W}(0,T)\hookrightarrow\hookrightarrow
+	C([0,T];L^2(\Omega))$ of Lemma~\ref{lem:compact-embedding}, and hence
+	into $L^2(Q)$, bounded subsets of $\mathcal{W}(0,T)$ are relatively
+	compact in $L^2(Q)$. Thus $\overline{\mathcal{G}(K)}$ is compact in
+	$L^2(Q)$.
+\end{proof}
+
+\begin{lemma}[Sequential closedness of the graph]
+	\label{lem:bk-graph}
+	If $(w_n)\subset K$, $u_n\in\mathcal{G}(w_n)$, $w_n\to w$ and
+	$u_n\to u$ strongly in $L^2(Q)$, then $u\in\mathcal{G}(w)$.
+\end{lemma}
+
+\begin{proof}
+	Write $u_n=S_0(v_n)+w_0$ with $v_n\in S^2_{\Phi,w_n}$. By
+	\eqref{eq:bk-selection-bound} and the boundedness of
+	$(w_n)\subset K$ in $L^2(Q)$, the sequence $(v_n)$ is bounded in
+	$L^2(Q)$; by reflexivity, a subsequence (not relabeled) satisfies
+	$v_n\rightharpoonup v$ weakly in $L^2(Q)$. By weak--weak continuity
+	of $S_0$, $S_0(v_n)\rightharpoonup S_0(v)$ weakly in $L^2(Q)$; on
+	the other hand $S_0(v_n)=u_n-w_0\to u-w_0$ strongly, hence weakly.
+	By uniqueness of weak limits, $u=S_0(v)+w_0$. Since $w_n\to w$
+	strongly and $v_n\rightharpoonup v$ weakly,
+	Lemma~\ref{lem:bk-weak-closedness} gives $v\in S^2_{\Phi,w}$, hence
+	$u\in\mathcal{G}(w)$.
+\end{proof}
+
+\begin{theorem}[Existence of strong solutions]
+	\label{thm:existence-pde}
+	Assume \textup{(P1)--(P3)}. Then problem
+	\eqref{eq:parabolic-inclusion-background} admits at least one strong
+	solution, i.e., $\mathcal{S}(u_0)\neq\varnothing$.
+\end{theorem}
+
+\begin{proof}
+	$K$ is a nonempty closed convex subset of the Banach space $L^2(Q)$.
+	By Lemma~\ref{lem:bk-values}, $\mathcal{G}(w)$ is nonempty, closed,
+	and convex for every $w\in K$, and by Lemma~\ref{lem:bk-self-map},
+	$\mathcal{G}(K)\subset K$. By Lemma~\ref{lem:bk-graph}, the graph of
+	$\mathcal{G}$ is sequentially closed in $K\times L^2(Q)$, which is
+	hypothesis \textup{(a)} of Theorem~\ref{thm:bk-fixed-point}; by
+	Lemma~\ref{lem:bk-compact}, $\mathcal{G}(K)$ is contained in the
+	compact set $\overline{\mathcal{G}(K)}\subset L^2(Q)$, which is
+	hypothesis \textup{(b)}. Theorem~\ref{thm:bk-fixed-point}, applied
+	with $X=L^2(Q)$ and $D=K$, yields $w^\ast\in K$ with
+	$w^\ast\in\mathcal{G}(w^\ast)$, i.e.\ $w^\ast=S_0(v^\ast)+w_0$ for
+	some $v^\ast\in S^2_{\Phi,w^\ast}$. Setting $u:=w^\ast$, we obtain
+	$u\in\mathcal{W}(0,T)$ with $\partial_t u-\Delta u=v^\ast\in\Phi(u)$
+	a.e.\ in $Q$ and $u(0)=u_0$, so $u\in\mathcal{S}(u_0)$ by
+	Definition~\ref{def:strong-solution-pde}.
 \end{proof}
 
 \begin{remark}
-	The assumptions \textup{(H1$'$)--(H3$'$)} are convenient sufficient
-	conditions for nonemptiness of $\mathcal{S}(u_0)$; optimal existence
-	hypotheses are not needed for the consistency analysis below.
+	Theorem~\ref{thm:existence-pde} asserts existence only. Since $\Phi$
+	is merely upper semicontinuous, $\mathcal{S}(u_0)$ need not be a
+	singleton in general, and the fixed-point argument makes no claim
+	about, and does not need, uniqueness of the selection $v^\ast$ or of
+	the resulting strong solution. For the relay example of
+	Section~\ref{subsec:parabolic-PDI}, uniqueness does hold, but for a
+	structural reason unrelated to the fixed-point argument: the
+	equation is a subgradient flow of a convex energy; see
+	Remark~\ref{rem:relay-wellposed}.
+\end{remark}
+
+\begin{remark}
+	If $\Phi$ is, in addition, \emph{lower} semicontinuous, a
+	Michael-type selection theorem (\cite[Lemma~2.1]{deimling_1992},
+	applied with $D=X=\mathbb{R}$) provides a continuous selection
+	$f(s)\in\Phi(s)$, which by \textup{(P3)} inherits the linear growth
+	bound $|f(s)|\le m_0(1+|s|)$; problem
+	\eqref{eq:parabolic-inclusion-background} then reduces to the
+	semilinear equation $\partial_t u-\Delta u=f(u)$, solvable by a
+	standard Schaefer fixed-point argument. Requiring both upper and
+	lower semicontinuity throughout would, however, make the
+	multifunction continuous and would exclude the relay nonlinearity of
+	Section~\ref{subsec:parabolic-PDI}, which admits no continuous
+	selection; this is precisely why Theorem~\ref{thm:existence-pde} is
+	formulated under upper semicontinuity alone.
 \end{remark}
 
 	%% ============================================================
@@ -1888,22 +2161,13 @@ $\Phi$ enjoys some lower regularity, as the following proposition shows.
 	
 	\subsection{Consistency}
 	\label{sec:pde-consistency}
-	For the consistency analysis, we assume that the set-valued reaction term
-	$\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$ satisfies:
-	
-	\begin{itemize}
-		\item[(P1)] $\Phi(s)$ is nonempty, closed, and convex for every
-		$s\in\mathbb{R}$.
-		
-		\item[(P2)] $\Phi$ is upper semicontinuous.
-		
-		\item[(P3)] There exists a constant $m_0\geq 0$ such that
-		\[
-		\sup_{r\in\Phi(s)} |r|
-		\leq m_0(1+|s|)
-		\qquad\forall\,s\in\mathbb{R}.
-		\]
-	\end{itemize}
+	For the consistency analysis, we assume that the set-valued reaction
+	term $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$ satisfies the
+	standing hypotheses \textup{(P1)--(P3)} of Section~\ref{sec:basics};
+	these are exactly the assumptions under which
+	Theorem~\ref{thm:existence-pde} guarantees
+	$\mathcal{S}(u_0)\neq\varnothing$, so that existence and consistency
+	rest on one and the same set of hypotheses.
 
 %	We work within the functional framework introduced in
 %	Section~\ref{sec:basics}: the parabolic energy space $\mathcal{W}(0,T)$,
@@ -1935,11 +2199,28 @@ $\Phi$ enjoys some lower regularity, as the following proposition shows.
 		\]
 	\end{definition}
 	The pointwise-in-time boundary condition in the definition of
-	$\mathcal{A}$ is meaningful because of the continuous embedding
-	\eqref{eq:W-cont-embedding}: every $u\in\mathcal{W}(0,T)$ admits a
-	representative in $C([0,T];H^1_0(\Omega))$, so the trace
-	$u(t,\cdot)|_{\partial\Omega}$ is well defined for \emph{every}
-	$t\in[0,T]$, even though $u(t,\cdot)\in H^2(\Omega)$ only for a.e.\ $t$.
+	$\mathcal{A}$ is in fact automatically satisfied: by the continuous
+	embedding \eqref{eq:W-cont-embedding}, every $u\in\mathcal{W}(0,T)$
+	admits a representative in $C([0,T];H^1_0(\Omega))$, so
+	$u(t,\cdot)\in H_0^1(\Omega)$ --- and hence
+	$u(t,\cdot)|_{\partial\Omega}=0$ in the trace sense --- for
+	\emph{every} $t\in[0,T]$, even though $u(t,\cdot)\in H^2(\Omega)$
+	only for a.e.\ $t$. Consequently,
+	$\mathcal{A}=\{u\in\mathcal{W}(0,T):u(0,\cdot)=u_0\}$; the boundary
+	condition is retained in the definition only for emphasis.
+	
+	We also note that $\mathcal{J}(u)<\infty$ for every
+	$u\in\mathcal{A}$: by \textup{(P3)}, choosing for a.e.\ $(t,x)$ any
+	$r_0(t,x)\in\Phi(u(t,x))$ gives
+	\[
+	\dist\bigl(\partial_t u-\Delta u,\,\Phi(u)\bigr)
+	\le|\partial_t u-\Delta u-r_0|
+	\le|\partial_t u-\Delta u|+m_0(1+|u|)
+	\quad\text{a.e.\ in } Q;
+	\]
+	squaring and integrating, and using $\partial_t u-\Delta u\in L^2(Q)$
+	and $u\in L^2(Q)$ (both immediate from $u\in\mathcal{W}(0,T)$),
+	yields $\mathcal{J}(u)<\infty$.
 \begin{lemma}[Normal convex integrand]\label{lem:normal-integrand-parabolic}
 	Let $\Phi:\mathbb{R}\rightrightarrows\mathbb{R}$ satisfy hypotheses (P1) and (P2).
 	Define $g:\mathbb{R}\times\mathbb{R}\to[0,\infty)$ by
@@ -3119,8 +3400,9 @@ the $\lambda=0$ (classical heat equation) case has not, making the qualitative
 contrast visible in a single plot (see Figure~\ref{fig:relay-extinction-ref} below).
 
 We check that $\Phi$ in \eqref{eq:relay-Phi} satisfies (P1)--(P3) of
-Section~\ref{sec:pde-consistency}, so that Theorem~\ref{thm:consistency-parabolic}
-applies to this example.
+Section~\ref{sec:basics}, so that both the existence result
+(Theorem~\ref{thm:existence-pde}) and the consistency result
+(Theorem~\ref{thm:consistency-parabolic}) apply to this example.
 \begin{itemize}
 	\item[(P1)] For every $s\in\mathbb{R}$, $\Phi(s)$ is a singleton or the
 	closed interval $[-\lambda,\lambda]$, hence nonempty, closed, and convex.
@@ -3134,13 +3416,17 @@ applies to this example.
 
 
 \begin{remark}\label{rem:relay-wellposed}
-	Theorem~\ref{thm:existence-pde} does not cover this example because
-	hypothesis~(H2$'$) requires a continuous selection
-	$f(s)\in\Phi(s)$. Indeed, any selection of
-	$\Phi$ in \eqref{eq:relay-Phi} is forced to equal $-\lambda$ for $s>0$
-	and $\lambda$ for $s<0$, hence is necessarily discontinuous at $s=0$.
-	Existence of a strong solution is instead obtained from the classical
-	theory of evolution equations governed by maximal monotone operators
+	Existence of a strong solution for this example is guaranteed
+	directly by Theorem~\ref{thm:existence-pde}, since \textup{(P1)--(P3)}
+	hold. Note that any selection of $\Phi$ in \eqref{eq:relay-Phi} is
+	forced to equal $-\lambda$ for $s>0$ and $\lambda$ for $s<0$, hence
+	is necessarily discontinuous at $s=0$; no reduction to a single-valued
+	semilinear equation via a continuous selection is available, and the
+	genuinely multivalued fixed-point argument of
+	Section~\ref{sec:basics} is essential here. The example has, however,
+	additional structure that yields more than existence --- namely
+	uniqueness and explicit a priori bounds --- via the classical theory
+	of evolution equations governed by maximal monotone operators
 	\cite{Brezis1973}: rewriting \eqref{eq:relay-pde} as
 	$\partial_t u + \bigl(-\Delta+\lambda\,\partial|\cdot|\bigr)(u)\ni 0$,
 	we identify $-\Delta+\lambda\,\partial|\cdot|$ (with the Dirichlet
@@ -3188,8 +3474,8 @@ applies to this example.
 	convex) yields
 	$u\in L^2\bigl(0,T;H^2(\Omega)\cap H_0^1(\Omega)\bigr)$. Hence
 	$u\in\mathcal{W}(0,T)$ is a strong solution of
-	\eqref{eq:relay-pde}, so $\mathcal{S}(u_0)\neq\varnothing$ also for
-	this example.
+	\eqref{eq:relay-pde}, recovering $\mathcal{S}(u_0)\neq\varnothing$
+	independently of Theorem~\ref{thm:existence-pde}.
 	
 	The stated regularity can also be read off from explicit $L^2$ estimates.
 	For gradient flows
