@@ -1,7 +1,0 @@
-mean_distance_residual: 1.233348145835e-10
-max_distance_residual: 1.233348143614e-07
-terminal_error: 7.748603820801e-07
-l2_error_exact: 4.918199777603e-02
-u_star_exact: 7.909883534347e-01
-u_reconstructed_min: 4.516347050667e-01
-u_reconstructed_max: 1.000351190567e+00

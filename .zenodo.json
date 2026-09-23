@@ -1,0 +1,43 @@
+{
+  "upload_type": "software",
+  "title": "Code and data for \"Distance-Residual Physics-Informed Neural Networks: A Deep Learning Framework for Differential and Partial Differential Inclusions\"",
+  "version": "1.0.0",
+  "language": "eng",
+  "license": "Apache-2.0",
+  "access_right": "open",
+  "creators": [
+    {
+      "name": "Filipkovska, Maria",
+      "affiliation": "B. Verkin Institute for Low Temperature Physics and Engineering of the National Academy of Sciences of Ukraine"
+    },
+    {
+      "name": "Marín, Juan José",
+      "affiliation": "Universidad Politécnica de Cartagena"
+    },
+    {
+      "name": "Öner, Işıl",
+      "affiliation": "Gebze Technical University"
+    },
+    {
+      "name": "Periago, Francisco",
+      "affiliation": "Universidad Politécnica de Cartagena"
+    },
+    {
+      "name": "Rykaczewski, Krzysztof",
+      "affiliation": "Nicolaus Copernicus University in Toruń"
+    }
+  ],
+  "keywords": [
+    "physics-informed neural networks",
+    "PINNs",
+    "differential inclusions",
+    "partial differential inclusions",
+    "distance residual",
+    "set-valued maps",
+    "relay nonlinearity",
+    "scientific machine learning",
+    "reproducibility"
+  ],
+  "description": "<p>Code, configurations, trained network checkpoints, and computational results supporting the numerical experiments (Section 6) of the manuscript \"Distance-Residual Physics-Informed Neural Networks: A Deep Learning Framework for Differential and Partial Differential Inclusions\".</p><p>DR-PINNs replace the classical pointwise PDE/ODE residual by the squared distance from the differential operator to a set-valued admissible set. The archive contains the complete replication pipeline for the three benchmarks of the paper: a linear control-constrained differential inclusion (Section 6.1), a differential inclusion with a time-dependent elliptical admissible set (Section 6.2), and a parabolic partial differential inclusion with a relay nonlinearity trained against an epsilon-banded relaxation (Section 6.3), including the reference solver with its grid and time-step refinement study, the multi-seed and sampling-ablation grid, all random seeds and hyperparameters, run manifests, and the saved checkpoints underlying the reported figures and tables.</p><p>Training is decoupled from post-processing: <code>bash reproduce_all.sh</code> reruns the full pipeline, <code>bash reproduce_all.sh --smoke</code> runs a fast end-to-end test, and figures and tables are regenerated from the saved checkpoints in minutes without retraining. See README.md for the directory layout, the staged per-experiment commands, and hardware notes.</p>",
+  "notes": "This work is based upon work from COST Action InterCoML, CA24136, supported by COST (European Cooperation in Science and Technology)."
+}
